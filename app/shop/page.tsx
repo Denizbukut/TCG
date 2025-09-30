@@ -111,10 +111,10 @@ export default function ShopPage() {
         const result = await getBattleLimitStatus(user.username)
         if (result.success) {
           setBattleLimit({
-            battlesUsed: result.battlesUsed,
-            battlesRemaining: result.battlesRemaining,
-            dailyLimit: result.dailyLimit,
-            canBattle: result.canBattle
+            battlesUsed: result.battlesUsed ?? 0,
+            battlesRemaining: result.battlesRemaining ?? 0,
+            dailyLimit: result.dailyLimit ?? 5,
+            canBattle: result.canBattle ?? false
           })
         }
       } catch (error) {

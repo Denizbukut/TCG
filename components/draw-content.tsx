@@ -1206,7 +1206,7 @@ const [showInfo, setShowInfo] = useState(false)
                             activeTab === "god"
                               ? "/godpack-removebg-preview.png"
                               : activeTab === "legendary"
-                                ? "/elite_pack-removebg-preview.png"
+                                ? "/pack.png"
                                 : activeTab === "icon"
                                   ? "/icon_pack_echt-removebg-preview.png"
                                   : "/classic_pack.png"
