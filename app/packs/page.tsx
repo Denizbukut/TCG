@@ -23,83 +23,83 @@ export default function PacksPage() {
   const [showAnimation, setShowAnimation] = useState(false)
   const [drawnCards, setDrawnCards] = useState<any[]>([])
   const [currentPackType, setCurrentPackType] = useState<"basic" | "premium" | "ultimate">("basic")
-  const [hasIconPass, setHasIconPass] = useState(false)
+  // const [hasIconPass, setHasIconPass] = useState(false)
   const [hasEpicAvatar, setHasEpicAvatar] = useState(false)
 
   // Debug: Log user state
-  console.log('PacksPage rendered, user:', user?.username, 'hasIconPass:', hasIconPass)
+  // console.log('PacksPage rendered, user:', user?.username, 'hasIconPass:', hasIconPass)
 
   // Check if user has active Icon Pass and Epic Avatar
-  useEffect(() => {
-    console.log('useEffect triggered, user:', user?.username)
+  // useEffect(() => {
+  //   console.log('useEffect triggered, user:', user?.username)
     
-    // TEMPORARY: Force hasIconPass to true for testing
-    console.log('🔧 TEMPORARY: Setting hasIconPass to true for testing')
-    setHasIconPass(true)
+  //   // TEMPORARY: Force hasIconPass to true for testing
+  //   console.log('🔧 TEMPORARY: Setting hasIconPass to true for testing')
+  //   setHasIconPass(true)
     
-    const checkUserBonuses = async () => {
-      if (!user?.username) {
-        console.log('No username found, returning')
-        return
-      }
+  //   const checkUserBonuses = async () => {
+  //     if (!user?.username) {
+  //       console.log('No username found, returning')
+  //       return
+  //     }
       
-      try {
-        console.log('Starting Icon Pass and Epic Avatar check for user:', user.username)
-        const supabase = getSupabaseBrowserClient()
-        if (!supabase) {
-          console.log('No Supabase client found')
-          return
-        }
+  //     try {
+  //       console.log('Starting Icon Pass and Epic Avatar check for user:', user.username)
+  //       const supabase = getSupabaseBrowserClient()
+  //       if (!supabase) {
+  //         console.log('No Supabase client found')
+  //         return
+  //       }
 
-        // Check Icon Pass
-        console.log('Querying icon_passes table...')
-        const { data: iconPassData, error: iconPassError } = await supabase
-          .from('icon_passes')
-          .select('*')
-          .eq('user_id', user.username)
-          .eq('active', true)
-          .single()
+  //       // Check Icon Pass
+  //       console.log('Querying icon_passes table...')
+  //       const { data: iconPassData, error: iconPassError } = await supabase
+  //         .from('icon_passes')
+  //         .select('*')
+  //         .eq('user_id', user.username)
+  //         .eq('active', true)
+  //         .single()
 
-        console.log('Icon Pass check result:', { data: iconPassData, error: iconPassError, username: user.username })
+  //       console.log('Icon Pass check result:', { data: iconPassData, error: iconPassError, username: user.username })
         
-        if (!iconPassError && iconPassData) {
-          setHasIconPass(true)
-          console.log('✅ Icon Pass is active!')
-        } else {
-          setHasIconPass(false)
-          console.log('❌ No active Icon Pass found, error:', iconPassError)
-        }
+  //       if (!iconPassError && iconPassData) {
+  //         setHasIconPass(true)
+  //         console.log('✅ Icon Pass is active!')
+  //       } else {
+  //         setHasIconPass(false)
+  //         console.log('❌ No active Icon Pass found, error:', iconPassError)
+  //       }
 
-        // Check Epic Avatar
-        if (user.avatar_id) {
-          console.log('Checking Epic Avatar for avatar_id:', user.avatar_id)
-          const { data: avatarData, error: avatarError } = await supabase
-            .from('avatars')
-            .select('rarity')
-            .eq('id', user.avatar_id)
-            .eq('is_active', true)
-            .single()
+  //       // Check Epic Avatar
+  //       if (user.avatar_id) {
+  //         console.log('Checking Epic Avatar for avatar_id:', user.avatar_id)
+  //         const { data: avatarData, error: avatarError } = await supabase
+  //           .from('avatars')
+  //           .select('rarity')
+  //           .eq('id', user.avatar_id)
+  //           .eq('is_active', true)
+  //           .single()
           
-          if (!avatarError && avatarData?.rarity === "epic") {
-            setHasEpicAvatar(true)
-            console.log('🎭 Epic Avatar detected!')
-          } else {
-            setHasEpicAvatar(false)
-            console.log('❌ No Epic Avatar found, rarity:', avatarData?.rarity)
-          }
-        } else {
-          setHasEpicAvatar(false)
-          console.log('❌ No avatar_id found for user')
-        }
-      } catch (error) {
-        console.error('❌ Error checking user bonuses:', error)
-        setHasIconPass(false)
-        setHasEpicAvatar(false)
-      }
-    }
+  //         if (!avatarError && avatarData?.rarity === "epic") {
+  //           setHasEpicAvatar(true)
+  //           console.log('🎭 Epic Avatar detected!')
+  //         } else {
+  //           setHasEpicAvatar(false)
+  //           console.log('❌ No Epic Avatar found, rarity:', avatarData?.rarity)
+  //         }
+  //       } else {
+  //         setHasEpicAvatar(false)
+  //         console.log('❌ No avatar_id found for user')
+  //       }
+  //     } catch (error) {
+  //       console.error('❌ Error checking user bonuses:', error)
+  //       setHasIconPass(false)
+  //       setHasEpicAvatar(false)
+  //     }
+  //   }
 
-    checkUserBonuses()
-  }, [user?.username, user?.avatar_id])
+  //   checkUserBonuses()
+  // }, [user?.username, user?.avatar_id])
 
   const handleDrawPack = async (packType: string) => {
     if (!user) return
@@ -162,20 +162,19 @@ export default function PacksPage() {
       <div className="pb-20">
         <header className="bg-orange-600 text-white p-4">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold">Card Packs</h1>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1">
-                <Ticket className="h-5 w-5 text-amber-500" />
-                <span className="font-bold">{user?.tickets ?? 0}</span>
+            <div className="flex items-center gap-4">
+              <h1 className="text-2xl font-bold">Card Packs</h1>
+              {/* Tickets neben dem Card Packs Titel */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 bg-white/20 px-2 py-1 rounded-full">
+                  <Ticket className="h-4 w-4 text-amber-300" />
+                  <span className="font-bold text-sm">{user?.tickets ?? 0}</span>
+                </div>
+                <div className="flex items-center gap-1 bg-white/20 px-2 py-1 rounded-full">
+                  <Ticket className="h-4 w-4 text-purple-300" />
+                  <span className="font-bold text-sm">{user?.elite_tickets ?? 0}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-1">
-                <Ticket className="h-5 w-5 text-purple-500" />
-                <span className="font-bold">{user?.elite_tickets ?? 0}</span>
-              </div>
-              {/* <div className="flex items-center gap-1">
-                <Package className="h-5 w-5 text-indigo-500" />
-                <span className="font-bold">{user?.icon_tickets ?? 0}</span>
-              </div> */}
             </div>
           </div>
         </header>
@@ -239,11 +238,11 @@ export default function PacksPage() {
                 <CardTitle className="flex items-center gap-2">
                   <PackageOpen className="h-5 w-5 text-blue-500" />
                   Premium Pack
-                  {hasIconPass && (
+                  {/* {hasIconPass && (
                     <div className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white text-xs px-2 py-1 rounded-full font-bold">
                       PASS ACTIVE
                     </div>
-                  )}
+                  )} */}
                 </CardTitle>
                 <CardDescription>3 cards with better odds for Rare and Epic</CardDescription>
               </CardHeader>

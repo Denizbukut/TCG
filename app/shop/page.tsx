@@ -36,7 +36,7 @@ export default function ShopPage() {
     dailyLimit: number
     canBattle: boolean
   } | null>(null)
-  const [showPvpBattles, setShowPvpBattles] = useState(false)
+  // const [showPvpBattles, setShowPvpBattles] = useState(false)
 
   // Time-based discount state
   const [timeDiscount, setTimeDiscount] = useState<{
@@ -220,46 +220,46 @@ const erc20TransferAbi = [{
 }]
 
 const WLD_TOKEN = "0x2cFc85d8E48F8EAB294be644d9E25C3030863003" // WLD (World Chain)
-  const sendPvpBattlePayment = async (dollarPrice: number, packageId: string, battleAmount: number) => {
-    setIsLoading({ ...isLoading, [packageId]: true })
+  // const sendPvpBattlePayment = async (dollarPrice: number, packageId: string, battleAmount: number) => {
+  //   setIsLoading({ ...isLoading, [packageId]: true })
 
-    try {
-      const discountedPrice = getDiscountedPrice(dollarPrice)
-      const roundedWldAmount = Number.parseFloat((price ? discountedPrice / price : discountedPrice).toFixed(3))
-      const {commandPayload, finalPayload} = await MiniKit.commandsAsync.sendTransaction({
-        transaction: [
-          {
-            address: WLD_TOKEN,
-            abi: erc20TransferAbi,
-            functionName: "transfer",
-            args: ["0x9311788aa11127F325b76986f0031714082F016B", tokenToDecimals(roundedWldAmount, Tokens.WLD).toString()]
-          },
+  //   try {
+  //     const discountedPrice = getDiscountedPrice(dollarPrice)
+  //     const roundedWldAmount = Number.parseFloat((price ? discountedPrice / price : discountedPrice).toFixed(3))
+  //     const {commandPayload, finalPayload} = await MiniKit.commandsAsync.sendTransaction({
+  //       transaction: [
+  //         {
+  //           address: WLD_TOKEN,
+  //           abi: erc20TransferAbi,
+  //           functionName: "transfer",
+  //           args: ["0x9311788aa11127F325b76986f0031714082F016B", tokenToDecimals(roundedWldAmount, Tokens.WLD).toString()]
+  //         },
 
-        ],
-      })
+  //       ],
+  //     })
      
 
-      if (finalPayload.status === "success") {
-        console.log("success sending payment")
-        await handleBuyPvpBattles(packageId, battleAmount)
-      } else {
-        toast({
-          title: "Payment Failed",
-          description: "Your payment could not be processed. Please try again.",
-          variant: "destructive",
-        })
-        setIsLoading({ ...isLoading, [packageId]: false })
-      }
-    } catch (error) {
-      console.error("Payment error:", error)
-      toast({
-        title: "Payment Error",
-        description: "An error occurred during payment. Please try again.",
-        variant: "destructive",
-      })
-      setIsLoading({ ...isLoading, [packageId]: false })
-    }
-  }
+  //     if (finalPayload.status === "success") {
+  //       console.log("success sending payment")
+  //       await handleBuyPvpBattles(packageId, battleAmount)
+  //     } else {
+  //       toast({
+  //         title: "Payment Failed",
+  //         description: "Your payment could not be processed. Please try again.",
+  //         variant: "destructive",
+  //       })
+  //       setIsLoading({ ...isLoading, [packageId]: false })
+  //     }
+  //   } catch (error) {
+  //     console.error("Payment error:", error)
+  //     toast({
+  //       title: "Payment Error",
+  //       description: "An error occurred during payment. Please try again.",
+  //       variant: "destructive",
+  //     })
+  //     setIsLoading({ ...isLoading, [packageId]: false })
+  //   }
+  // }
 
   const sendPayment = async (
   dollarPrice: number,
@@ -312,127 +312,127 @@ const WLD_TOKEN = "0x2cFc85d8E48F8EAB294be644d9E25C3030863003" // WLD (World Cha
 
 
   // Handle buying PvP battles
-  const handleBuyPvpBattles = async (packageId: string, battleAmount: number) => {
-    if (!user?.username) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to purchase PvP battles",
-        variant: "destructive",
-      })
-      setIsLoading({ ...isLoading, [packageId]: false })
-      return
-    }
+  // const handleBuyPvpBattles = async (packageId: string, battleAmount: number) => {
+  //   if (!user?.username) {
+  //     toast({
+  //       title: "Error",
+  //       description: "You must be logged in to purchase PvP battles",
+  //       variant: "destructive",
+  //     })
+  //     setIsLoading({ ...isLoading, [packageId]: false })
+  //     return
+  //   }
 
-    try {
-      const supabase = getSupabaseBrowserClient()
-      if (!supabase) {
-        throw new Error("Could not connect to database")
-      }
+  //   try {
+  //     const supabase = getSupabaseBrowserClient()
+  //     if (!supabase) {
+  //       throw new Error("Could not connect to database")
+  //     }
 
-      // Get user UUID
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("id")
-        .eq("username", user.username)
-        .single()
+  //     // Get user UUID
+  //     const { data: userData, error: userError } = await supabase
+  //       .from("users")
+  //       .select("id")
+  //       .eq("username", user.username)
+  //       .single()
 
-      if (userError || !userData) {
-        throw new Error("Could not fetch user data")
-      }
+  //     if (userError || !userData) {
+  //       throw new Error("Could not fetch user data")
+  //     }
 
-      const userId = userData.id
+  //     const userId = userData.id
 
-      // Get current battle limit
-      const { data: battleLimitData, error: battleLimitError } = await supabase
-        .from("user_battle_limits")
-        .select("battles_used, last_reset_date")
-        .eq("user_id", userId)
-        .single()
+  //     // Get current battle limit
+  //     const { data: battleLimitData, error: battleLimitError } = await supabase
+  //       .from("user_battle_limits")
+  //       .select("battles_used, last_reset_date")
+  //       .eq("user_id", userId)
+  //       .single()
 
-      let currentBattlesUsed = 0
-      let lastResetDate = new Date().toISOString().split('T')[0]
+  //     let currentBattlesUsed = 0
+  //     let lastResetDate = new Date().toISOString().split('T')[0]
 
-      if (battleLimitError && battleLimitError.code !== 'PGRST116') {
-        throw new Error("Could not fetch battle limit")
-      } else if (battleLimitData) {
-        currentBattlesUsed = battleLimitData.battles_used || 0
-        lastResetDate = battleLimitData.last_reset_date || lastResetDate
-      }
+  //     if (battleLimitError && battleLimitError.code !== 'PGRST116') {
+  //       throw new Error("Could not fetch battle limit")
+  //     } else if (battleLimitData) {
+  //       currentBattlesUsed = battleLimitData.battles_used || 0
+  //       lastResetDate = battleLimitData.last_reset_date || lastResetDate
+  //     }
 
-      // Check if we need to reset (new day)
-      const today = new Date().toISOString().split('T')[0]
-      if (lastResetDate !== today) {
-        currentBattlesUsed = 0
-        lastResetDate = today
-      }
+  //     // Check if we need to reset (new day)
+  //     const today = new Date().toISOString().split('T')[0]
+  //     if (lastResetDate !== today) {
+  //       currentBattlesUsed = 0
+  //       lastResetDate = today
+  //     }
 
-      // Add purchased battles (reduce battles_used)
-      const newBattlesUsed = Math.max(0, currentBattlesUsed - battleAmount)
+  //     // Add purchased battles (reduce battles_used)
+  //     const newBattlesUsed = Math.max(0, currentBattlesUsed - battleAmount)
 
-      console.log(`PvP Battle Purchase Debug:`, {
-        currentBattlesUsed,
-        battleAmount,
-        newBattlesUsed,
-        battlesRemaining: 5 - newBattlesUsed
-      })
+  //     console.log(`PvP Battle Purchase Debug:`, {
+  //       currentBattlesUsed,
+  //       battleAmount,
+  //       newBattlesUsed,
+  //       battlesRemaining: 5 - newBattlesUsed
+  //     })
 
-      // Update battle limit
-      const { error: updateError } = await supabase
-        .from("user_battle_limits")
-        .upsert({
-          user_id: userId,
-          battles_used: newBattlesUsed,
-          last_reset_date: lastResetDate,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id'
-        })
+  //     // Update battle limit
+  //     const { error: updateError } = await supabase
+  //       .from("user_battle_limits")
+  //       .upsert({
+  //         user_id: userId,
+  //         battles_used: newBattlesUsed,
+  //         last_reset_date: lastResetDate,
+  //         updated_at: new Date().toISOString()
+  //       }, {
+  //         onConflict: 'user_id'
+  //       })
 
-      if (updateError) {
-        throw new Error("Failed to update battle limit")
-      }
+  //     if (updateError) {
+  //       throw new Error("Failed to update battle limit")
+  //     }
 
-      // Log the PvP purchase
-      const originalPrice = pvpBattlePackages.find(p => p.id === packageId)?.price || 0
-      const discountedPrice = getDiscountedPrice(originalPrice)
-      const hasDiscount = discountedPrice < originalPrice
-      const discountPercentage = hasDiscount ? ((originalPrice - discountedPrice) / originalPrice) * 100 : 0
+  //     // Log the PvP purchase
+  //     const originalPrice = pvpBattlePackages.find(p => p.id === packageId)?.price || 0
+  //     const discountedPrice = getDiscountedPrice(originalPrice)
+  //     const hasDiscount = discountedPrice < originalPrice
+  //     const discountPercentage = hasDiscount ? ((originalPrice - discountedPrice) / originalPrice) * 100 : 0
 
-      await supabase.from("pvp_purchases").insert({
-        user_id: userId,
-        username: user.username,
-        amount: battleAmount,
-        price_usd: discountedPrice,
-        price_wld: price ? (discountedPrice / price).toFixed(6) : null,
-        discounted: hasDiscount,
-        discount_percentage: hasDiscount ? discountPercentage : null,
-        clan_role: userClanRole,
-        clan_member_count: clanMemberCount
-      })
+  //     await supabase.from("pvp_purchases").insert({
+  //       user_id: userId,
+  //       username: user.username,
+  //       amount: battleAmount,
+  //       price_usd: discountedPrice,
+  //       price_wld: price ? (discountedPrice / price).toFixed(6) : null,
+  //       discounted: hasDiscount,
+  //       discount_percentage: hasDiscount ? discountPercentage : null,
+  //       clan_role: userClanRole,
+  //       clan_member_count: clanMemberCount
+  //     })
 
-      // Update local state
-      setBattleLimit({
-        battlesUsed: newBattlesUsed,
-        battlesRemaining: 5 - newBattlesUsed,
-        dailyLimit: 5,
-        canBattle: newBattlesUsed < 5
-      })
+  //     // Update local state
+  //     setBattleLimit({
+  //       battlesUsed: newBattlesUsed,
+  //       battlesRemaining: 5 - newBattlesUsed,
+  //       dailyLimit: 5,
+  //       canBattle: newBattlesUsed < 5
+  //     })
 
-      toast({
-        title: "Purchase Successful!",
-        description: `You've purchased ${battleAmount} additional PvP battle${battleAmount > 1 ? 's' : ''}!`,
-      })
-    } catch (error) {
-      console.error("Error buying PvP battles:", error)
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading({ ...isLoading, [packageId]: false })
-    }
-  }
+  //     toast({
+  //       title: "Purchase Successful!",
+  //       description: `You've purchased ${battleAmount} additional PvP battle${battleAmount > 1 ? 's' : ''}!`,
+  //     })
+  //   } catch (error) {
+  //     console.error("Error buying PvP battles:", error)
+  //     toast({
+  //       title: "Error",
+  //       description: error instanceof Error ? error.message : "An unexpected error occurred",
+  //       variant: "destructive",
+  //     })
+  //   } finally {
+  //     setIsLoading({ ...isLoading, [packageId]: false })
+  //   }
+  // }
 
   // Handle buying tickets
   const handleBuyTickets = async (packageId: string, ticketAmount: number, ticketType: "regular" | "legendary" | "icon") => {
@@ -571,10 +571,10 @@ await supabase.from("ticket_purchases").insert({
   }))
 
   // PvP Battle Packs (nur verfügbar wenn alle 5 Battles verbraucht)
-  const pvpBattlePackages = [
-    { id: "pvp-1", amount: 1, price: 0.25 },
-    { id: "pvp-5", amount: 5, price: 0.78 },
-  ]
+  // const pvpBattlePackages = [
+  //   { id: "pvp-1", amount: 1, price: 0.25 },
+  //   { id: "pvp-5", amount: 5, price: 0.78 },
+  // ]
 
   return (
     <ProtectedRoute>
@@ -640,8 +640,8 @@ await supabase.from("ticket_purchases").insert({
 
                     {/* Main Shop Tabs */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-            <Tabs defaultValue={typeof window !== 'undefined' && window.location.search.includes('tab=pvp') ? "pvp" : "tickets"} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 h-12 rounded-2xl p-1 bg-gradient-to-r from-gray-900/60 via-gray-800/40 to-gray-900/60 mb-6 shadow-lg backdrop-blur-md">
+            {/* <Tabs defaultValue="tickets" className="w-full">
+              <TabsList className="grid w-full grid-cols-1 h-12 rounded-2xl p-1 bg-gradient-to-r from-gray-900/60 via-gray-800/40 to-gray-900/60 mb-6 shadow-lg backdrop-blur-md">
                 <TabsTrigger
                   value="tickets"
                   className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-yellow-300 data-[state=active]:text-yellow-200 data-[state=active]:shadow transition-all font-semibold tracking-wide"
@@ -649,17 +649,10 @@ await supabase.from("ticket_purchases").insert({
                   <Ticket className="h-4 w-4 mr-2 text-yellow-300" />
                   Tickets
                 </TabsTrigger>
-                <TabsTrigger
-                  value="pvp"
-                  className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-orange-400 data-[state=active]:text-orange-200 data-[state=active]:shadow transition-all font-semibold tracking-wide text-orange-300"
-                >
-                  <CircleDot className="h-4 w-4 mr-2 text-orange-300" />
-                  PvP
-                </TabsTrigger>
-              </TabsList>
+              </TabsList> */}
 
               {/* Tickets Tab Content */}
-              <TabsContent value="tickets" className="mt-0">
+              {/* <TabsContent value="tickets" className="mt-0"> */}
                 <Tabs defaultValue="regular" className="w-full">
                   <TabsList className="grid w-full grid-cols-2 h-12 rounded-2xl p-1 bg-gradient-to-r from-gray-900/60 via-gray-800/40 to-gray-900/60 mb-6 shadow-lg backdrop-blur-md">
                     <TabsTrigger
@@ -840,11 +833,11 @@ await supabase.from("ticket_purchases").insert({
 
     {/* Icon Tickets Content - REMOVED */}
                 </Tabs>
-              </TabsContent>
+              {/* </TabsContent> */}
 
               {/* PvP Tab Content */}
-              <TabsContent value="pvp" className="mt-0">
-                {battleLimit && (
+              {/* <TabsContent value="pvp" className="mt-0"> */}
+                {/* {battleLimit && (
                   <div className="space-y-6">
                     <div className="bg-gradient-to-r from-amber-800/40 to-orange-900/40 border border-amber-700/50 rounded-xl p-4">
                       <div className="flex items-center justify-between mb-4">
@@ -881,7 +874,6 @@ await supabase.from("ticket_purchases").insert({
                               <Card
                                 className="overflow-hidden border-2 border-orange-400/30 bg-gradient-to-br from-gray-900/60 to-gray-800/40 rounded-xl shadow-md backdrop-blur-md transition-all p-2"
                               >
-                                {/* Shine Effekt */}
                                 <motion.div
                                   className="absolute left-[-40%] top-0 w-1/2 h-full bg-gradient-to-r from-transparent via-orange-200/10 to-transparent skew-x-[-20deg] pointer-events-none"
                                   animate={{ left: ['-40%', '120%'] }}
@@ -949,9 +941,9 @@ await supabase.from("ticket_purchases").insert({
                       </div>
                     </div>
                   </div>
-                )}
-              </TabsContent>
-            </Tabs>
+                )} */}
+              {/* </TabsContent> */}
+            {/* </Tabs> */}
           </motion.div>
 
 

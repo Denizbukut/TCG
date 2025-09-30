@@ -194,7 +194,7 @@ export default function Home() {
   const [currentAvatarUrl, setCurrentAvatarUrl] = useState("")
   const [currentAvatarId, setCurrentAvatarId] = useState(1)
   const [currentXpColor, setCurrentXpColor] = useState("pink")
-  const [iconTickets, setIconTickets] = useState(0)
+  // const [iconTickets, setIconTickets] = useState(0)
   
   // SBC State variables
   const [sbcChallenges, setSbcChallenges] = useState<SBCChallenge[]>([])
@@ -786,9 +786,9 @@ const [copied, setCopied] = useState(false)
         if (data && typeof data.elite_tickets === "number") {
           setEliteTickets(data.elite_tickets)
         }
-        if (data && typeof data.icon_tickets === "number") {
-          setIconTickets(data.icon_tickets)
-        }
+        // if (data && typeof data.icon_tickets === "number") {
+        //   setIconTickets(data.icon_tickets)
+        // }
 
         // Update premium status
         if (data && typeof data.has_premium === "boolean") {
@@ -1200,7 +1200,7 @@ const [copied, setCopied] = useState(false)
     if (user) {
       if (typeof user.tickets === "number") setTickets(user.tickets)
       if (typeof user.elite_tickets === "number") setEliteTickets(user.elite_tickets)
-      if (typeof user.icon_tickets === "number") setIconTickets(user.icon_tickets)
+      // if (typeof user.icon_tickets === "number") setIconTickets(user.icon_tickets)
     }
   }, [user])
 
@@ -1551,23 +1551,23 @@ const [copied, setCopied] = useState(false)
 
           if (!userError && userData) {
             const currentEliteTickets = Number(userData.elite_tickets) || 0;
-            const currentIconTickets = Number(userData.icon_tickets) || 0;
+            // const currentIconTickets = Number(userData.icon_tickets) || 0;
             
             const newEliteTickets = currentEliteTickets + specialDeal.elite_tickets;
-            const newIconTickets = currentIconTickets + (specialDeal.icon_tickets || 0);
+            // const newIconTickets = currentIconTickets + (specialDeal.icon_tickets || 0);
 
             const { error: updateError } = await supabase
               .from("users")
               .update({
                 elite_tickets: newEliteTickets,
-                icon_tickets: newIconTickets,
+                // icon_tickets: newIconTickets,
               })
               .eq("username", user.username);
 
             if (!updateError) {
               // Lokale Ticket-Zähler aktualisieren
               setEliteTickets(newEliteTickets);
-              setIconTickets(newIconTickets);
+              // setIconTickets(newIconTickets);
 
               // Success Animation anzeigen
               setShowSpecialDealSuccess(true);
@@ -1640,22 +1640,20 @@ const [copied, setCopied] = useState(false)
                   <span className="sr-only">Telegram</span>
                   <Send className="w-4 h-4 text-white" />
       </a>
+      
+      {/* Tickets neben dem Telegram Icon */}
+      <div className="flex items-center gap-2 ml-2">
+        <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#232526] to-[#414345] px-2 py-1 rounded-full shadow-sm border-2 border-yellow-400 min-w-[54px]">
+          <Ticket className="h-4 w-4 text-yellow-400 mx-auto" />
+          <span className="font-medium text-xs text-center text-yellow-100">{tickets}</span>
+        </div>
+        <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#232526] to-[#414345] px-2 py-1 rounded-full shadow-sm border-2 border-yellow-400 min-w-[54px]">
+          <Ticket className="h-4 w-4 text-yellow-400 mx-auto" />
+          <span className="font-medium text-xs text-center text-yellow-100">{eliteTickets}</span>
+        </div>
+      </div>
     </div>
             </div>
-    <div className="flex items-center gap-2 ml-2 flex-shrink-0">
-      <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#232526] to-[#414345] px-2 py-1 rounded-full shadow-sm border-2 border-yellow-400 min-w-[54px]">
-        <Ticket className="h-4 w-4 text-yellow-400 mx-auto" />
-        <span className="font-medium text-xs text-center text-yellow-100">{tickets}</span>
-      </div>
-      <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#232526] to-[#414345] px-2 py-1 rounded-full shadow-sm border-2 border-yellow-400 min-w-[54px]">
-        <Ticket className="h-4 w-4 text-yellow-400 mx-auto" />
-        <span className="font-medium text-xs text-center text-yellow-100">{eliteTickets}</span>
-      </div>
-      {/* <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#232526] to-[#414345] px-2 py-1 rounded-full shadow-sm border-2 border-yellow-400 min-w-[54px]">
-        <Crown className="h-4 w-4 text-yellow-400 mx-auto" />
-        <span className="font-medium text-xs text-center text-yellow-100">{iconTickets}</span>
-      </div> */}
-    </div>
   </div>
 </header>
 
@@ -2169,11 +2167,11 @@ const [copied, setCopied] = useState(false)
                           <Crown className="h-3 w-3 text-purple-500" />+{specialDeal.elite_tickets}
                         </span>
                       )}
-                      {specialDeal.icon_tickets > 0 && (
+                      {/* {specialDeal.icon_tickets > 0 && (
                         <span className="inline-block px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-sm font-bold flex items-center gap-1 border border-white">
                           <Crown className="h-3 w-3 text-indigo-500" />+{specialDeal.icon_tickets}
                         </span>
-                      )}
+                      )} */}
                     </div>
                     <div className="text-lg font-bold text-center mb-1">
                       {specialDeal.discount_percentage && specialDeal.discount_percentage > 0 ? (
@@ -2308,7 +2306,7 @@ const [copied, setCopied] = useState(false)
                             </div>
                           </div>
                           {/* Icon Tickets */}
-                          <div className={`flex items-center ${specialDeal.icon_tickets > 0 ? '' : 'opacity-50'}`}> 
+                          {/* <div className={`flex items-center ${specialDeal.icon_tickets > 0 ? '' : 'opacity-50'}`}> 
                             <div className="w-9 h-9 rounded-md bg-indigo-900/30 border border-indigo-700/50 flex items-center justify-center mr-3">
                               <Crown className="h-4 w-4 text-indigo-400" />
                             </div>
@@ -2316,7 +2314,7 @@ const [copied, setCopied] = useState(false)
                               <p className="text-sm font-medium text-white">{specialDeal.icon_tickets} Icon Tickets</p>
                               <p className="text-xs text-gray-400">For icon rewards</p>
                             </div>
-                          </div>
+                          </div> */}
                         </div>
                       </div>
                       {/* Price and Action */}
