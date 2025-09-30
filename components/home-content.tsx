@@ -202,7 +202,7 @@ export default function Home() {
   const [sbcLoading, setSbcLoading] = useState(false)
   
   // Referrals/SBC Slide system
-  const [referralSbcIndex, setReferralSbcIndex] = useState<number>(1)
+  const [referralSbcIndex, setReferralSbcIndex] = useState<number>(0)
   
   // SBC Helper functions
   const isChallengeCompleted = (challengeId: number) => {
@@ -239,24 +239,30 @@ export default function Home() {
       text: 'Invite friends & earn rewards!',
       action: () => setShowReferralDialog(true),
       color: 'text-yellow-100',
-      dot: 'bg-yellow-500',
-      badge: 'NEW BONUS',
     },
-    {
-      key: 'sbc',
-      title: 'WBC',
-      icon: <img src="/sbc-logo.svg" alt="WBC Logo" className="h-8 w-8" />,
-      bg: 'from-purple-600 to-purple-800',
-      border: 'border-purple-400',
-      text: 'Complete squad challenges!',
-      action: () => router.push('/sbc'),
-      color: 'text-purple-100',
-      dot: 'bg-purple-500',
-      progress: sbcLoading ? 'Loading...' : `${sbcChallenges.filter(c => isChallengeCompleted(c.id)).length}/${sbcChallenges.length}`,
-    },
+    // {
+    //   key: 'sbc',
+    //   title: 'WBC',
+    //   icon: <img src="/sbc-logo.svg" alt="WBC Logo" className="h-8 w-8" />,
+    //   bg: 'from-purple-600 to-purple-800',
+    //   border: 'border-purple-400',
+    //   text: 'Complete squad challenges!',
+    //   action: () => router.push('/sbc'),
+    //   color: 'text-purple-100',
+    //   dot: 'bg-purple-500',
+    //   progress: sbcLoading ? 'Loading...' : `${sbcChallenges.filter(c => isChallengeCompleted(c.id)).length}/${sbcChallenges.length}`,
+    // },
   ]
-  const handleReferralSbcPrev = () => setReferralSbcIndex((prev) => (prev === 0 ? referralSbcSlides.length - 1 : prev - 1))
-  const handleReferralSbcNext = () => setReferralSbcIndex((prev) => (prev === referralSbcSlides.length - 1 ? 0 : prev + 1))
+  const handleReferralSbcPrev = () => {
+    if (referralSbcSlides.length > 1) {
+      setReferralSbcIndex((prev) => (prev === 0 ? referralSbcSlides.length - 1 : prev - 1))
+    }
+  }
+  const handleReferralSbcNext = () => {
+    if (referralSbcSlides.length > 1) {
+      setReferralSbcIndex((prev) => (prev === referralSbcSlides.length - 1 ? 0 : prev + 1))
+    }
+  }
 
   // Format contest countdown
   const formatContestCountdown = (ms: number) => {
@@ -415,7 +421,7 @@ const [copied, setCopied] = useState(false)
   const [isChatOpen, setIsChatOpen] = useState(false)
   const { price } = useWldPrice()
 
-  const ticketClaimAmount = user?.clan_id ? (userClanInfo?.level && userClanInfo.level >= 2 ? 4 : 3) : 3
+  const ticketClaimAmount = 1
 
   // Add the router constant inside the component:
   const router = useRouter()
@@ -1017,7 +1023,7 @@ const [copied, setCopied] = useState(false)
 
           toast({
             title: "Success!",
-            description: "You've claimed 3 tickets as your daily bonus!",
+            description: "You've claimed 1 ticket as your daily bonus!",
           })
 
           setAlreadyClaimed(true)
@@ -1132,17 +1138,17 @@ const [copied, setCopied] = useState(false)
       color: 'text-blue-700',
       dot: 'bg-blue-500',
     },
-    {
-      key: 'iconpass',
-      title: 'Icon Pass',
-      icon: <Crown className="h-8 w-8 text-yellow-600" />, 
-      bg: 'from-white to-yellow-200',
-      border: 'border-yellow-100',
-      text: 'Unlock exclusive ICON rewards!',
-      href: '/icon-pass',
-      color: 'text-yellow-700',
-      dot: 'bg-yellow-500',
-    },
+    // {
+    //   key: 'iconpass',
+    //   title: 'Icon Pass',
+    //   icon: <Crown className="h-8 w-8 text-yellow-600" />, 
+    //   bg: 'from-white to-yellow-200',
+    //   border: 'border-yellow-100',
+    //   text: 'Unlock exclusive ICON rewards!',
+    //   href: '/icon-pass',
+    //   color: 'text-yellow-700',
+    //   dot: 'bg-yellow-500',
+    // },
   ]
   const handlePrev = () => setPassIndex((prev) => (prev === 0 ? passSlides.length - 1 : prev - 1))
   const handleNext = () => setPassIndex((prev) => (prev === passSlides.length - 1 ? 0 : prev + 1))
@@ -1645,10 +1651,10 @@ const [copied, setCopied] = useState(false)
         <Ticket className="h-4 w-4 text-yellow-400 mx-auto" />
         <span className="font-medium text-xs text-center text-yellow-100">{eliteTickets}</span>
       </div>
-      <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#232526] to-[#414345] px-2 py-1 rounded-full shadow-sm border-2 border-yellow-400 min-w-[54px]">
+      {/* <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#232526] to-[#414345] px-2 py-1 rounded-full shadow-sm border-2 border-yellow-400 min-w-[54px]">
         <Crown className="h-4 w-4 text-yellow-400 mx-auto" />
         <span className="font-medium text-xs text-center text-yellow-100">{iconTickets}</span>
-      </div>
+      </div> */}
     </div>
   </div>
 </header>
@@ -1870,8 +1876,8 @@ const [copied, setCopied] = useState(false)
                 </div>
               </div>
             </div>
-            {/* Weekly Contest (volle Breite) */}
-            <div className="col-span-6">
+            {/* Weekly Contest (volle Breite) - COMMENTED OUT */}
+            {/* <div className="col-span-6">
 <motion.div
   initial={{ opacity: 0, y: 20, scale: 0.95 }}
   animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -1881,7 +1887,7 @@ const [copied, setCopied] = useState(false)
   onClick={() => router.push('/weekly-contest')}
 >
   {/* Shine Effekt */}
-  <motion.div
+  {/* <motion.div
     className="absolute inset-0 pointer-events-none"
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
@@ -1947,7 +1953,7 @@ const [copied, setCopied] = useState(false)
     <ChevronRight className="w-6 h-6 text-yellow-300" />
   </motion.div>
   {/* Animierter Schatten */}
-  <motion.div
+  {/* <motion.div
     className="absolute inset-0 rounded-2xl pointer-events-none"
     animate={{ boxShadow: [
       '0 4px 24px 0 rgba(255, 215, 0, 0.10)',
@@ -1957,7 +1963,7 @@ const [copied, setCopied] = useState(false)
     transition={{ duration: 2.5, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' }}
   />
 </motion.div>
-      </div>
+      </div> */}
             {/* $ANI Card (replaces Chat) */}
             <div className="col-span-2">
               <div
@@ -2026,36 +2032,30 @@ const [copied, setCopied] = useState(false)
                     <div className={`text-sm font-bold ${referralSbcSlides[referralSbcIndex].color}`}>
                       {referralSbcSlides[referralSbcIndex].title}
                     </div>
-                    {referralSbcSlides[referralSbcIndex].progress && (
-                      <div className="text-xs text-purple-200 mt-1">
-                        {referralSbcSlides[referralSbcIndex].progress}
-                      </div>
-                    )}
-                    {referralSbcSlides[referralSbcIndex].badge && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow">
-                        {referralSbcSlides[referralSbcIndex].badge}
-                      </span>
-                    )}
                     
-                    {/* Navigation arrows */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleReferralSbcPrev()
-                      }}
-                      className="absolute top-1 left-1 w-4 h-4 bg-white/20 rounded-full flex items-center justify-center text-white text-xs hover:bg-white/30 transition"
-                    >
-                      ‹
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleReferralSbcNext()
-                      }}
-                      className="absolute top-1 right-1 w-4 h-4 bg-white/20 rounded-full flex items-center justify-center text-white text-xs hover:bg-white/30 transition"
-                    >
-                      ›
-                    </button>
+                    {/* Navigation arrows - only show if more than one slide */}
+                    {referralSbcSlides.length > 1 && (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleReferralSbcPrev()
+                          }}
+                          className="absolute top-1 left-1 w-4 h-4 bg-white/20 rounded-full flex items-center justify-center text-white text-xs hover:bg-white/30 transition"
+                        >
+                          ‹
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleReferralSbcNext()
+                          }}
+                          className="absolute top-1 right-1 w-4 h-4 bg-white/20 rounded-full flex items-center justify-center text-white text-xs hover:bg-white/30 transition"
+                        >
+                          ›
+                        </button>
+                      </>
+                    )}
                     
                     {/* Slide indicators */}
                     <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex space-x-1">
@@ -2378,10 +2378,7 @@ const [copied, setCopied] = useState(false)
                     <div>
                       <h3 className="font-medium text-sm text-yellow-100">Ticket Claim</h3>
                       <p className="text-xs text-yellow-200">
-  Get {ticketClaimAmount} tickets every 24 hours
-  {ticketClaimAmount === 4 && (
-    <span className="text-emerald-600 font-medium"> (+1 Clan Bonus)</span>
-  )}
+  Get {ticketClaimAmount} ticket every 24 hours
 </p>
                     </div>
                   </div>

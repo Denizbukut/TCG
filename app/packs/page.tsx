@@ -172,10 +172,10 @@ export default function PacksPage() {
                 <Ticket className="h-5 w-5 text-purple-500" />
                 <span className="font-bold">{user?.elite_tickets ?? 0}</span>
               </div>
-              <div className="flex items-center gap-1">
+              {/* <div className="flex items-center gap-1">
                 <Package className="h-5 w-5 text-indigo-500" />
                 <span className="font-bold">{user?.icon_tickets ?? 0}</span>
-              </div>
+              </div> */}
             </div>
           </div>
         </header>

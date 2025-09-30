@@ -661,7 +661,7 @@ await supabase.from("ticket_purchases").insert({
               {/* Tickets Tab Content */}
               <TabsContent value="tickets" className="mt-0">
                 <Tabs defaultValue="regular" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 h-12 rounded-2xl p-1 bg-gradient-to-r from-gray-900/60 via-gray-800/40 to-gray-900/60 mb-6 shadow-lg backdrop-blur-md">
+                  <TabsList className="grid w-full grid-cols-2 h-12 rounded-2xl p-1 bg-gradient-to-r from-gray-900/60 via-gray-800/40 to-gray-900/60 mb-6 shadow-lg backdrop-blur-md">
                     <TabsTrigger
                       value="regular"
                       className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-yellow-300 data-[state=active]:text-yellow-200 data-[state=active]:shadow transition-all font-semibold tracking-wide"
@@ -676,13 +676,13 @@ await supabase.from("ticket_purchases").insert({
                       <Ticket className="h-4 w-4 mr-2 text-gray-300" />
                       Elite Tickets
                     </TabsTrigger>
-                    <TabsTrigger
+                    {/* <TabsTrigger
                       value="icon"
                       className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-yellow-200 data-[state=active]:text-yellow-100 data-[state=active]:shadow transition-all font-semibold tracking-wide"
                     >
                       <span className="font-extrabold text-yellow-200 mr-2">★</span>
                       Icon Tickets
-                    </TabsTrigger>
+                    </TabsTrigger> */}
                                     </TabsList>
 
                   {/* Classic Tickets Content */}
@@ -838,76 +838,7 @@ await supabase.from("ticket_purchases").insert({
       </div>
     </TabsContent>
 
-    {/* Icon Tickets Content */}
-    <TabsContent value="icon" className="mt-0 space-y-6">
-      <div className="grid grid-cols-2 gap-2">
-        {iconPackages.map((pkg) => {
-          const originalPrice = pkg.price
-          const discountedPrice = getDiscountedPrice(originalPrice)
-          const hasDiscount = discountedPrice < originalPrice
-          return (
-            <motion.div
-              key={pkg.id}
-              whileHover={{ scale: 1.03, boxShadow: '0 0 32px 0 rgba(212,175,55,0.10)' }}
-              className="relative"
-            >
-              <Card
-                className="overflow-hidden border-2 border-yellow-200/30 bg-gradient-to-br from-gray-900/60 to-gray-800/40 rounded-xl shadow-md backdrop-blur-md transition-all p-2"
-              >
-                <motion.div
-                  className="absolute left-[-40%] top-0 w-1/2 h-full bg-gradient-to-r from-transparent via-yellow-100/10 to-transparent skew-x-[-20deg] pointer-events-none"
-                  animate={{ left: ['-40%', '120%'] }}
-                  transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                />
-                {hasDiscount && (
-                  <div className="absolute top-0 right-0 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10">
-                    -{Math.round((1 - discountedPrice / originalPrice) * 100)}%
-                  </div>
-                )}
-                <CardHeader className="p-2 pb-1 space-y-0">
-                  <CardTitle className="text-base font-extrabold flex items-center text-yellow-100 drop-shadow">
-                    <span className="mr-1">{pkg.amount}</span>
-                    <Crown className="h-4 w-4 text-yellow-200 drop-shadow-lg mx-1" />
-                    <span className="ml-1 text-xs">{pkg.amount === 1 ? "Icon Ticket" : "Icon Tickets"}</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-2 pt-0 pb-1">
-                  <Separator className="my-2 border-yellow-200/20" />
-                  <div className="flex flex-col items-start">
-                    {hasDiscount && (
-                      <span className="text-xs text-yellow-200/60 line-through">
-                        {price ? `${(originalPrice / price).toFixed(3)} WLD` : `${originalPrice.toFixed(3)} WLD`}
-                      </span>
-                    )}
-                    <span className="text-base font-bold text-yellow-100">
-                      {price ? `${(discountedPrice / price).toFixed(3)} WLD` : `${discountedPrice.toFixed(3)} WLD`}
-                    </span>
-                    <span className="text-xs text-yellow-100/80">(~${discountedPrice.toFixed(2)})</span>
-                  </div>
-                </CardContent>
-                <CardFooter className="p-2 pt-0">
-                  <Button
-                    size="sm"
-                    className="w-full bg-gradient-to-r from-gray-800/80 to-yellow-200/30 text-yellow-100 font-bold border-0 hover:scale-105 hover:shadow-lg transition backdrop-blur-md"
-                    onClick={() => sendPayment(originalPrice, pkg.id, pkg.amount, 'icon')}
-                    disabled={isLoading[pkg.id]}
-                  >
-                    {isLoading[pkg.id] ? (
-                      <>
-                        <div className="h-4 w-4 border-2 border-t-transparent border-yellow-200 rounded-full animate-spin mr-2"></div>
-                        Processing...
-                      </>
-                    ) : (
-                      "Purchase"
-                    )}
-                  </Button>
-                </CardFooter>
-              </Card>
-            </motion.div>
-          )
-        })}
-      </div>
-    </TabsContent>
+    {/* Icon Tickets Content - REMOVED */}
                 </Tabs>
               </TabsContent>
 

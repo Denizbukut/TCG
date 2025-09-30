@@ -1092,7 +1092,7 @@ const [showInfo, setShowInfo] = useState(false)
               >
 
                 {/* Tabs - UPDATED: Changed God tab to red gradient */}
-                <div className="grid grid-cols-4 rounded-xl overflow-hidden mb-6 border border-yellow-400 bg-black/70">
+                <div className="grid grid-cols-2 rounded-xl overflow-hidden mb-6 border border-yellow-400 bg-black/70">
                   <button
                     onClick={() => setActiveTab("regular")}
                     className={`py-3 px-2 text-center font-medium transition-all text-xs ${
@@ -1119,7 +1119,7 @@ const [showInfo, setShowInfo] = useState(false)
                       <span>Elite</span>
                     </div>
                   </button>
-                  <button
+                  {/* <button
                     onClick={() => setActiveTab("god")}
                     className={`py-3 px-2 text-center font-medium transition-all text-xs ${
                       activeTab === "god"
@@ -1131,8 +1131,8 @@ const [showInfo, setShowInfo] = useState(false)
                       <Zap className="h-3 w-3" />
                       <span>GOAT</span>
                     </div>
-                  </button>
-                  <button
+                  </button> */}
+                  {/* <button
                     onClick={() => setActiveTab("icon")}
                     className={`py-3 px-2 text-center font-medium transition-all text-xs ${
                       activeTab === "icon"
@@ -1144,7 +1144,7 @@ const [showInfo, setShowInfo] = useState(false)
                       <Crown className="h-3 w-3" />
                       <span>ICON</span>
                     </div>
-                  </button>
+                  </button> */}
 
                 </div>
                 
@@ -1164,7 +1164,7 @@ const [showInfo, setShowInfo] = useState(false)
                   </div>
                 )}
                 
-                {godPacksLeft !== null && (
+                {/* {godPacksLeft !== null && (
                   <div className={`mb-4 text-center text-sm font-medium px-4 py-2 rounded-xl ${
                     godPacksLeft === 0
                       ? "bg-black/70 text-yellow-200 border border-yellow-400"
@@ -1173,7 +1173,7 @@ const [showInfo, setShowInfo] = useState(false)
                     ⚡ Goat Packs opened today:{" "}
                     <span className="font-bold">{godPacksLeft}</span> / {max_godpacks_daily}
                   </div>
-                )}
+                )} */}
                 
 
 
