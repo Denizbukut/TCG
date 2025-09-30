@@ -16,21 +16,21 @@ type CardCatalogProps = {
 // Map database rarity to display categories
 const rarityMapping: Record<string, string> = {
   goat: "G",
-  ultimate: "U",
-  elite: "E",
+  legendary: "L",
+  epic: "E",
   rare: "R",
-  basic: "B",
-  wbc: "WBC"
+  common: "C",
+  // wbc: "WBC" // Commented out
 };
 
 // Map display categories back to database rarities
 const categoryToRarities: Record<string, string[]> = {
   G: ["goat"],
-  U: ["ultimate"],
-  E: ["elite"],
+  L: ["legendary"],
+  E: ["epic"],
   R: ["rare"],
-  B: ["basic"],
-  WBC: ["wbc"]
+  C: ["common"],
+  // WBC: ["wbc"] // Commented out
 };
 
 export default function CardCatalog({ username, searchTerm = "" }: CardCatalogProps) {
@@ -80,7 +80,7 @@ export default function CardCatalog({ username, searchTerm = "" }: CardCatalogPr
         // Debug: Check if WBC card is loaded
         const totalCards = cards?.length || 0
         const wbcCard = cards?.find(card => card.name === 'doue' && card.rarity === 'wbc')
-        const ibrahimovic = cards?.find(card => card.name?.toLowerCase().includes('ibrahimovic'))
+        const ibrahimovic = cards?.find(card => (card.name as string)?.toLowerCase().includes('ibrahimovic'))
         const allDoueCards = cards?.filter(card => card.name === 'doue')
         
         setDebugInfo(`✅ Total: ${totalCards} | WBC doue: ${wbcCard ? 'FOUND' : 'NOT FOUND'} | Ibrahimovic: ${ibrahimovic ? 'FOUND' : 'NOT FOUND'} | All doue cards: ${allDoueCards?.length} | Obtainable false cards: ${cards?.filter(c => c.obtainable === false).length}`)
@@ -103,7 +103,7 @@ export default function CardCatalog({ username, searchTerm = "" }: CardCatalogPr
         if (!userCardsError && userCardData) {
           const userCardMap: Record<string, boolean> = {}
            userCardData.forEach((item) => {
-            userCardMap[item.card_id] = true
+            userCardMap[item.card_id as string] = true
           })
           setUserCards(userCardMap)
           } else {
@@ -159,8 +159,8 @@ export default function CardCatalog({ username, searchTerm = "" }: CardCatalogPr
     return acc
   }, {})
 
-  // Sort categories in order: G, U, E, R, B, WBC
-  const sortedCategories = ["G", "U", "E", "R", "B", "WBC"].filter(
+  // Sort categories in order: G, U, E, R, B (WBC commented out)
+  const sortedCategories = ["G", "U", "E", "R", "B"].filter(
     (category) => cardsByRarity[category] && cardsByRarity[category].length > 0,
   )
 
@@ -204,9 +204,9 @@ export default function CardCatalog({ username, searchTerm = "" }: CardCatalogPr
         <TabsTrigger value="B" className="text-black data-[state=active]:bg-gray-200 data-[state=active]:text-black">
           Basic
         </TabsTrigger>
-        <TabsTrigger value="WBC" className="text-black data-[state=active]:bg-gray-200 data-[state=active]:text-black">
+        {/* <TabsTrigger value="WBC" className="text-black data-[state=active]:bg-gray-200 data-[state=active]:text-black">
           WBC
-        </TabsTrigger>
+        </TabsTrigger> */}
       </TabsList>
 
       <TabsContent value="all" className="mt-4 text-black">
@@ -219,16 +219,16 @@ export default function CardCatalog({ username, searchTerm = "" }: CardCatalogPr
               <h3 className="text-lg font-semibold text-black">
                 {category === "G"
                   ? "Goat"
-                  : category === "U"
-                  ? "Ultimate"
+                  : category === "L"
+                  ? "Legendary"
                   : category === "E"
-                  ? "Elite"
+                  ? "Epic"
                   : category === "R"
                   ? "Rare"
-                  : category === "B"
-                  ? "Basic"
-                  : category === "WBC"
-                  ? "WBC"
+                  : category === "C"
+                  ? "Common"
+                  // : category === "WBC"
+                  // ? "WBC"
                   : category}
               </h3>
               <span className="ml-2 text-sm text-gray-700">({cardsByRarity[category].length} cards)</span>
@@ -262,7 +262,7 @@ export default function CardCatalog({ username, searchTerm = "" }: CardCatalogPr
         ))}
       </TabsContent>
 
-      {["G", "U", "E", "R", "B", "WBC"].map((category) => (
+      {["G", "U", "E", "R", "B"].map((category) => (
         <TabsContent key={category} value={category} className="mt-4 text-black">
           <motion.div
             className="grid grid-cols-5 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2"

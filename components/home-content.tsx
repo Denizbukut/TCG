@@ -1614,7 +1614,7 @@ const [copied, setCopied] = useState(false)
           <div className="w-full px-4 py-3 flex items-center justify-between">
             <div className="flex items-center">
               <h1 className="text-sm font-bold tracking-tight bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">
-        WORLD SOCCER
+        CRYPTO TCG
       </h1>
               {/* Social Icon Buttons */}
               <div className="flex gap-2 ml-2">

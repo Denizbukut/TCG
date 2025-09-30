@@ -6,7 +6,7 @@ import {  incrementMission } from "@/app/actions/missions"
 import { isUserBanned } from "@/lib/banned-users"
 
 // Card rarity types
-type CardRarity = "common" | "rare" | "epic" | "legendary" | "basic" | "elite" | "ultimate" | "goat"
+type CardRarity = "common" | "rare" | "epic" | "legendary" | "goat"
 
 // Define types for our data
 type UserCard = {
@@ -154,8 +154,8 @@ function generateRandomCard(rarity: CardRarity): Card {
   }
   let fallback: keyof typeof cardNames = "common";
   if (rarity === "rare") fallback = "rare";
-  if (rarity === "epic" || rarity === "elite") fallback = "epic";
-  if (rarity === "legendary" || rarity === "ultimate" || rarity === "goat") fallback = "legendary";
+  if (rarity === "epic") fallback = "epic";
+  if (rarity === "legendary" || rarity === "goat") fallback = "legendary";
   const name = cardNames[fallback][Math.floor(Math.random() * cardNames[fallback].length)]
   return {
     id: Math.random().toString(36).substring(2, 15), // Generate a random ID
@@ -168,16 +168,14 @@ function generateRandomCard(rarity: CardRarity): Card {
 // Funktion, um Punkte für eine Kartenrarität zu erhalten
 function getScoreForRarity(rarity: CardRarity): number {
   switch (rarity) {
-    case "ultimate":
-      return 200 // Ultimate-Karten geben doppelte Punkte (verdoppelt von 100)
     case "legendary":
-      return 100 // Geändert von 500 auf 100
+      return 100 // Legendary-Karten geben 100 Punkte
     case "epic":
-      return 40 // Geändert von 100 auf 40
+      return 50 // Epic-Karten geben 50 Punkte
     case "rare":
-      return 25 // Geändert von 20 auf 25
+      return 25 // Rare-Karten geben 25 Punkte
     case "common":
-      return 5 // Unverändert
+      return 5 // Common-Karten geben 5 Punkte
     default:
       return 0
   }
@@ -346,10 +344,10 @@ export async function drawCards(username: string, packType: string, count = 1) {
     }
 
     // Filter cards by rarity for each pack type
-    const commonCards = availableCards.filter((card) => card.rarity === "basic" || card.rarity === "common")
+    const commonCards = availableCards.filter((card) => card.rarity === "common")
     const rareCards = availableCards.filter((card) => card.rarity === "rare")
-    const epicCards = availableCards.filter((card) => card.rarity === "elite" || card.rarity === "epic")
-    const legendaryCards = availableCards.filter((card) => card.rarity === "ultimate" || card.rarity === "legendary")
+    const epicCards = availableCards.filter((card) => card.rarity === "epic")
+    const legendaryCards = availableCards.filter((card) => card.rarity === "legendary")
     const goatCards = availableCards.filter((card) => card.rarity === "goat" || card.rarity === "godlike")
 
     // Generate random cards based on rarity chances
@@ -410,7 +408,7 @@ export async function drawCards(username: string, packType: string, count = 1) {
         if (!cardPool || cardPool.length === 0) {
           cardPool = commonCards.length > 0 ? commonCards : availableCards;
         }
-        rarity = cardPool[0]?.rarity || "basic";
+        rarity = cardPool[0]?.rarity || "common";
         const selectedCard = cardPool[Math.floor(Math.random() * cardPool.length)];
         drawnCards.push(selectedCard);
         if (selectedCard.rarity === "ultimate") {
@@ -503,7 +501,7 @@ export async function drawCards(username: string, packType: string, count = 1) {
         if (!cardPool || cardPool.length === 0) {
           cardPool = epicCards.length > 0 ? epicCards : availableCards;
         }
-        rarity = cardPool[0]?.rarity || "elite";
+        rarity = cardPool[0]?.rarity || "epic";
         const selectedCard = cardPool[Math.floor(Math.random() * cardPool.length)];
         drawnCards.push(selectedCard);
         if (selectedCard.rarity === "ultimate") {
@@ -598,7 +596,7 @@ export async function drawCards(username: string, packType: string, count = 1) {
         if (!cardPool || cardPool.length === 0) {
           cardPool = epicCards.length > 0 ? epicCards : availableCards;
         }
-        rarity = cardPool[0]?.rarity || "elite";
+        rarity = cardPool[0]?.rarity || "epic";
         const selectedCard = cardPool[Math.floor(Math.random() * cardPool.length)];
         drawnCards.push(selectedCard);
         if (selectedCard.rarity === "ultimate") {
@@ -654,16 +652,16 @@ export async function drawCards(username: string, packType: string, count = 1) {
         }
 
         if (random < 35) {
-          rarity = "basic"
+          rarity = "common"
           cardPool = commonCards
         } else if (random < 75) {
           rarity = "rare"
           cardPool = rareCards
         } else if (random < 95 + (legendaryChance - 5)) {
-          rarity = "elite"
+          rarity = "epic"
           cardPool = epicCards
         } else {
-          rarity = "ultimate"
+          rarity = "legendary"
           cardPool = legendaryCards
         }
       } else {
@@ -674,23 +672,23 @@ export async function drawCards(username: string, packType: string, count = 1) {
         }
 
         if (random < 50) {
-          rarity = "basic"
+          rarity = "common"
           cardPool = commonCards
         } else if (random < 84) {
           rarity = "rare"
           cardPool = rareCards
         } else if (random < 98 + (legendaryChance - 2)) {
-          rarity = "elite"
+          rarity = "epic"
           cardPool = epicCards
         } else {
-          rarity = "ultimate"
+          rarity = "legendary"
           cardPool = legendaryCards
         }
       }
 
       // If no cards of the selected rarity, fall back to common
       if (!cardPool || cardPool.length === 0) {
-        rarity = "basic"
+        rarity = "common"
         cardPool = commonCards.length > 0 ? commonCards : availableCards
       }
 
@@ -985,21 +983,21 @@ function determineRarity(packType: string): CardRarity {
 
   if (packType === "legendary") {
     // Legendary pack with updated odds:
-    // 10% legendary, 40% epic, 40% rare, 10% common
+    // 10% legendary, 40% epic, 40% elite, 10% common
     if (random < 10) return "legendary"
     if (random < 50) return "epic" // 10 + 40 = 50
     if (random < 90) return "rare" // 50 + 40 = 90
     return "common" // Remaining 10%
   } else if (packType === "icon") {
     // ICON pack with 15% better odds than legendary:
-    // 30% legendary, 38% epic, 30% rare, 2% common
+    // 30% legendary, 38% epic, 30% elite, 2% common
     if (random < 30) return "legendary"
     if (random < 68) return "epic" // 30 + 38 = 68
     if (random < 98) return "rare" // 68 + 30 = 98
     return "common" // Remaining 2%
   } else {
     // Regular pack with updated odds:
-    // 1% legendary, 5% epic, 34% rare, 60% common
+    // 1% legendary, 5% epic, 34% elite, 60% common
     if (random < 1) return "legendary"
     if (random < 6) return "epic" // 1 + 5 = 6
     if (random < 40) return "rare" // 6 + 34 = 40

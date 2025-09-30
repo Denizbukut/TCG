@@ -82,11 +82,11 @@ export async function listCardForSale(userId: string, cardId: string, price: num
       minUsdPrice = 0.55
     } else {
       // Rarity-basierte Preise (nur wenn Rating niedriger ist)
-      if (cardDetails.rarity === "ultimate") {
+      if (cardDetails.rarity === "legendary") {
         minUsdPrice = 1.5
-      } else if (cardDetails.rarity === "legendary") {
+      } else if (cardDetails.rarity === "epic") {
         minUsdPrice = 1.0
-      } else if (cardDetails.rarity === "elite") {
+      } else if (cardDetails.rarity === "rare") {
         minUsdPrice = 0.5
       }
     }
@@ -110,9 +110,9 @@ export async function listCardForSale(userId: string, cardId: string, price: num
       } else if (cardDetails.overall_rating >= 85) {
         cardType = `Rating ${cardDetails.overall_rating} cards`
       } else {
-        cardType = cardDetails.rarity === "ultimate" ? "Ultimate" : 
-                  cardDetails.rarity === "legendary" ? "Legendary" : 
-                  cardDetails.rarity === "elite" ? "Elite" : "cards"
+        cardType = cardDetails.rarity === "legendary" ? "Legendary" : 
+                  cardDetails.rarity === "epic" ? "Epic" : 
+                  cardDetails.rarity === "rare" ? "Rare" : "cards"
       }
       
       return {

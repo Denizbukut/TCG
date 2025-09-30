@@ -32,7 +32,7 @@ type Card = {
   name: string
   character: string
   image_url?: string
-  rarity: "basic" | "rare" | "elite" | "ultimate" | "goat" | "wbc"
+  rarity: "common" | "rare" | "epic" | "legendary" | "goat" // | "wbc" // Commented out
   overall_rating?: number
 }
 
@@ -48,23 +48,23 @@ const MAX_USER_LISTINGS = 3
 const DEFAULT_PAGE_SIZE = 20
 
 // Card rarity type
-type CardRarity = "basic" | "rare" | "elite" | "ultimate" | "goat" | "wbc"
+type CardRarity = "common" | "rare" | "epic" | "legendary" | "goat" // | "wbc" // Commented out
 
 // Function to calculate score based on card rarity
 function getScoreForRarity(rarity: CardRarity): number {
   switch (rarity) {
     case "goat":
       return 200
-    case "ultimate":
+    case "legendary":
       return 100
-    case "elite":
-      return 40
+    case "epic":
+      return 50
     case "rare":
       return 25
-    case "basic":
+    case "common":
       return 5
-    case "wbc":
-      return 250 // WBC-Karten sind sehr wertvoll
+    // case "wbc":
+    //   return 250 // WBC-Karten sind sehr wertvoll // Commented out
     default:
       return 0
   }
@@ -639,11 +639,11 @@ export async function createListing(
       minUsdPrice = 0.55
     } else {
       // Rarity-basierte Preise (nur wenn Rating niedriger ist)
-      if (cardDetails.rarity === "ultimate") {
+      if (cardDetails.rarity === "legendary") {
         minUsdPrice = 1.5
-      } else if (cardDetails.rarity === "legendary") {
+      } else if (cardDetails.rarity === "epic") {
         minUsdPrice = 1.0
-      } else if (cardDetails.rarity === "elite") {
+      } else if (cardDetails.rarity === "rare") {
         minUsdPrice = 0.5
       }
     }
@@ -667,9 +667,9 @@ export async function createListing(
       } else if (cardDetails.overall_rating >= 85) {
         cardType = `Rating ${cardDetails.overall_rating} cards`
       } else {
-        cardType = cardDetails.rarity === "ultimate" ? "Ultimate" : 
-                  cardDetails.rarity === "legendary" ? "Legendary" : 
-                  cardDetails.rarity === "elite" ? "Elite" : "cards"
+        cardType = cardDetails.rarity === "legendary" ? "Legendary" : 
+                  cardDetails.rarity === "epic" ? "Epic" : 
+                  cardDetails.rarity === "rare" ? "Rare" : "cards"
       }
       
       return {
@@ -1195,11 +1195,11 @@ export async function updateListingPrice(username: string, listingId: string, ne
       minUsdPrice = 0.55
     } else {
       // Rarity-basierte Preise (nur wenn Rating niedriger ist)
-      if (cardDetails.rarity === "ultimate") {
+      if (cardDetails.rarity === "legendary") {
         minUsdPrice = 1.5
-      } else if (cardDetails.rarity === "legendary") {
+      } else if (cardDetails.rarity === "epic") {
         minUsdPrice = 1.0
-      } else if (cardDetails.rarity === "elite") {
+      } else if (cardDetails.rarity === "rare") {
         minUsdPrice = 0.5
       }
     }
@@ -1223,9 +1223,9 @@ export async function updateListingPrice(username: string, listingId: string, ne
       } else if (cardDetails.overall_rating >= 85) {
         cardType = `Rating ${cardDetails.overall_rating} cards`
       } else {
-        cardType = cardDetails.rarity === "ultimate" ? "Ultimate" : 
-                  cardDetails.rarity === "legendary" ? "Legendary" : 
-                  cardDetails.rarity === "elite" ? "Elite" : "cards"
+        cardType = cardDetails.rarity === "legendary" ? "Legendary" : 
+                  cardDetails.rarity === "epic" ? "Epic" : 
+                  cardDetails.rarity === "rare" ? "Rare" : "cards"
       }
       
       return {

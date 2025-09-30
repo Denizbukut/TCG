@@ -61,7 +61,7 @@ type Card = {
   name: string
   character: string
   image_url?: string
-  rarity: "basic" | "rare" | "elite" | "ultimate" | "goat" | "wbc"
+  rarity: "common" | "rare" | "epic" | "legendary" | "goat" // | "wbc" // Commented out
   overall_rating?: number
 }
 
@@ -797,12 +797,12 @@ export default function TradePage() {
                       </SelectTrigger>
                       <SelectContent className="bg-black/90 text-yellow-300 border border-yellow-400">
                                                     <SelectItem value="all">All Rarities</SelectItem>
-                            <SelectItem value="basic">Basic</SelectItem>
+                            <SelectItem value="common">Common</SelectItem>
                             <SelectItem value="rare">Rare</SelectItem>
-                            <SelectItem value="elite">Elite</SelectItem>
-                            <SelectItem value="ultimate">Ultimate</SelectItem>
+                            <SelectItem value="epic">Epic</SelectItem>
+                            <SelectItem value="legendary">Legendary</SelectItem>
                             <SelectItem value="goat">GOAT</SelectItem>
-                            <SelectItem value="wbc">WBC</SelectItem>
+                            {/* <SelectItem value="wbc">WBC</SelectItem> */}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1278,10 +1278,10 @@ export default function TradePage() {
                     <div className="flex items-center mt-1">
                       <Badge
                         className={`
-                        ${selectedListing.card.rarity === "basic" ? "bg-gray-500" : ""}
+                        ${selectedListing.card.rarity === "common" ? "bg-gray-500" : ""}
                         ${selectedListing.card.rarity === "rare" ? "bg-blue-500" : ""}
-                        ${selectedListing.card.rarity === "elite" ? "bg-purple-500" : ""}
-                        ${selectedListing.card.rarity === "ultimate" ? "bg-amber-500" : ""}
+                        ${selectedListing.card.rarity === "epic" ? "bg-purple-500" : ""}
+                        ${selectedListing.card.rarity === "legendary" ? "bg-amber-500" : ""}
                         ${selectedListing.card.rarity === "goat" ? "bg-red-500" : ""}
                       `}
                       >

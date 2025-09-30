@@ -95,7 +95,7 @@ export function CardItem({
   if (!id) return null
 
   const rarityStyles = {
-  basic: {
+  common: {
     border: "border-4 border-gray-400",
     glow: "shadow-gray-300",
     text: "text-gray-600",
@@ -107,13 +107,13 @@ export function CardItem({
     text: "text-blue-600",
     gradient: "from-blue-300/30 to-blue-100/30",
   },
-  elite: {
+  epic: {
     border: "border-4 border-purple-500",
     glow: "shadow-purple-300",
     text: "text-purple-600",
     gradient: "from-purple-300/30 to-purple-100/30",
   },
-  ultimate: {
+  legendary: {
     border: "border-4 border-yellow-500",
     glow: "shadow-yellow-300",
     text: "text-yellow-600",
@@ -134,7 +134,7 @@ export function CardItem({
 }
 
 
-  const rarityStyle = rarityStyles[rarity as keyof typeof rarityStyles] || rarityStyles.basic
+  const rarityStyle = rarityStyles[rarity as keyof typeof rarityStyles] || rarityStyles.common
   const placeholderUrl = "/placeholder.svg"
   const cardImageUrl = getCloudflareImageUrl(imageUrl)
   

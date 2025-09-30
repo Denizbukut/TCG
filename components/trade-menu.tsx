@@ -290,18 +290,19 @@ export default function TradeMenu() {
       console.log("Rating 85+ detected, setting min price to $0.55")
     } else {
       // Rarity-basierte Preise (nur wenn Rating niedriger ist)
-      if (selectedCard.cards.rarity === "wbc") {
-        minUsdPrice = 5.0
-        console.log("WBC rarity detected, setting min price to $5.00")
-      } else if (selectedCard.cards.rarity === "ultimate") {
+      // if (selectedCard.cards.rarity === "wbc") {
+      //   minUsdPrice = 5.0
+      //   console.log("WBC rarity detected, setting min price to $5.00")
+      // } else 
+      if (selectedCard.cards.rarity === "legendary") {
         minUsdPrice = 1.5
-        console.log("Ultimate rarity detected, setting min price to $1.50")
-      } else if (selectedCard.cards.rarity === "legendary") {
+        console.log("Legendary rarity detected, setting min price to $1.50")
+      } else if (selectedCard.cards.rarity === "epic") {
         minUsdPrice = 1.0
-        console.log("Legendary rarity detected, setting min price to $1.00")
-      } else if (selectedCard.cards.rarity === "elite") {
+        console.log("Epic rarity detected, setting min price to $1.00")
+      } else if (selectedCard.cards.rarity === "rare") {
         minUsdPrice = 0.5
-        console.log("Elite rarity detected, setting min price to $0.50")
+        console.log("Rare rarity detected, setting min price to $0.50")
       }
     }
 
@@ -324,10 +325,10 @@ export default function TradeMenu() {
       } else if (selectedCard.cards.overall_rating >= 85) {
         cardType = `Rating ${selectedCard.cards.overall_rating} cards`
       } else {
-        cardType = selectedCard.cards.rarity === "wbc" ? "WBC" : 
-                  selectedCard.cards.rarity === "ultimate" ? "Ultimate" : 
+        cardType = // selectedCard.cards.rarity === "wbc" ? "WBC" : 
                   selectedCard.cards.rarity === "legendary" ? "Legendary" : 
-                  selectedCard.cards.rarity === "elite" ? "Elite" : "cards"
+                  selectedCard.cards.rarity === "epic" ? "Epic" : 
+                  selectedCard.cards.rarity === "rare" ? "Rare" : "cards"
       }
       toast({
         title: "Price too low",
@@ -447,8 +448,8 @@ export default function TradeMenu() {
         return "bg-gradient-to-r from-blue-400 to-blue-600 border-0"
       case "uncommon":
         return "bg-gradient-to-r from-green-400 to-green-600 border-0"
-      case "wbc":
-        return "bg-gradient-to-r from-red-500 to-red-700 border-0"
+      // case "wbc":
+      //   return "bg-gradient-to-r from-red-500 to-red-700 border-0" // Commented out
       default:
         return "bg-gradient-to-r from-slate-400 to-slate-600 border-0"
     }
@@ -613,7 +614,7 @@ export default function TradeMenu() {
                           >
                             Rare
                           </button>
-                          <button
+                          {/* <button
                             className={`w-full text-left px-3 py-1.5 text-sm rounded-md ${filterRarity === "wbc" ? "bg-orange-100 text-orange-700" : "hover:bg-gray-100"}`}
                             onClick={() => {
                               setFilterRarity("wbc")
@@ -621,7 +622,7 @@ export default function TradeMenu() {
                             }}
                           >
                             WBC
-                          </button>
+                          </button> */}
                         </div>
                       </div>
 
@@ -918,11 +919,11 @@ export default function TradeMenu() {
                          minUsdPrice = 1.0
                        } else {
                          // Rarity-basierte Preise (nur wenn Rating niedriger ist)
-                         if (card.cards.rarity === "ultimate") {
+                         if (card.cards.rarity === "legendary") {
                            minUsdPrice = 1.5
-                         } else if (card.cards.rarity === "legendary") {
+                         } else if (card.cards.rarity === "epic") {
                            minUsdPrice = 1.0
-                         } else if (card.cards.rarity === "elite") {
+                         } else if (card.cards.rarity === "rare") {
                            minUsdPrice = 0.5
                          }
                        }
@@ -982,12 +983,12 @@ export default function TradeMenu() {
                        ? `Rating ${selectedCard.cards.overall_rating} cards must be listed for at least $1.50 (~${priceUsdPerWLD ? (1.5 / priceUsdPerWLD).toFixed(3) : "1.5"} WLD)`
                        : selectedCard.cards.overall_rating >= 87
                        ? `Rating ${selectedCard.cards.overall_rating} cards must be listed for at least $1.00 (~${priceUsdPerWLD ? (1.0 / priceUsdPerWLD).toFixed(3) : "1.0"} WLD)`
-                       : selectedCard.cards.rarity === "ultimate" 
-                       ? `Ultimate cards must be listed for at least $1.50 (~${priceUsdPerWLD ? (1.5 / priceUsdPerWLD).toFixed(3) : "1.5"} WLD)`
-                       : selectedCard.cards.rarity === "legendary"
-                       ? `Legendary cards must be listed for at least $1.00 (~${priceUsdPerWLD ? (1 / priceUsdPerWLD).toFixed(3) : "1"} WLD)`
-                       : selectedCard.cards.rarity === "elite"
-                       ? `Elite cards must be listed for at least $0.50 (~${priceUsdPerWLD ? (0.5 / priceUsdPerWLD).toFixed(3) : "0.5"} WLD)`
+                       : selectedCard.cards.rarity === "legendary" 
+                       ? `Legendary cards must be listed for at least $1.50 (~${priceUsdPerWLD ? (1.5 / priceUsdPerWLD).toFixed(3) : "1.5"} WLD)`
+                       : selectedCard.cards.rarity === "epic"
+                       ? `Epic cards must be listed for at least $1.00 (~${priceUsdPerWLD ? (1 / priceUsdPerWLD).toFixed(3) : "1"} WLD)`
+                       : selectedCard.cards.rarity === "rare"
+                       ? `Rare cards must be listed for at least $0.50 (~${priceUsdPerWLD ? (0.5 / priceUsdPerWLD).toFixed(3) : "0.5"} WLD)`
                        : `Minimum price: $0.15 (~${priceUsdPerWLD ? (0.15 / priceUsdPerWLD).toFixed(3) : "0.15"} WLD)`
                      }
                    </p>

@@ -36,8 +36,8 @@ export default function BattleCard({ card, isSelected, isTarget, isAnimating, an
   // Default HP values based on rarity since we no longer store them in the database
   const getDefaultHp = (rarity: string) => {
     switch (rarity) {
-      case "wbc":
-        return 120
+      // case "wbc":
+      //   return 120 // Commented out
       case "legendary":
         return 100
       case "epic":

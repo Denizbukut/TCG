@@ -39,7 +39,7 @@ const isUserBanned = (username: string): boolean => {
   return BANNED_USERNAMES.includes(username)
 }
 
-// Rarität definieren - UPDATED: Added godlike
+// Rarität definieren - UPDATED: Changed rarity names
 type CardRarity = "common" | "rare" | "epic" | "legendary" | "godlike"
 
 const FALLBACK_CARDS = [
@@ -675,11 +675,6 @@ const [showInfo, setShowInfo] = useState(false)
           await incrementLegendaryDraw(user.username, goatPacks * 15);
         }
         
-        const ultimateCards = result.drawnCards?.filter((card: any) => card.rarity=== "ultimate") || []
-        if (ultimateCards.length > 0) {
-          await incrementLegendaryDraw(user.username, ultimateCards.length * 5)
-          
-        }
 
 
         // Mission tracking for godlike cards
@@ -926,9 +921,10 @@ const [showInfo, setShowInfo] = useState(false)
   }
 
   const RARITY_ALIAS: Record<string, keyof typeof RARITY_COLORS> = {
-    common: 'basic',
-    epic: 'elite',
-    legendary: 'ultimate',
+    common: 'common',
+    rare: 'rare',
+    epic: 'epic',
+    legendary: 'legendary',
     goat: 'goat',
     godlike: 'goat',
   };
@@ -973,17 +969,17 @@ const [showInfo, setShowInfo] = useState(false)
   const getRarityStats = () => {
     // Nur die gewünschten Rarities für die Anzeige
     const stats: Record<string, number> = {
-      basic: 0,
+      common: 0,
       rare: 0,
-      elite: 0,
-      ultimate: 0,
+      epic: 0,
+      legendary: 0,
     }
     drawnCards.forEach((card) => {
       // Mappe alte Namen auf neue
       let key = card.rarity
-      if (key === 'common') key = 'basic'
-      if (key === 'epic') key = 'elite'
-      if (key === 'legendary') key = 'ultimate'
+      if (key === 'basic') key = 'common'
+      if (key === 'elite') key = 'rare'
+      if (key === 'ultima') key = 'legendary'
       if (stats.hasOwnProperty(key)) {
         stats[key]++
       }
@@ -993,9 +989,10 @@ const [showInfo, setShowInfo] = useState(false)
 
   // Hilfsfunktion für die Anzeige der Rarity-Namen
   const getDisplayRarity = (rarity: string) => {
-    if (rarity === 'common' || rarity === 'basic') return 'Basic';
-    if (rarity === 'epic' || rarity === 'elite') return 'Elite';
-    if (rarity === 'legendary' || rarity === 'ultimate') return 'Ultimate';
+    if (rarity === 'common' || rarity === 'basic') return 'Common';
+    if (rarity === 'rare') return 'Rare';
+    if (rarity === 'epic') return 'Epic';
+    if (rarity === 'legendary' || rarity === 'ultima') return 'Legendary';
     if (rarity === 'godlike' || rarity === 'goat') return 'GOAT';
     return rarity.charAt(0).toUpperCase() + rarity.slice(1);
   };
@@ -1218,7 +1215,7 @@ const [showInfo, setShowInfo] = useState(false)
 
                       <div className="text-center mb-4">
                         <h3 className="text-lg font-medium text-white">
-                          {activeTab === "god" ? "GOAT" : activeTab === "legendary" ? "Elite" : activeTab === "icon" ? "ICON" : "Basic"} Card Pack
+                          {activeTab === "god" ? "GOAT" : activeTab === "legendary" ? "Legendary" : activeTab === "icon" ? "ICON" : "Common"} Card Pack
                         </h3>
                         <p className="text-sm text-gray-500">Contains 1 random card</p>
                         <div className="flex items-center justify-center gap-1 mt-1 text-xs text-violet-600">

@@ -218,12 +218,12 @@ export default function CollectionPage() {
 
 
       const matchesRarity = activeTab === "all" || 
-      (activeTab === "ultima" && (card.rarity?.toLowerCase() === "legendary" || card.rarity?.toLowerCase() === "ultima" || card.rarity?.toLowerCase() === "ultimate")) || 
+      (activeTab === "legendary" && (card.rarity?.toLowerCase() === "legendary" || card.rarity?.toLowerCase() === "ultima" || card.rarity?.toLowerCase() === "ultimate")) || 
       (activeTab === "epic" && (card.rarity?.toLowerCase() === "epic" || card.rarity?.toLowerCase() === "elite")) ||
       (activeTab === "rare" && card.rarity?.toLowerCase() === "rare") ||
       (activeTab === "common" && (card.rarity?.toLowerCase() === "common" || card.rarity?.toLowerCase() === "basic")) ||
-      (activeTab === "goat" && card.rarity?.toLowerCase() === "goat") ||
-      (activeTab === "wbc" && card.rarity?.toLowerCase() === "wbc")
+      (activeTab === "goat" && card.rarity?.toLowerCase() === "goat")
+      // (activeTab === "wbc" && card.rarity?.toLowerCase() === "wbc") // Commented out
 
     const matchesEpoch = selectedEpoch === "all" || card.epoch === selectedEpoch
 
@@ -258,7 +258,7 @@ export default function CollectionPage() {
         
         // Handle different possible rarity values
         if (rarityKey === 'legendary' || rarityKey === 'ultima' || rarityKey === 'ultimate') {
-          rarityKey = 'ultima'
+          rarityKey = 'legendary'
         } else if (rarityKey === 'epic' || rarityKey === 'elite') {
           rarityKey = 'epic'
         } else if (rarityKey === 'rare') {
@@ -278,7 +278,7 @@ export default function CollectionPage() {
       }
       return acc
     },
-    { total: 0, common: 0, rare: 0, epic: 0, ultima: 0, goat: 0 },
+    { total: 0, common: 0, rare: 0, epic: 0, legendary: 0, goat: 0 },
   )
   
   // Debug: Log the final stats
@@ -623,10 +623,10 @@ export default function CollectionPage() {
             <div className="grid grid-cols-3 gap-2 text-center">
               {[
                 { label: "Total", value: collectionStats.total, color: "text-yellow-300" },
-                { label: "Basic", value: collectionStats.common, color: "text-yellow-300" },
+                { label: "Common", value: collectionStats.common, color: "text-yellow-300" },
                 { label: "Rare", value: collectionStats.rare, color: "text-blue-400" },
-                { label: "Elite", value: collectionStats.epic, color: "text-purple-400" },
-                { label: "Ultima", value: collectionStats.ultima, color: "text-amber-400" },
+                { label: "Epic", value: collectionStats.epic, color: "text-purple-400" },
+                { label: "Legendary", value: collectionStats.legendary, color: "text-amber-400" },
                 { label: "GOAT", value: collectionStats.goat, color: "text-red-400" },
               ].map((stat) => (
                 <div key={stat.label} className="bg-black/60 rounded-lg p-2 border border-yellow-500/50">
@@ -691,21 +691,21 @@ export default function CollectionPage() {
               <TabsTrigger value="goat" className="text-xs h-7 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">
                 GOAT
               </TabsTrigger>
-              <TabsTrigger value="ultima" className="text-xs h-7 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">
-                Ultima
+              <TabsTrigger value="legendary" className="text-xs h-7 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">
+                Legendary
               </TabsTrigger>
               <TabsTrigger value="epic" className="text-xs h-7 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">
-                Elite
+                Epic
               </TabsTrigger>
               <TabsTrigger value="rare" className="text-xs h-7 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">
                 Rare
               </TabsTrigger>
               <TabsTrigger value="common" className="text-xs h-7 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">
-                Basic
+                Common
               </TabsTrigger>
-              <TabsTrigger value="wbc" className="text-xs h-7 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">
+              {/* <TabsTrigger value="wbc" className="text-xs h-7 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">
                 WBC
-              </TabsTrigger>
+              </TabsTrigger> */}
             </TabsList>
           </Tabs>
         </motion.div>

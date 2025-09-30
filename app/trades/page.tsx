@@ -158,19 +158,19 @@ export default function TradesPage() {
     // Preisvalidierung für Ultimate-Karten
     const parsedPrice = Number(price)
     const minWldPrice = 
-      selectedCard.cards.rarity === "ultimate"
+      selectedCard.cards.rarity === "legendary"
         ? 1.5
-        : selectedCard.cards.rarity === "legendary"
+        : selectedCard.cards.rarity === "epic"
         ? 1
-        : selectedCard.cards.rarity === "elite"
+        : selectedCard.cards.rarity === "rare"
         ? 0.5
         : 0.15
 
     if (parsedPrice < minWldPrice) {
-      const cardType = selectedCard.cards.rarity === "ultimate" ? "Ultimate" : 
-                      selectedCard.cards.rarity === "legendary" ? "Legendary" : 
-                      selectedCard.cards.rarity === "elite" ? "Elite" : "cards"
-      const usdAmount = selectedCard.cards.rarity === "ultimate" ? 1.5 : selectedCard.cards.rarity === "legendary" ? 1 : selectedCard.cards.rarity === "elite" ? 0.5 : 0.15
+      const cardType = selectedCard.cards.rarity === "legendary" ? "Legendary" : 
+                      selectedCard.cards.rarity === "epic" ? "Epic" : 
+                      selectedCard.cards.rarity === "rare" ? "Rare" : "cards"
+      const usdAmount = selectedCard.cards.rarity === "legendary" ? 1.5 : selectedCard.cards.rarity === "epic" ? 1 : selectedCard.cards.rarity === "rare" ? 0.5 : 0.15
       toast({
         title: "Price too low",
         description: `${cardType} cards must be listed for at least $${usdAmount.toFixed(2)} (~${minWldPrice.toFixed(3)} WLD)`,
@@ -278,12 +278,12 @@ export default function TradesPage() {
     switch (rarity) {
       case "legendary":
         return "bg-orange-500 text-white font-semibold"
-      case "ultra-rare":
+      case "epic":
         return "bg-purple-500 text-white font-semibold"
       case "rare":
         return "bg-blue-500 text-white font-semibold"
-      case "uncommon":
-        return "bg-green-500 text-white font-semibold"
+      case "common":
+        return "bg-slate-500 text-white font-semibold"
       default:
         return "bg-slate-500 text-white font-semibold"
     }
@@ -588,9 +588,9 @@ export default function TradesPage() {
                         setSelectedCard(card)
                         // Setze Standardpreis basierend auf Rarity
                         const defaultPrice = 
-                          card.cards.rarity === "ultimate"
+                          card.cards.rarity === "legendary"
                             ? "1.5"
-                            : card.cards.rarity === "legendary"
+                            : card.cards.rarity === "epic"
                             ? "1"
                             : "0.15"
                         setPrice(defaultPrice)
@@ -637,10 +637,10 @@ export default function TradesPage() {
                   />
                   {selectedCard && (
                     <p className="text-xs text-gray-500">
-                      {selectedCard.cards.rarity === "ultimate" 
-                        ? "Ultimate cards must be listed for at least 1.5 WLD"
-                        : selectedCard.cards.rarity === "legendary"
-                        ? "Legendary cards must be listed for at least 1 WLD"
+                      {selectedCard.cards.rarity === "legendary" 
+                        ? "Legendary cards must be listed for at least 1.5 WLD"
+                        : selectedCard.cards.rarity === "epic"
+                        ? "Epic cards must be listed for at least 1 WLD"
                         : "Minimum price: 0.15 WLD"
                       }
                     </p>

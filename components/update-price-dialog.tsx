@@ -75,13 +75,14 @@ useEffect(() => {
     minUsdPrice = 0.55
   } else {
     // Rarity-basierte Preise (nur wenn Rating niedriger ist)
-    if (cardRarity === "wbc") {
-      minUsdPrice = 5.0
-    } else if (cardRarity === "ultimate") {
+    // if (cardRarity === "wbc") {
+    //   minUsdPrice = 5.0
+    // } else 
+    if (cardRarity === "legendary") {
       minUsdPrice = 1.5
-    } else if (cardRarity === "legendary") {
+    } else if (cardRarity === "epic") {
       minUsdPrice = 1.0
-    } else if (cardRarity === "elite") {
+    } else if (cardRarity === "rare") {
       minUsdPrice = 0.5
     }
   }
@@ -178,12 +179,12 @@ useEffect(() => {
                   ? `Rating ${overallRating} cards must be listed for at least ${minWldPrice.toFixed(3)} WLD ($${0.65.toFixed(2)})`
                   : overallRating && overallRating >= 85
                   ? `Rating ${overallRating} cards must be listed for at least ${minWldPrice.toFixed(3)} WLD ($${0.55.toFixed(2)})`
-                  : cardRarity === "ultimate"
-                  ? `Ultimate cards must be listed for at least ${minWldPrice.toFixed(3)} WLD ($${1.50.toFixed(2)})`
                   : cardRarity === "legendary"
-                  ? `Legendary cards must be listed for at least ${minWldPrice.toFixed(3)} WLD ($${1.00.toFixed(2)})`
-                  : cardRarity === "elite"
-                  ? `Elite cards must be listed for at least ${minWldPrice.toFixed(3)} WLD ($${0.50.toFixed(2)})`
+                  ? `Legendary cards must be listed for at least ${minWldPrice.toFixed(3)} WLD ($${1.50.toFixed(2)})`
+                  : cardRarity === "epic"
+                  ? `Epic cards must be listed for at least ${minWldPrice.toFixed(3)} WLD ($${1.00.toFixed(2)})`
+                  : cardRarity === "rare"
+                  ? `Rare cards must be listed for at least ${minWldPrice.toFixed(3)} WLD ($${0.50.toFixed(2)})`
                   : `Starting price is ${minWldPrice.toFixed(3)} WLD ($${(minWldPrice * (priceUsdPerWLD || 1)).toFixed(2)})`
                 }
               </p>
