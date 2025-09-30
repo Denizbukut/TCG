@@ -129,10 +129,11 @@ useEffect(() => {
     })
   }
 
-  // Calculate XP needed for a specific level
+  // Calculate XP needed for a specific level (same formula as main system)
   const calculateXpForLevel = (level: number) => {
-    if (level <= 1) return 100
-    return 100 + (level - 1) * 50
+    if (level <= 1) return 500
+    // Lineare Formel: 500 + (level - 1) * 1500
+    return 500 + (level - 1) * 1500
   }
 
   const sendXpPayment = async () => {
@@ -989,10 +990,10 @@ const handlePurchaseXpPass = async () => {
             </div>
             <div className="flex justify-between items-center mb-1">
               <span className="text-xs text-gray-500">
-                {user?.experience || 0} / {user?.nextLevelExp || 100} XP
+                {user?.experience || 0} / {user?.nextLevelExp || 500} XP
               </span>
               <span className="text-xs font-medium">
-                {Math.floor(((user?.experience || 0) / (user?.nextLevelExp || 100)) * 100)}%
+                {Math.floor(((user?.experience || 0) / (user?.nextLevelExp || 500)) * 100)}%
               </span>
             </div>
             <Progress

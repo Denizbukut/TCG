@@ -1703,7 +1703,7 @@ const [copied, setCopied] = useState(false)
                         fill="none"
                         strokeLinecap="round"
                         strokeDasharray={`${2 * Math.PI * 36}`}
-                        strokeDashoffset={`${2 * Math.PI * 36 * (1 - ((user?.experience || 0) / (user?.nextLevelExp || 100)))}`}
+                        strokeDashoffset={`${2 * Math.PI * 36 * (1 - ((user?.experience || 0) / (user?.nextLevelExp || 500)))}`}
                         className="transition-all duration-300"
                         style={{ filter: 'drop-shadow(0 0 2px rgba(239, 68, 68, 0.5))' }}
                       />

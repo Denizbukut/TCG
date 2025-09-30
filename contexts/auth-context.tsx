@@ -101,7 +101,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           level: Number(typedData.level || 1),
           clan_id: Number(typedData.clan_id || null),
           experience: Number(typedData.experience || 0),
-          nextLevelExp: Number(typedData.next_level_exp || 100),
+          nextLevelExp: Number(typedData.next_level_exp || 500),
           has_premium: Boolean(typedData.has_premium || false),
           score: Number(typedData.score || 0), // Score aus der Datenbank laden
           avatar_id: Number(typedData.avatar_id || 1), // NEW: avatar_id hinzufügen (Standard: 1)
@@ -236,7 +236,7 @@ if (!isHumanVerified) {
         coins: 1000,
         level: 1,
         experience: 0,
-        nextLevelExp: 100,
+        nextLevelExp: 500,
         has_premium: false,
         score: 100, // Initialer Score basierend auf Level * 100
       }
@@ -367,8 +367,19 @@ if (!isHumanVerified) {
 
   // Calculate XP needed for a specific level using the new formula
   const calculateXpForLevel = (level: number) => {
-    if (level <= 1) return 100
-    return 100 + (level - 1) * 50
+    if (level <= 1) return 500
+    // Lineare Formel: 500 + (level - 1) * 1500
+    // Level 1: 500 XP
+    // Level 2: 2,000 XP  
+    // Level 3: 3,500 XP
+    // Level 4: 5,000 XP
+    // Level 5: 6,500 XP
+    // Level 6: 8,000 XP
+    // Level 7: 9,500 XP
+    // Level 8: 11,000 XP
+    // Level 9: 12,500 XP
+    // Level 10: 14,000 XP
+    return 500 + (level - 1) * 1500
   }
 
   const updateUserExp = async (expToAdd: number) => {

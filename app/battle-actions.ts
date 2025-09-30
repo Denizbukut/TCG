@@ -63,8 +63,8 @@ export async function saveBattleResult(battleData: {
         const newExp = levelData.experience + battleData.rewardExp
         let newLevel = levelData.level
 
-        // Calculate experience needed for next level
-        const nextLevelExp = Math.floor(100 * Math.pow(1.5, levelData.level - 1))
+        // Calculate experience needed for next level (same formula as main system)
+        const nextLevelExp = levelData.level <= 1 ? 500 : 500 + (levelData.level - 1) * 1500
 
         // Check if user leveled up
         if (newExp >= nextLevelExp) {
