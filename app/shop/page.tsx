@@ -593,10 +593,11 @@ await supabase.from("ticket_purchases").insert({
               <Ticket className="h-3.5 w-3.5 text-gray-300" />
                               <span className="font-medium text-sm text-gray-100">{eliteTickets}</span>
             </div>
-            <div className="flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded-full shadow-sm border border-gray-400/30 backdrop-blur-md">
+            {/* Icon Tickets - COMMENTED OUT */}
+            {/* <div className="flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded-full shadow-sm border border-gray-400/30 backdrop-blur-md">
               <Crown className="h-3.5 w-3.5 text-yellow-200" />
               <span className="font-medium text-sm text-gray-100">{iconTickets}</span>
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -660,14 +661,14 @@ await supabase.from("ticket_purchases").insert({
                       className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-yellow-300 data-[state=active]:text-yellow-200 data-[state=active]:shadow transition-all font-semibold tracking-wide"
                     >
                       <Ticket className="h-4 w-4 mr-2 text-yellow-300" />
-                      Classic Tickets
+                      Regular Tickets
                     </TabsTrigger>
                     <TabsTrigger
                       value="legendary"
                       className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-gray-400 data-[state=active]:text-gray-200 data-[state=active]:shadow transition-all font-semibold tracking-wide"
                     >
                       <Ticket className="h-4 w-4 mr-2 text-gray-300" />
-                      Elite Tickets
+                      Legendary Tickets
                     </TabsTrigger>
                     {/* <TabsTrigger
                       value="icon"
@@ -678,7 +679,7 @@ await supabase.from("ticket_purchases").insert({
                     </TabsTrigger> */}
                                     </TabsList>
 
-                  {/* Classic Tickets Content */}
+                  {/* Regular Tickets Content */}
     <TabsContent value="regular" className="mt-0 space-y-6">
       <div className="grid grid-cols-2 gap-3">
         {regularPackages.map((pkg) => {
@@ -709,7 +710,7 @@ await supabase.from("ticket_purchases").insert({
                   <CardTitle className="text-base font-extrabold flex items-center text-yellow-200 drop-shadow">
                     <span className="mr-1">{pkg.amount}</span>
                     <Ticket className="h-4 w-4 text-yellow-300 drop-shadow-lg mx-1" />
-                    <span className="ml-1 text-xs">{pkg.amount === 1 ? "Classic Ticket" : "Classic Tickets"}</span>
+                    <span className="ml-1 text-xs">{pkg.amount === 1 ? "Regular Ticket" : "Regular Tickets"}</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-2 pt-0 pb-1">
@@ -756,7 +757,7 @@ await supabase.from("ticket_purchases").insert({
       </div>
     </TabsContent>
 
-    {/* Elite Tickets Content */}
+    {/* Legendary Tickets Content */}
     <TabsContent value="legendary" className="mt-0 space-y-6">
       <div className="grid grid-cols-2 gap-2">
         {legendaryPackages.map((pkg) => {
@@ -786,7 +787,7 @@ await supabase.from("ticket_purchases").insert({
                   <CardTitle className="text-base font-extrabold flex items-center text-gray-200 drop-shadow">
                     <span className="mr-1">{pkg.amount}</span>
                     <Ticket className="h-4 w-4 text-gray-300 drop-shadow-lg mx-1" />
-                    <span className="ml-1 text-xs">{pkg.amount === 1 ? "Elite Ticket" : "Elite Tickets"}</span>
+                    <span className="ml-1 text-xs">{pkg.amount === 1 ? "Legendary Ticket" : "Legendary Tickets"}</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-2 pt-0 pb-1">

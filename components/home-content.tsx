@@ -1613,43 +1613,43 @@ const [copied, setCopied] = useState(false)
         <header className="sticky top-0 z-30 backdrop-blur-md bg-gradient-to-br from-[#232526]/90 to-[#414345]/90 border-b-2 border-yellow-400 shadow-sm">
           <div className="w-full px-4 py-3 flex items-center justify-between">
             <div className="flex items-center">
-              <h1 className="text-sm font-bold tracking-tight bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">
-        CRYPTO TCG
-      </h1>
+              <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">
+                CRYPTO TCG
+              </h1>
               {/* Social Icon Buttons */}
-              <div className="flex gap-2 ml-2">
-      <a
-        href="https://x.com/ani_labs_world"
-        target="_blank"
-        rel="noopener noreferrer"
+              <div className="flex gap-2 ml-3 items-center">
+                <a
+                  href="https://x.com/ani_labs_world"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="w-8 h-8 rounded-full bg-black flex items-center justify-center transition-transform hover:scale-105 shadow border-2 border-white"
                   aria-label="Twitter"
-      >
+                >
                   <span className="sr-only">Twitter</span>
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-4 h-4 text-white">
                     <path d="M17.53 3H21.5L14.36 10.66L22.75 21H16.28L11.22 14.73L5.52 21H1.54L9.04 12.76L1 3H7.6L12.18 8.67L17.53 3ZM16.4 19.13H18.18L7.45 4.76H5.54L16.4 19.13Z" fill="currentColor"/>
                   </svg>
-      </a>
-      <a
-        href="https://t.me/c/2551554609/13381"
-        target="_blank"
-        rel="noopener noreferrer"
+                </a>
+                <a
+                  href="https://t.me/c/2551554609/13381"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center transition-transform hover:scale-105 shadow border-2 border-white"
                   aria-label="Telegram"
-      >
+                >
                   <span className="sr-only">Telegram</span>
                   <Send className="w-4 h-4 text-white" />
       </a>
       
       {/* Tickets neben dem Telegram Icon */}
       <div className="flex items-center gap-2 ml-2">
-        <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#232526] to-[#414345] px-2 py-1 rounded-full shadow-sm border-2 border-yellow-400 min-w-[54px]">
-          <Ticket className="h-4 w-4 text-yellow-400 mx-auto" />
-          <span className="font-medium text-xs text-center text-yellow-100">{tickets}</span>
+        <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#232526] to-[#414345] px-2 py-1 rounded-full shadow-sm border-2 border-blue-400 min-w-[54px]">
+          <Ticket className="h-4 w-4 text-blue-400 mx-auto" />
+          <span className="font-medium text-xs text-center text-blue-100">{tickets}</span>
         </div>
-        <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#232526] to-[#414345] px-2 py-1 rounded-full shadow-sm border-2 border-yellow-400 min-w-[54px]">
-          <Ticket className="h-4 w-4 text-yellow-400 mx-auto" />
-          <span className="font-medium text-xs text-center text-yellow-100">{eliteTickets}</span>
+        <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#232526] to-[#414345] px-2 py-1 rounded-full shadow-sm border-2 border-purple-400 min-w-[54px]">
+          <Ticket className="h-4 w-4 text-purple-400 mx-auto" />
+          <span className="font-medium text-xs text-center text-purple-100">{eliteTickets}</span>
         </div>
       </div>
     </div>
@@ -1669,13 +1669,7 @@ const [copied, setCopied] = useState(false)
                 transition={{ duration: 0.4 }}
                 className="bg-gradient-to-br from-[#232526] to-[#414345] rounded-xl shadow-lg p-2 flex flex-col items-center justify-center min-h-[80px] h-full border-2 border-yellow-400 relative"
               >
-                {/* NEW BONUS Banner - small corner badge */}
-                <div className="absolute -top-1 -right-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full px-2 py-1 text-white shadow-lg z-10">
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs">🎭</span>
-                    <span className="text-xs font-bold">NEW</span>
-                  </div>
-                </div>
+                {/* NEW BONUS Banner - REMOVED */}
                 <button
                   onClick={() => setShowAvatarDialog(true)}
                   className="relative w-20 h-20 rounded-full overflow-visible hover:ring-2 hover:ring-blue-300 transition-all flex-shrink-0 mb-1 -mt-3 flex items-center justify-center"
@@ -1736,33 +1730,7 @@ const [copied, setCopied] = useState(false)
                       Choose Avatar & XP-Ring
                     </DialogTitle>
                     
-                    {/* NEW BONUS Banner */}
-                    <div className="mb-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg p-3 text-white shadow-lg">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="bg-white/20 rounded-full p-1">
-                            <span className="text-lg">🎭</span>
-                          </div>
-                          <div>
-                            <h3 className="font-bold text-sm">NEW BONUS!</h3>
-                            <p className="text-xs opacity-90">Avatar Drop-Rate Bonuses</p>
-                          </div>
-                        </div>
-                        <div className="bg-white/20 rounded-full px-2 py-1 text-xs font-bold">
-                          NEW
-                        </div>
-                      </div>
-                      <div className="mt-2 space-y-1 text-xs">
-                        <div className="flex items-center gap-1">
-                          <span className="text-purple-200">🎭 Epic:</span>
-                          <span className="font-semibold">+1% Ultimate Cards</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="text-yellow-200">👑 God:</span>
-                          <span className="font-semibold">+2% Ultimate Cards</span>
-                        </div>
-                      </div>
-                    </div>
+                    {/* NEW BONUS Banner - REMOVED */}
                     <div className="grid grid-cols-3 gap-3 mt-4">
                                              {avatarOptions.map((avatar) => {
                          const isAdmin = user?.username === 'jiraiya' || user?.username === 'badbunny.3547' || user?.username === 'damla123' || user?.username === 'xgrokxd'
@@ -1962,8 +1930,8 @@ const [copied, setCopied] = useState(false)
   />
 </motion.div>
       </div> */}
-            {/* $ANI Card (replaces Chat) */}
-            <div className="col-span-2">
+            {/* $ANI Card (replaces Chat) - COMMENTED OUT */}
+            {/* <div className="col-span-2">
               <div
                 className="bg-gradient-to-br from-[#232526] to-[#414345] rounded-xl p-2 shadow-lg flex flex-col items-center justify-center min-h-[70px] h-full text-center cursor-pointer transition border-2 border-yellow-400"
                 onClick={() => router.push('/ani_forreal')}
@@ -1976,8 +1944,8 @@ const [copied, setCopied] = useState(false)
                 </div>
                 <div className="text-sm font-bold text-yellow-100">$ANI</div>
               </div>
-            </div>
-            <div className="col-span-2 relative">
+            </div> */}
+            <div className="col-span-3 relative">
               {hasActiveDiscount && (
                 <div className="absolute -top-2 -right-2 bg-white text-red-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow z-10">
                   -{discountValue}%
@@ -2011,7 +1979,7 @@ const [copied, setCopied] = useState(false)
                 </motion.div>
               </Link>
             </div>
-            <div className="col-span-2 relative">
+            <div className="col-span-3 relative">
               {/* Referrals/SBC Slide System */}
               <div className="relative w-full h-full rounded-xl overflow-hidden">
                 <AnimatePresence mode="wait">

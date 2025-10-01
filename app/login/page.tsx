@@ -179,7 +179,7 @@ export default function LoginPage() {
       {/* Full screen background image using Next.js Image component for better optimization */}
       <div className="absolute inset-0 z-0">
         <img
-          src="https://ani-labs.xyz/world_soccer_login.jpg"
+          src="/CRYPTO TCG.jpg"
           alt="Login background"
           className="absolute inset-0 w-full h-full object-cover"
         />
