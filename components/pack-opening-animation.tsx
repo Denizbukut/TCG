@@ -103,7 +103,7 @@ export function PackOpeningAnimation({ isOpen, onClose, packType, cards }: PackO
       case "premium":
         return "/regular-summon-pack.png"
       case "ultimate":
-        return "/anime-world-legendary-pack.png"
+        return "/legendarypack.png?v=2"
       default:
         return "/regular-summon-pack.png"
     }

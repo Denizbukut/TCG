@@ -1,4 +1,4 @@
-"use client";
+"usfreinds rasasu me client";
 
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { renderStars } from "@/utils/card-stars";

@@ -297,7 +297,7 @@ export default function PacksPage() {
                     transition: { rotate: { duration: 0.5, repeat: Number.POSITIVE_INFINITY } },
                   }}
                 >
-                  <img src="/anime-world-legendary-pack.png" alt="Ultimate Pack" className="absolute inset-0 w-full h-full object-cover" />
+                  <img src="/legendarypack.png?v=2" alt="Ultimate Pack" className="absolute inset-0 w-full h-full object-cover" />
                 </motion.div>
               </div>
               <CardContent>
