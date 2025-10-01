@@ -61,7 +61,7 @@ type Card = {
   name: string
   character: string
   image_url?: string
-  rarity: "common" | "rare" | "epic" | "legendary" | "goat" // | "wbc" // Commented out
+  rarity: "common" | "rare" | "epic" | "legendary" // | "wbc" // Commented out
   overall_rating?: number
 }
 
@@ -118,10 +118,16 @@ const getCloudflareImageUrl = (imagePath?: string) => {
 
 // Neue Bild-URL-Logik global für alle Card-Boxen
 const getCardImageUrl = (imageUrl?: string) => {
-  if (!imageUrl) return "/placeholder.svg";
+  if (!imageUrl) {
+    console.log("No image URL provided, using placeholder");
+    return "/placeholder.svg";
+  }
+  console.log("Original image URL:", imageUrl);
   // Remove leading slash and any world_soccer/world-soccer prefix
   let cleaned = imageUrl.replace(/^\/?(world[-_])?soccer\//i, "");
-  return `https://ani-labs.xyz/${cleaned}`;
+  const finalUrl = `https://ani-labs.xyz/${cleaned}`;
+  console.log("Processed image URL:", finalUrl);
+  return finalUrl;
 }
 
 export default function TradePage() {
@@ -696,7 +702,7 @@ export default function TradePage() {
                 <span className="inline-block bg-gradient-to-r from-yellow-400 to-yellow-600 text-black px-2 py-1 rounded mr-2">
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="10" fill="#FFD700"/></svg>
                 </span>
-                Transfer Market
+                Trade Market
               </h1>
               <div className="flex items-center gap-2">
                 <div className="relative w-12 h-12">
@@ -801,7 +807,6 @@ export default function TradePage() {
                             <SelectItem value="rare">Rare</SelectItem>
                             <SelectItem value="epic">Epic</SelectItem>
                             <SelectItem value="legendary">Legendary</SelectItem>
-                            <SelectItem value="goat">GOAT</SelectItem>
                             {/* <SelectItem value="wbc">WBC</SelectItem> */}
                       </SelectContent>
                     </Select>
@@ -1060,15 +1065,15 @@ export default function TradePage() {
                         <Pagination pagination={transactionsPagination} onPageChange={handleTransactionsPageChange} />
                       </>
                     ) : (
-                      <div className="bg-white rounded-xl p-6 shadow-sm text-center">
+                      <div className="bg-black/70 rounded-xl p-6 shadow-sm text-center border border-yellow-400">
                         <div className="flex flex-col items-center">
-                          <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-3">
-                            <Clock className="h-8 w-8 text-gray-400" />
+                          <div className="w-16 h-16 rounded-full bg-yellow-900/50 flex items-center justify-center mb-3 border border-yellow-400">
+                            <Clock className="h-8 w-8 text-yellow-400" />
                           </div>
-                          <h3 className="text-lg font-medium mb-1">No Transaction History</h3>
-                          <p className="text-gray-500 text-sm mb-4">You haven't bought or sold any cards yet</p>
+                          <h3 className="text-lg font-medium mb-1 text-yellow-200">No Transaction History</h3>
+                          <p className="text-yellow-300 text-sm mb-4">You haven't bought or sold any cards yet</p>
                           <Link href="/collection">
-                            <Button variant="outline" size="sm" className="rounded-full">
+                            <Button variant="outline" size="sm" className="rounded-full border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black">
                               <Tag className="h-4 w-4 mr-1" />
                               Browse Marketplace
                             </Button>
@@ -1282,7 +1287,6 @@ export default function TradePage() {
                         ${selectedListing.card.rarity === "rare" ? "bg-blue-500" : ""}
                         ${selectedListing.card.rarity === "epic" ? "bg-purple-500" : ""}
                         ${selectedListing.card.rarity === "legendary" ? "bg-amber-500" : ""}
-                        ${selectedListing.card.rarity === "goat" ? "bg-red-500" : ""}
                       `}
                       >
                         {selectedListing.card.rarity}
@@ -1452,11 +1456,6 @@ function MarketplaceCard({
       text: "text-yellow-600",
       badge: "bg-amber-500",
     },
-    goat: {
-      border: "border-red-500",
-      text: "text-red-600",
-      badge: "bg-red-500",
-    },
     wbc: {
       border: "border-red-800",
       text: "text-red-700",
@@ -1493,6 +1492,15 @@ function MarketplaceCard({
           alt="Card"
           loading="lazy"
           className="w-full h-full object-cover"
+          onError={(e) => {
+            console.log("Image failed to load, trying fallback");
+            const target = e.target as HTMLImageElement;
+            if (target.src.includes('ani-labs.xyz')) {
+              target.src = listing.card.image_url || "/placeholder.svg";
+            } else {
+              target.src = "/placeholder.svg";
+            }
+          }}
         />
       </div>
       <div className="flex-1 min-w-0">
@@ -1557,11 +1565,6 @@ function MyListingCard({
       text: "text-yellow-600",
       badge: "bg-amber-500",
     },
-    goat: {
-      border: "border-red-500",
-      text: "text-red-600",
-      badge: "bg-red-500",
-    },
   }
 
   const rarityStyle = rarityStyles[listing.card.rarity as keyof typeof rarityStyles] || rarityStyles.basic
@@ -1604,6 +1607,15 @@ function MyListingCard({
               alt="Card"
               loading="lazy"
               className="w-full h-full object-cover"
+              onError={(e) => {
+                console.log("Image failed to load, trying fallback");
+                const target = e.target as HTMLImageElement;
+                if (target.src.includes('ani-labs.xyz')) {
+                  target.src = listing.card.image_url || "/placeholder.svg";
+                } else {
+                  target.src = "/placeholder.svg";
+                }
+              }}
             />)}
             
 
@@ -1694,11 +1706,6 @@ function TransactionCard({ transaction }: { transaction: Transaction }) {
       text: "text-yellow-600",
       badge: "bg-amber-500",
     },
-    goat: {
-      border: "border-red-500",
-      text: "text-red-600",
-      badge: "bg-red-500",
-    },
   }
 
   const rarityStyle = rarityStyles[transaction.card.rarity as keyof typeof rarityStyles] || rarityStyles.basic
@@ -1740,6 +1747,15 @@ function TransactionCard({ transaction }: { transaction: Transaction }) {
               alt="Card"
               loading="lazy"
               className="w-full h-full object-cover"
+              onError={(e) => {
+                console.log("Image failed to load, trying fallback");
+                const target = e.target as HTMLImageElement;
+                if (target.src.includes('ani-labs.xyz')) {
+                  target.src = transaction.card.image_url || "/placeholder.svg";
+                } else {
+                  target.src = "/placeholder.svg";
+                }
+              }}
             />)}
             
             <div className="absolute bottom-0 left-0 right-0 flex justify-center">
@@ -1808,11 +1824,6 @@ function RecentSaleCard({ sale }: { sale: RecentSale }) {
       text: "text-yellow-600",
       badge: "bg-amber-500",
     },
-    goat: {
-      border: "border-red-500",
-      text: "text-red-600",
-      badge: "bg-red-500",
-    },
   }
 
   const rarityStyle = rarityStyles[sale.card.rarity as keyof typeof rarityStyles] || rarityStyles.basic
@@ -1876,6 +1887,15 @@ function RecentSaleCard({ sale }: { sale: RecentSale }) {
               alt="Card"
               loading="lazy"
               className="w-full h-full object-cover"
+              onError={(e) => {
+                console.log("Image failed to load, trying fallback");
+                const target = e.target as HTMLImageElement;
+                if (target.src.includes('ani-labs.xyz')) {
+                  target.src = sale.card.image_url || "/placeholder.svg";
+                } else {
+                  target.src = "/placeholder.svg";
+                }
+              }}
             />)}
             
             <div className="absolute bottom-0 left-0 right-0 flex justify-center">

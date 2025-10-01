@@ -1545,20 +1545,23 @@ const [copied, setCopied] = useState(false)
           // 2. Tickets hinzufügen
           const { data: userData, error: userError } = await supabase
             .from("users")
-            .select("elite_tickets, icon_tickets")
+            .select("tickets, elite_tickets, icon_tickets")
             .eq("username", user.username)
             .single();
 
           if (!userError && userData) {
+            const currentTickets = Number(userData.tickets) || 0;
             const currentEliteTickets = Number(userData.elite_tickets) || 0;
             // const currentIconTickets = Number(userData.icon_tickets) || 0;
             
+            const newTickets = currentTickets + specialDeal.classic_tickets;
             const newEliteTickets = currentEliteTickets + specialDeal.elite_tickets;
             // const newIconTickets = currentIconTickets + (specialDeal.icon_tickets || 0);
 
             const { error: updateError } = await supabase
               .from("users")
               .update({
+                tickets: newTickets,
                 elite_tickets: newEliteTickets,
                 // icon_tickets: newIconTickets,
               })
@@ -1566,6 +1569,7 @@ const [copied, setCopied] = useState(false)
 
             if (!updateError) {
               // Lokale Ticket-Zähler aktualisieren
+              setTickets(newTickets);
               setEliteTickets(newEliteTickets);
               // setIconTickets(newIconTickets);
 
@@ -2044,7 +2048,7 @@ const [copied, setCopied] = useState(false)
               <div
                 className="w-1/2 flex flex-col items-center rounded-xl p-3 h-full text-white cursor-pointer relative overflow-hidden"
                 style={{
-                  backgroundImage: 'url("/deal of the day.png")',
+                  backgroundImage: 'url("/dealday.jpg")',
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   backgroundRepeat: 'no-repeat'
@@ -2096,7 +2100,7 @@ const [copied, setCopied] = useState(false)
               <div
                 className="w-1/2 flex flex-col items-center rounded-xl p-3 h-full text-white cursor-pointer relative overflow-hidden"
                 style={{
-                  backgroundImage: 'url("/special deal.jpg")',
+                  backgroundImage: 'url("/specialdeal.jpg")',
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   backgroundRepeat: 'no-repeat'
@@ -2263,14 +2267,24 @@ const [copied, setCopied] = useState(false)
                               <p className="text-xs text-gray-400">Level {specialDeal.card_level} {specialDeal.card_rarity} Card</p>
                             </div>
                           </div>
+                          {/* Classic Tickets */}
+                          <div className={`flex items-center ${specialDeal.classic_tickets > 0 ? '' : 'opacity-50'}`}> 
+                            <div className="w-9 h-9 rounded-md bg-blue-900/30 border border-blue-700/50 flex items-center justify-center mr-3">
+                              <Ticket className="h-4 w-4 text-blue-400" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-white">{specialDeal.classic_tickets} Regular Tickets</p>
+                              <p className="text-xs text-gray-400">For regular card packs</p>
+                            </div>
+                          </div>
                           {/* Elite Tickets */}
                           <div className={`flex items-center ${specialDeal.elite_tickets > 0 ? '' : 'opacity-50'}`}> 
                             <div className="w-9 h-9 rounded-md bg-purple-900/30 border border-purple-700/50 flex items-center justify-center mr-3">
                               <Crown className="h-4 w-4 text-purple-400" />
                             </div>
                             <div>
-                              <p className="text-sm font-medium text-white">{specialDeal.elite_tickets} Elite Tickets</p>
-                              <p className="text-xs text-gray-400">For elite card packs</p>
+                              <p className="text-sm font-medium text-white">{specialDeal.elite_tickets} Legendary Tickets</p>
+                              <p className="text-xs text-gray-400">For legendary card packs</p>
                             </div>
                           </div>
                           {/* Icon Tickets */}

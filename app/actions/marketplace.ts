@@ -33,7 +33,6 @@ type Card = {
   character: string
   image_url?: string
   rarity: "common" | "rare" | "epic" | "legendary" | "goat" // | "wbc" // Commented out
-  overall_rating?: number
 }
 
 type MarketListingWithDetails = MarketListing & {
@@ -263,7 +262,7 @@ export async function getMarketListings(page = 1, pageSize = DEFAULT_PAGE_SIZE, 
     // 2. Fetch card details in a single query
     const { data: cards, error: cardsError } = await supabase
       .from("cards")
-      .select("id, name, character, image_url, rarity, overall_rating")
+      .select("id, name, character, image_url, rarity")
       .in("id", cardIds)
 
     if (cardsError) {
@@ -396,7 +395,7 @@ export async function getUserListings(username: string, page = 1, pageSize = DEF
 
     const { data: cards, error: cardsError } = await supabase
       .from("cards")
-      .select("id, name, character, image_url, rarity, overall_rating")
+      .select("id, name, character, image_url, rarity")
       .in("id", cardIds)
 
     if (cardsError) {
@@ -596,7 +595,7 @@ export async function createListing(
     // Get the card details to determine rarity and calculate score
     const { data: cardDetails, error: cardDetailsError } = await supabase
       .from("cards")
-      .select("rarity, overall_rating")
+      .select("rarity")
       .eq("id", cardId)
       .single()
 
@@ -619,58 +618,28 @@ export async function createListing(
       console.error("Error fetching WLD price:", error)
     }
 
-    // Preisvalidierung basierend auf Rating und Rarity (USD umgerechnet zu WLD)
+    // Preisvalidierung basierend auf Rarity (USD umgerechnet zu WLD)
     let minUsdPrice = 0.15 // Standard-Mindestpreis
     
-    // Rating-basierte Preise (höhere Priorität als Rarity)
-    if (cardDetails.overall_rating >= 91) {
-      minUsdPrice = 3.5
-    } else if (cardDetails.overall_rating >= 90) {
-      minUsdPrice = 2.5
-    } else if (cardDetails.overall_rating >= 89) {
-      minUsdPrice = 2.0
-    } else if (cardDetails.overall_rating >= 88) {
+    // Rarity-basierte Preise
+    if (cardDetails.rarity === "legendary") {
       minUsdPrice = 1.5
-    } else if (cardDetails.overall_rating >= 87) {
-      minUsdPrice = 0.75
-    } else if (cardDetails.overall_rating >= 86) {
-      minUsdPrice = 0.65
-    } else if (cardDetails.overall_rating >= 85) {
-      minUsdPrice = 0.55
-    } else {
-      // Rarity-basierte Preise (nur wenn Rating niedriger ist)
-      if (cardDetails.rarity === "legendary") {
-        minUsdPrice = 1.5
-      } else if (cardDetails.rarity === "epic") {
-        minUsdPrice = 1.0
-      } else if (cardDetails.rarity === "rare") {
-        minUsdPrice = 0.5
-      }
+    } else if (cardDetails.rarity === "epic") {
+      minUsdPrice = 1.0
+    } else if (cardDetails.rarity === "rare") {
+      minUsdPrice = 0.5
+    } else if (cardDetails.rarity === "common") {
+      minUsdPrice = 0.15
     }
 
     const minWldPrice = priceUsdPerWLD ? minUsdPrice / priceUsdPerWLD : minUsdPrice
 
     if (price < minWldPrice) {
       let cardType = "cards"
-      if (cardDetails.overall_rating >= 91) {
-        cardType = `Rating ${cardDetails.overall_rating} cards`
-      } else if (cardDetails.overall_rating >= 90) {
-        cardType = `Rating ${cardDetails.overall_rating} cards`
-      } else if (cardDetails.overall_rating >= 89) {
-        cardType = `Rating ${cardDetails.overall_rating} cards`
-      } else if (cardDetails.overall_rating >= 88) {
-        cardType = `Rating ${cardDetails.overall_rating} cards`
-      } else if (cardDetails.overall_rating >= 87) {
-        cardType = `Rating ${cardDetails.overall_rating} cards`
-      } else if (cardDetails.overall_rating >= 86) {
-        cardType = `Rating ${cardDetails.overall_rating} cards`
-      } else if (cardDetails.overall_rating >= 85) {
-        cardType = `Rating ${cardDetails.overall_rating} cards`
-      } else {
-        cardType = cardDetails.rarity === "legendary" ? "Legendary" : 
-                  cardDetails.rarity === "epic" ? "Epic" : 
-                  cardDetails.rarity === "rare" ? "Rare" : "cards"
-      }
+      cardType = cardDetails.rarity === "legendary" ? "Legendary" : 
+                cardDetails.rarity === "epic" ? "Epic" : 
+                cardDetails.rarity === "rare" ? "Rare" : 
+                cardDetails.rarity === "common" ? "Common" : "cards"
       
       return {
         success: false,
@@ -1027,7 +996,7 @@ export async function cancelListing(username: string, listingId: string) {
     // Get the card details to determine rarity and calculate score
     const { data: cardDetails, error: cardDetailsError } = await supabase
       .from("cards")
-      .select("rarity, overall_rating")
+      .select("rarity")
       .eq("id", listing.card_id)
       .single()
 
@@ -1152,7 +1121,7 @@ export async function updateListingPrice(username: string, listingId: string, ne
     // Hole die Karten-Details für die Preisvalidierung
     const { data: cardDetails, error: cardDetailsError } = await supabase
       .from("cards")
-      .select("rarity, overall_rating")
+      .select("rarity")
       .eq("id", listing.card_id)
       .single()
 
@@ -1178,55 +1147,25 @@ export async function updateListingPrice(username: string, listingId: string, ne
     // Preisvalidierung basierend auf Rating und Rarity (USD umgerechnet zu WLD)
     let minUsdPrice = 0.15 // Standard-Mindestpreis
     
-    // Rating-basierte Preise (höhere Priorität als Rarity)
-    if (cardDetails.overall_rating >= 91) {
-      minUsdPrice = 3.5
-    } else if (cardDetails.overall_rating >= 90) {
-      minUsdPrice = 2.5
-    } else if (cardDetails.overall_rating >= 89) {
-      minUsdPrice = 2.0
-    } else if (cardDetails.overall_rating >= 88) {
+    // Rarity-basierte Preise
+    if (cardDetails.rarity === "legendary") {
       minUsdPrice = 1.5
-    } else if (cardDetails.overall_rating >= 87) {
-      minUsdPrice = 0.75
-    } else if (cardDetails.overall_rating >= 86) {
-      minUsdPrice = 0.65
-    } else if (cardDetails.overall_rating >= 85) {
-      minUsdPrice = 0.55
-    } else {
-      // Rarity-basierte Preise (nur wenn Rating niedriger ist)
-      if (cardDetails.rarity === "legendary") {
-        minUsdPrice = 1.5
-      } else if (cardDetails.rarity === "epic") {
-        minUsdPrice = 1.0
-      } else if (cardDetails.rarity === "rare") {
-        minUsdPrice = 0.5
-      }
+    } else if (cardDetails.rarity === "epic") {
+      minUsdPrice = 1.0
+    } else if (cardDetails.rarity === "rare") {
+      minUsdPrice = 0.5
+    } else if (cardDetails.rarity === "common") {
+      minUsdPrice = 0.15
     }
 
     const minWldPrice = priceUsdPerWLD ? minUsdPrice / priceUsdPerWLD : minUsdPrice
 
     if (newPrice < minWldPrice) {
       let cardType = "cards"
-      if (cardDetails.overall_rating >= 91) {
-        cardType = `Rating ${cardDetails.overall_rating} cards`
-      } else if (cardDetails.overall_rating >= 90) {
-        cardType = `Rating ${cardDetails.overall_rating} cards`
-      } else if (cardDetails.overall_rating >= 89) {
-        cardType = `Rating ${cardDetails.overall_rating} cards`
-      } else if (cardDetails.overall_rating >= 88) {
-        cardType = `Rating ${cardDetails.overall_rating} cards`
-      } else if (cardDetails.overall_rating >= 87) {
-        cardType = `Rating ${cardDetails.overall_rating} cards`
-      } else if (cardDetails.overall_rating >= 86) {
-        cardType = `Rating ${cardDetails.overall_rating} cards`
-      } else if (cardDetails.overall_rating >= 85) {
-        cardType = `Rating ${cardDetails.overall_rating} cards`
-      } else {
-        cardType = cardDetails.rarity === "legendary" ? "Legendary" : 
-                  cardDetails.rarity === "epic" ? "Epic" : 
-                  cardDetails.rarity === "rare" ? "Rare" : "cards"
-      }
+      cardType = cardDetails.rarity === "legendary" ? "Legendary" : 
+                cardDetails.rarity === "epic" ? "Epic" : 
+                cardDetails.rarity === "rare" ? "Rare" : 
+                cardDetails.rarity === "common" ? "Common" : "cards"
       
       return {
         success: false,

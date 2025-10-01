@@ -18,7 +18,7 @@ export default function MobileNav() {
         <NavItem href="/draw" icon={<Package />} label="Packs" isActive={pathname === "/draw"} />
         {/* <NavItem href="/ani" icon={<Trophy className="h-5 w-5" />} label="Kick Off" isActive={pathname === "/ani"} /> */}
         <NavItem href="/collection" icon={<CreditCard />} label="Collection" isActive={pathname === "/collection"} />
-        <NavItem href="/trade" icon={<Repeat />} label="Transfer" isActive={pathname === "/trade"} />
+        <NavItem href="/trade" icon={<Repeat />} label="Trade" isActive={pathname === "/trade"} />
       </div>
     </div>
   )

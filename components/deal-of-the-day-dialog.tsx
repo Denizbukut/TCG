@@ -366,8 +366,8 @@ export default function DealOfTheDayDialog({
                           <Ticket className="h-4 w-4 text-blue-400" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-white">{deal.classic_tickets} Classic Tickets</p>
-                          <p className="text-xs text-gray-400">For classic card packs</p>
+                          <p className="text-sm font-medium text-white">{deal.classic_tickets} Regular Tickets</p>
+                          <p className="text-xs text-gray-400">For regular card packs</p>
                         </div>
                       </div>
                     )}
@@ -378,8 +378,8 @@ export default function DealOfTheDayDialog({
                           <Crown className="h-4 w-4 text-purple-400" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-white">{deal.elite_tickets} Elite Tickets</p>
-                          <p className="text-xs text-gray-400">For elite card packs</p>
+                          <p className="text-sm font-medium text-white">{deal.elite_tickets} Legendary Tickets</p>
+                          <p className="text-xs text-gray-400">For legendary card packs</p>
                         </div>
                       </div>
                     )}
