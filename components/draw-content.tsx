@@ -971,14 +971,14 @@ const [showInfo, setShowInfo] = useState(false)
     const stats: Record<string, number> = {
       common: 0,
       rare: 0,
-      epic: 0,
       legendary: 0,
     }
     drawnCards.forEach((card) => {
       // Mappe alte Namen auf neue
       let key = card.rarity
       if (key === 'basic') key = 'common'
-      if (key === 'elite') key = 'rare'
+      if (key === 'elite') key = 'legendary'
+      if (key === 'epic') key = 'legendary'
       if (key === 'ultima') key = 'legendary'
       if (stats.hasOwnProperty(key)) {
         stats[key]++
@@ -991,7 +991,7 @@ const [showInfo, setShowInfo] = useState(false)
   const getDisplayRarity = (rarity: string) => {
     if (rarity === 'common' || rarity === 'basic') return 'Common';
     if (rarity === 'rare') return 'Rare';
-    if (rarity === 'epic') return 'Epic';
+    if (rarity === 'epic') return 'Legendary';
     if (rarity === 'legendary' || rarity === 'ultima') return 'Legendary';
     if (rarity === 'godlike' || rarity === 'goat') return 'GOAT';
     return rarity.charAt(0).toUpperCase() + rarity.slice(1);
@@ -1100,7 +1100,7 @@ const [showInfo, setShowInfo] = useState(false)
                   >
                     <div className="flex items-center justify-center gap-1">
                       <Ticket className="h-3 w-3" />
-                      <span>Basic</span>
+                      <span>Regular</span>
                     </div>
                   </button>
                   <button
@@ -1113,7 +1113,7 @@ const [showInfo, setShowInfo] = useState(false)
                   >
                     <div className="flex items-center justify-center gap-1">
                       <Ticket className="h-3 w-3" />
-                      <span>Elite</span>
+                      <span>Legendary</span>
                     </div>
                   </button>
                   {/* <button
@@ -1203,10 +1203,10 @@ const [showInfo, setShowInfo] = useState(false)
                             activeTab === "god"
                               ? "/godpack-removebg-preview.png"
                               : activeTab === "legendary"
-                                ? "/pack.png"
+                                ? "/legendarypack.png?v=2"
                                 : activeTab === "icon"
                                   ? "/icon_pack_echt-removebg-preview.png"
-                                  : "/classic_pack.png"
+                                  : "/regular pack.png?v=2"
                           }
                           alt="Card Pack"
                           className="absolute inset-0 w-full h-full object-contain"
@@ -1215,7 +1215,7 @@ const [showInfo, setShowInfo] = useState(false)
 
                       <div className="text-center mb-4">
                         <h3 className="text-lg font-medium text-white">
-                          {activeTab === "god" ? "GOAT" : activeTab === "legendary" ? "Legendary" : activeTab === "icon" ? "ICON" : "Common"} Card Pack
+                          {activeTab === "god" ? "GOAT" : activeTab === "legendary" ? "Legendary" : activeTab === "icon" ? "ICON" : "Regular"} Card Pack
                         </h3>
                         <p className="text-sm text-gray-500">Contains 1 random card</p>
                         <div className="flex items-center justify-center gap-1 mt-1 text-xs text-violet-600">
@@ -1246,11 +1246,11 @@ const [showInfo, setShowInfo] = useState(false)
                           <div className="border border-gray-200 rounded-lg p-3 relative">
                             <div className="space-y-2">
                               <div className="flex justify-between items-center text-sm">
-                                <span className="text-purple-500">Elite</span>
+                                <span className="text-purple-500">Epic</span>
                                 <span className="text-purple-500">{godPackChances.epic}%</span>
                               </div>
                               <div className="flex justify-between items-center text-sm">
-                                <span className="text-amber-500">Ultimate</span>
+                                <span className="text-amber-500">Legendary</span>
                                 <div className="flex items-center gap-1">
                                   <span className="text-amber-500">
                                     {userClanRole === "lucky_star" || userClanRole === "leader" ? "52%" : "50%"}
@@ -1270,55 +1270,47 @@ const [showInfo, setShowInfo] = useState(false)
                               Get +3 free ICON Tickets
                             </div>
                           </div>
-                        ) : activeTab === "legendary" ? (
+                        ) : activeTab === "regular" ? (
                           <div className="border border-gray-200 rounded-lg p-3 relative">
-                            {/* PASS ACTIVE Badge */}
-                            {hasIconPass && (
-                              <div className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white text-xs px-2 py-1 rounded-full font-bold z-10">
-                                PASS ACTIVE
-                              </div>
-                            )}
-                            
                             <div className="space-y-2">
                               <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-500">Basic</span>
-                                <span className="text-gray-500">{hasIconPass ? "7%" : "10%"}</span>
+                                <span className="text-gray-500">Common</span>
+                                <span className="text-gray-500">60%</span>
                               </div>
                               <div className="flex justify-between items-center text-sm">
                                 <span className="text-blue-500">Rare</span>
-                                <span className="text-blue-500">{hasIconPass ? "35%" : "45%"}</span>
+                                <span className="text-blue-500">34%</span>
                               </div>
                               <div className="flex justify-between items-center text-sm">
-                                <span className="text-purple-500">Elite</span>
-                                <span className="text-purple-500">{hasIconPass ? "40%" : "35%"}</span>
+                                <span className="text-purple-500">Epic</span>
+                                <span className="text-purple-500">5%</span>
                               </div>
                               <div className="flex justify-between items-center text-sm">
-                                <span className="text-amber-500">Ultimate</span>
-                                <span className="text-amber-500">{hasIconPass ? "18%" : "10%"}</span>
+                                <span className="text-amber-500">Legendary</span>
+                                <span className="text-amber-500">1%</span>
                               </div>
                             </div>
                           </div>
-                        ) : activeTab === "icon" ? (
+                        ) : activeTab === "legendary" ? (
                           <div className="border border-gray-200 rounded-lg p-3 relative">
                             <div className="space-y-2">
                               <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-500">Basic</span>
-                                <span className="text-gray-500">5%</span>
+                                <span className="text-gray-500">Common</span>
+                                <span className="text-gray-500">15%</span>
                               </div>
                               <div className="flex justify-between items-center text-sm">
                                 <span className="text-blue-500">Rare</span>
-                                <span className="text-blue-500">35%</span>
+                                <span className="text-blue-500">50%</span>
                               </div>
                               <div className="flex justify-between items-center text-sm">
-                                <span className="text-purple-500">Elite</span>
-                                <span className="text-purple-500">40%</span>
+                                <span className="text-purple-500">Epic</span>
+                                <span className="text-purple-500">30%</span>
                               </div>
                               <div className="flex justify-between items-center text-sm">
-                                <span className="text-amber-500">Ultimate</span>
-                                <span className="text-amber-500">20%</span>
+                                <span className="text-amber-500">Legendary</span>
+                                <span className="text-amber-500">5%</span>
                               </div>
                             </div>
-                            {/* Detaillierte Draw Rate Tabelle entfernt */}
                           </div>
                         ) : (
                           <div className="border border-gray-200 rounded-lg p-3 relative">
@@ -1329,7 +1321,7 @@ const [showInfo, setShowInfo] = useState(false)
                             )}
                             <div className="space-y-2">
                               <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-500">Basic</span>
+                                <span className="text-gray-500">Common</span>
                                 <div className="flex items-center gap-2">
                                   <span className="text-gray-500">{hasPremiumPass ? "40%" : "50%"}</span>
                                 </div>
@@ -1341,13 +1333,13 @@ const [showInfo, setShowInfo] = useState(false)
                                 </div>
                               </div>
                               <div className="flex justify-between items-center text-sm">
-                                <span className="text-purple-500">Elite</span>
+                                <span className="text-purple-500">Epic</span>
                                 <div className="flex items-center gap-2">
                                   <span className="text-purple-500">{hasPremiumPass ? "18%" : "14%"}</span>
                                 </div>
                               </div>
                               <div className="flex justify-between items-center text-sm">
-                                <span className="text-amber-500">Ultimate</span>
+                                <span className="text-amber-500">Legendary</span>
                                 <div className="flex items-center gap-2">
                                   <span className="text-amber-500">{hasPremiumPass ? "6%" : "2%"}</span>
                                 </div>
@@ -1568,7 +1560,7 @@ const [showInfo, setShowInfo] = useState(false)
 
                 <div className="bg-white border-b border-gray-200 px-4 py-3">
                   <div className="grid grid-cols-4 gap-2 text-center">
-                    {['basic', 'rare', 'elite', 'ultimate'].map((rarity) => (
+                    {['common', 'rare', 'legendary'].map((rarity) => (
                       <div key={rarity} className={`p-2 rounded-lg ${getRarityStyles(rarity as CardRarity).bg}`}>
                         <div className={`text-xs font-medium ${getRarityStyles(rarity as CardRarity).text}`}>
                           {getDisplayRarity(rarity)}
@@ -1740,7 +1732,7 @@ const [showInfo, setShowInfo] = useState(false)
                                 ? "/legendarypack.png?v=2"
                                 : activeTab === "icon"
                                   ? "/icon_pack_echt-removebg-preview.png"
-                                  : "/classic_pack.png"
+                                  : "/regular pack.png?v=2"
                           }
                           alt="Card Pack"
                           className="absolute inset-0 w-full h-full object-contain opacity-80"
@@ -1794,9 +1786,9 @@ const [showInfo, setShowInfo] = useState(false)
                       <motion.div
                         key={`spinning-card-${i}`}
                         className={`absolute w-8 h-12 rounded border-2 ${
-                          getRarityStyles(["common", "rare", "epic", "legendary", "godlike"][i % 5] as CardRarity)
+                          getRarityStyles(["common", "rare", "legendary", "legendary", "godlike"][i % 5] as CardRarity)
                             .border
-                        } ${getRarityStyles(["common", "rare", "epic", "legendary", "godlike"][i % 5] as CardRarity).bg}`}
+                        } ${getRarityStyles(["common", "rare", "legendary", "legendary", "godlike"][i % 5] as CardRarity).bg}`}
                         style={{
                           left: `${Math.cos((i * Math.PI * 2) / 8) * 40}px`,
                           top: `${Math.sin((i * Math.PI * 2) / 8) * 40}px`,
@@ -1963,7 +1955,7 @@ const [showInfo, setShowInfo] = useState(false)
                         </div>
                       </div>
 
-                      {/* Special effects für legendary, epic und godlike cards */}
+                      {/* Special effects für legendary und godlike cards */}
                       {(selectedBulkCard.rarity === "legendary" ||
                         selectedBulkCard.rarity === "epic" ||
                         selectedBulkCard.rarity === "godlike") && (
@@ -2046,7 +2038,7 @@ const [showInfo, setShowInfo] = useState(false)
                             ? "/legendarypack.png?v=2"
                             : activeTab === "icon"
                               ? "/icon_pack_echt-removebg-preview.png"
-                              : "/classic_pack.png"
+                              : "/regular pack.png?v=2"
                       }
                       alt="Card Pack"
                       className="absolute inset-0 w-full h-full object-contain"

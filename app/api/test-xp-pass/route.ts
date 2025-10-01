@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     
     // Test if we can insert into xp_passes
     const testExpiry = new Date()
-    testExpiry.setDate(testExpiry.getDate() + 14)
+    testExpiry.setDate(testExpiry.getDate() + 7)
     
     const { data: insertTestData, error: insertTestError } = await supabase
       .from("xp_passes")
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
     
     // Test creating an XP pass
     const expiryDate = new Date()
-    expiryDate.setDate(expiryDate.getDate() + 14)
+    expiryDate.setDate(expiryDate.getDate() + 7)
     
     const { data, error } = await supabase.from("xp_passes").insert({
       user_id: username,

@@ -101,11 +101,11 @@ export function PackOpeningAnimation({ isOpen, onClose, packType, cards }: PackO
   const getPackImage = () => {
     switch (packType) {
       case "premium":
-        return "/regular-summon-pack.png"
+        return "/regular pack.png?v=2"
       case "ultimate":
         return "/legendarypack.png?v=2"
       default:
-        return "/regular-summon-pack.png"
+        return "/regular pack.png?v=2"
     }
   }
 

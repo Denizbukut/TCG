@@ -267,15 +267,14 @@ export async function drawCards(username: string, packType: string, count = 1) {
 
     // Check if user has enough tickets
     const isLegendary = packType === "legendary"
-    const isIcon = packType === "icon"
     // Für Elite Packs elite_tickets verwenden
-    const ticketField = isLegendary ? "elite_tickets" : isIcon ? "icon_tickets" : "tickets"
+    const ticketField = isLegendary ? "elite_tickets" : "tickets"
     const currentTickets = userData[ticketField] || 0
 
     if (currentTickets < count) {
       return {
         success: false,
-        error: `Not enough ${isLegendary ? "legendary " : isIcon ? "icon " : ""}tickets`,
+        error: `Not enough ${isLegendary ? "legendary " : ""}tickets`,
       }
     }
 
@@ -286,8 +285,6 @@ export async function drawCards(username: string, packType: string, count = 1) {
     const updateData: Record<string, any> = {}
     if (isLegendary) {
       updateData.elite_tickets = newTicketCount
-    } else if (isIcon) {
-      updateData.icon_tickets = newTicketCount
     } else {
       updateData.tickets = newTicketCount
     }
@@ -359,56 +356,21 @@ export async function drawCards(username: string, packType: string, count = 1) {
       let rarity: CardRarity
       let cardPool: any[]
 
-      if (!isLegendary && !isIcon) {
+      if (!isLegendary) {
         await incrementMission(username, "open_regular_pack")
         
-        // Epic Avatar Bonus: 1% bessere Ultimate-Karten Drop-Rate (Rating 88-91)
-        let epicAvatarBonus = 0;
-        if (hasEpicAvatar) {
-          epicAvatarBonus = 1; // 1% Bonus
-          console.log(`🎭 Epic Avatar Bonus applied: +${epicAvatarBonus}% Ultimate drop rate (Rating 88-91) for user ${username}`);
-        }
+        // Verwende Rarity-basiertes System statt Rating
+        rarity = determineRarity("regular")
         
-        // Neue Draw Rates für Classic Packs mit Epic Avatar Bonus
-        // 75–79: 58.3%
-        // 80–84: 25.08%
-        // 85: 9.72%
-        // 86: 3.00%
-        // 87: 2.00%
-        // 88: 1.00% + (epicAvatarBonus * 0.5)% (mehr Bonus)
-        // 89: 0.25% + (epicAvatarBonus * 0.3)% (mittlerer Bonus)
-        // 90: 0.1% + (epicAvatarBonus * 0.2)% (weniger Bonus)
-        // 91: 0.0000000005555% (kein Bonus)
-        // 92+: 0.000000000000000000000444444%
-        let rating = 0;
-        if (random < 58.3) {
-          rating = Math.floor(Math.random() * 5) + 75; // 75–79
-        } else if (random < 58.3 + 25.08) {
-          rating = Math.floor(Math.random() * 5) + 80; // 80–84
-        } else if (random < 58.3 + 25.08 + 9.72) {
-          rating = 85;
-        } else if (random < 58.3 + 25.08 + 9.72 + 3.00) {
-          rating = 86;
-        } else if (random < 58.3 + 25.08 + 9.72 + 3.00 + 2.00) {
-          rating = 87;
-        } else if (random < 58.3 + 25.08 + 9.72 + 3.00 + 2.00 + (1.00 + epicAvatarBonus * 0.5)) {
-          rating = 88;
-        } else if (random < 58.3 + 25.08 + 9.72 + 3.00 + 2.00 + (1.00 + epicAvatarBonus * 0.5) + (0.25 + epicAvatarBonus * 0.3)) {
-          rating = 89;
-        } else if (random < 58.3 + 25.08 + 9.72 + 3.00 + 2.00 + (1.00 + epicAvatarBonus * 0.5) + (0.25 + epicAvatarBonus * 0.3) + (0.1 + epicAvatarBonus * 0.2)) {
-          rating = 90;
-        } else if (random < 58.3 + 25.08 + 9.72 + 3.00 + 2.00 + (1.00 + epicAvatarBonus * 0.5) + (0.25 + epicAvatarBonus * 0.3) + (0.1 + epicAvatarBonus * 0.2) + 0.0000000005555) {
-          rating = 91;
-        } else {
-          rating = 92;
-        }
-        // Filter cards nach rating
-        let cardPool = availableCards.filter(card => card.overall_rating == rating);
-        // Fallback falls keine Karte mit rating vorhanden
+        // Filter cards nach Rarity
+        cardPool = availableCards.filter(card => card.rarity === rarity);
+        // Fallback falls keine Karte mit Rarity vorhanden
         if (!cardPool || cardPool.length === 0) {
-          cardPool = commonCards.length > 0 ? commonCards : availableCards;
+          cardPool = availableCards.filter(card => card.rarity === rarity);
+          if (!cardPool || cardPool.length === 0) {
+            cardPool = availableCards; // Final fallback
+          }
         }
-        rarity = cardPool[0]?.rarity || "common";
         const selectedCard = cardPool[Math.floor(Math.random() * cardPool.length)];
         drawnCards.push(selectedCard);
         if (selectedCard.rarity === "ultimate") {
@@ -491,101 +453,6 @@ export async function drawCards(username: string, packType: string, count = 1) {
         } else if (random < 30.35 + 26 + 14 + 11.5 + 10 + 6.75 + 1.15 + 0.40) {
           rating = 90;
         } else if (random < 30.35 + 26 + 14 + 11.5 + 10 + 6.75 + 1.15 + 0.40 + 0.15) {
-          rating = 91;
-        } else {
-          rating = 92;
-        }
-        // Filter cards nach overall_rating
-        let cardPool = availableCards.filter(card => card.overall_rating == rating);
-        // Fallback falls keine Karte mit rating vorhanden
-        if (!cardPool || cardPool.length === 0) {
-          cardPool = epicCards.length > 0 ? epicCards : availableCards;
-        }
-        rarity = cardPool[0]?.rarity || "epic";
-        const selectedCard = cardPool[Math.floor(Math.random() * cardPool.length)];
-        drawnCards.push(selectedCard);
-        if (selectedCard.rarity === "ultimate") {
-          await incrementMission(username, "draw_legendary_card");
-        }
-        // Calculate score for this card
-        const cardPoints = getScoreForRarity(selectedCard.rarity);
-        totalScoreToAdd += cardPoints;
-        // Add card to user's collection
-        const today = new Date().toISOString().split("T")[0];
-        const { data: existingCard, error: existingCardError } = await supabase
-          .from("user_cards")
-          .select("*")
-          .eq("user_id", username)
-          .eq("card_id", selectedCard.id)
-          .eq("level", 1)
-          .single();
-        if (existingCardError && existingCardError.code !== "PGRST116") {
-          console.error("Error checking existing card:", existingCardError);
-        }
-        if (existingCard) {
-          const newQuantity = (existingCard.quantity || 0) + 1;
-          const { error: updateCardError } = await supabase
-            .from("user_cards")
-            .update({ quantity: newQuantity })
-            .eq("id", existingCard.id)
-            .eq("level", 1);
-          if (updateCardError) {
-            console.error("Error updating card quantity:", updateCardError);
-          }
-        } else {
-          const { data: insertedCard, error: insertCardError } = await supabase
-            .from("user_cards")
-            .insert({
-              user_id: username,
-              card_id: selectedCard.id,
-              quantity: 1,
-              level: 1,
-              favorite: false,
-              obtained_at: today,
-            })
-            .select();
-          if (insertCardError) {
-            console.error("Error adding card to collection:", insertCardError);
-          }
-        }
-        continue;
-      } else if (isIcon) {
-        // God Avatar Bonus: 1.5% bessere Drop-Rate für Icon Packs (auf Rating 88-89 verteilt)
-        let godAvatarBonus = 0;
-        if (hasGodAvatar) {
-          godAvatarBonus = 1.5; // 1.5% Bonus
-          console.log(`👑 God Avatar Bonus applied: +${godAvatarBonus}% Icon Pack drop rate (Rating 88-89) for user ${username}`);
-        }
-        
-        // Neue Draw Rates für Icon Packs (nur Backend, nicht im UI anzeigen)
-        // 75–78: 5%
-        // 79–84: 19,75%
-        // 85: 22%
-        // 86: 19%
-        // 87: 16,5%
-        // 88: 10,5% + (godAvatarBonus * 0.5)% (0.75% Bonus)
-        // 89: 4% + (godAvatarBonus * 0.5)% (0.75% Bonus)
-        // 90: 1,5%
-        // 91: 0,75%
-        // 92+: 0.000000000000000000000444444
-        let rating = 0;
-        if (random < 5) {
-          rating = Math.floor(Math.random() * 4) + 75; // 75–78
-        } else if (random < 5 + 19.75) {
-          rating = Math.floor(Math.random() * 6) + 79; // 79–84
-        } else if (random < 5 + 19.75 + 22) {
-          rating = 85;
-        } else if (random < 5 + 19.75 + 22 + 19) {
-          rating = 86;
-        } else if (random < 5 + 19.75 + 22 + 19 + 16.5) {
-          rating = 87;
-        } else if (random < 5 + 19.75 + 22 + 19 + 16.5 + (10.5 + godAvatarBonus * 0.5)) {
-          rating = 88;
-        } else if (random < 5 + 19.75 + 22 + 19 + 16.5 + (10.5 + godAvatarBonus * 0.5) + (4 + godAvatarBonus * 0.5)) {
-          rating = 89;
-        } else if (random < 5 + 19.75 + 22 + 19 + 16.5 + (10.5 + godAvatarBonus * 0.5) + (4 + godAvatarBonus * 0.5) + 1.5) {
-          rating = 90;
-        } else if (random < 5 + 19.75 + 22 + 19 + 16.5 + (10.5 + godAvatarBonus * 0.5) + (4 + godAvatarBonus * 0.5) + 1.5 + 0.75) {
           rating = 91;
         } else {
           rating = 92;
@@ -876,9 +743,8 @@ if (!clanError && clanData) {
     return {
       success: true,
       drawnCards,
-      newTicketCount: !isLegendary && !isIcon ? newTicketCount : updatedUser?.tickets || userData.tickets,
+      newTicketCount: !isLegendary ? newTicketCount : updatedUser?.tickets || userData.tickets,
       newEliteTicketCount: isLegendary ? newTicketCount : updatedUser?.elite_tickets || userData.elite_tickets,
-      newIconTicketCount: isIcon ? newTicketCount : updatedUser?.icon_tickets || userData.icon_tickets,
       scoreAdded: totalScoreToAdd,
       newScore: updatedUser?.score || newScore,
       removedZeroQuantityCards: removedCards?.length || 0,
@@ -983,18 +849,11 @@ function determineRarity(packType: string): CardRarity {
 
   if (packType === "legendary") {
     // Legendary pack with updated odds:
-    // 10% legendary, 40% epic, 40% elite, 10% common
-    if (random < 10) return "legendary"
-    if (random < 50) return "epic" // 10 + 40 = 50
-    if (random < 90) return "rare" // 50 + 40 = 90
-    return "common" // Remaining 10%
-  } else if (packType === "icon") {
-    // ICON pack with 15% better odds than legendary:
-    // 30% legendary, 38% epic, 30% elite, 2% common
-    if (random < 30) return "legendary"
-    if (random < 68) return "epic" // 30 + 38 = 68
-    if (random < 98) return "rare" // 68 + 30 = 98
-    return "common" // Remaining 2%
+    // 5% legendary, 30% epic, 50% rare, 15% common
+    if (random < 5) return "legendary"
+    if (random < 35) return "epic" // 5 + 30 = 35
+    if (random < 85) return "rare" // 35 + 50 = 85
+    return "common" // Remaining 15%
   } else {
     // Regular pack with updated odds:
     // 1% legendary, 5% epic, 34% elite, 60% common

@@ -190,7 +190,7 @@ export default function PacksPage() {
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
                   <Package className="h-5 w-5 text-green-500" />
-                  Basic Pack
+                  Regular Pack
                   {hasEpicAvatar && (
                     <div className="bg-gradient-to-r from-purple-400 to-purple-600 text-white text-xs px-2 py-1 rounded-full font-bold">
                       🎭 EPIC BONUS
@@ -198,7 +198,7 @@ export default function PacksPage() {
                   )}
                 </CardTitle>
                 <CardDescription>
-                  3 cards with Common to Rare cards
+                  3 cards with Regular to Rare cards
                   {hasEpicAvatar && (
                     <span className="block text-purple-600 font-medium mt-1">
                       +1% Ultimate drop rate (Rating 88-91) with Epic Avatar!
@@ -213,7 +213,7 @@ export default function PacksPage() {
                   animate="animate"
                   style={{ filter: "drop-shadow(0 0 8px rgba(34, 197, 94, 0.5))" }}
                 >
-                  <img src="/regular-summon-pack.png" alt="Basic Pack" className="absolute inset-0 w-full h-full object-cover" />
+                  <img src="/regular pack.png?v=2" alt="Regular Pack" className="absolute inset-0 w-full h-full object-cover" />
                 </motion.div>
               </div>
               <CardContent>
@@ -253,7 +253,7 @@ export default function PacksPage() {
                   animate="animate"
                   style={{ filter: "drop-shadow(0 0 8px rgba(59, 130, 246, 0.5))" }}
                 >
-                  <img src="/regular-summon-pack.png" alt="Premium Pack" className="absolute inset-0 w-full h-full object-cover" />
+                  <img src="/regular pack.png?v=2" alt="Premium Pack" className="absolute inset-0 w-full h-full object-cover" />
                 </motion.div>
               </div>
               <CardContent>

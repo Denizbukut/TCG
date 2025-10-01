@@ -618,8 +618,8 @@ const handlePurchaseXpPass = async () => {
         if (reward.level <= userLevel) {
           // Standard rewards
           if (!reward.standardClaimed) {
-            // Double rewards for every 5 levels
-            standardTicketsToAdd += reward.isSpecialLevel ? 6 : 3
+            // 1 ticket per level, 3 tickets every 5 levels
+            standardTicketsToAdd += reward.isSpecialLevel ? 3 : 1
             updatedRewards[i] = { ...reward, standardClaimed: true }
           }
 
@@ -770,9 +770,9 @@ const handlePurchaseXpPass = async () => {
     if (!supabase || !user?.username) return
 
     try {
-      // Calculate expiry date (1 month from now)
+      // Calculate expiry date (7 days from now)
       const expiryDate = new Date()
-      expiryDate.setDate(expiryDate.getDate() + 14)
+      expiryDate.setDate(expiryDate.getDate() + 7)
 
       // Check if user already has a premium pass record
       const { data: existingPass, error: checkError } = await supabase
@@ -956,11 +956,11 @@ const handlePurchaseXpPass = async () => {
                 <Ticket className="h-3.5 w-3.5 text-blue-500" />
                 <span className="font-medium text-sm">{eliteTickets}</span>
               </div>
-              {/* Icon Ticket */}
-              <div className="flex items-center gap-1 bg-white px-3 py-1.5 rounded-full shadow-sm border border-gray-100">
+              {/* Icon Ticket - COMMENTED OUT */}
+              {/* <div className="flex items-center gap-1 bg-white px-3 py-1.5 rounded-full shadow-sm border border-gray-100">
                 <Crown className="h-3.5 w-3.5 text-indigo-500" />
                 <span className="font-medium text-sm">{user?.icon_tickets ?? 0}</span>
-              </div>
+              </div> */}
             </div>
           </div>
           {/* Back to Home Button mittig */}
@@ -1105,11 +1105,11 @@ const handlePurchaseXpPass = async () => {
                         <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mr-2">
                           <Ticket className="h-3 w-3 text-blue-600" />
                         </div>
-                        <span className="text-sm">Daily Elite Ticket</span>
+                        <span className="text-sm">Daily Legendary Ticket</span>
                       </div>
 
                       <p className="text-xs text-gray-600 mt-2 pl-7">
-                        Claim <b>1 elite ticket</b> every <b>24 hours</b>
+                        Claim <b>1 legendary ticket</b> every <b>24 hours</b>
                       </p>
                     </div>
 
@@ -1123,7 +1123,7 @@ const handlePurchaseXpPass = async () => {
                       </div>
 
                       <p className="text-xs text-gray-600 mt-2 pl-7">
-                        Get <b>1 elite ticket</b> for each <b>level up</b> (2 tickets every 5 levels)
+                        Get <b>1 legendary ticket</b> for each <b>level up</b> (2 tickets every 5 levels)
                       </p>
                     </div>
 
@@ -1134,7 +1134,7 @@ const handlePurchaseXpPass = async () => {
                           <BarChart3 className="h-3 w-3 text-blue-600" />
                         </div>
                         <span className="text-sm">
-                          Improved <b>Classic Pack</b> Drop Rates
+                          Improved <b>Regular Pack</b> Drop Rates
                         </span>
                       </div>
 
@@ -1147,11 +1147,11 @@ const handlePurchaseXpPass = async () => {
                         <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mr-2">
                           <Calendar className="h-3 w-3 text-orange-600" />
                         </div>
-                        <span className="text-sm">14 Days Duration</span>
+                        <span className="text-sm">7 Days Duration</span>
                       </div>
 
                       <p className="text-xs text-gray-600 mt-2 pl-7">
-                        Premium Pass is valid for <b>14 days</b> from purchase
+                        Premium Pass is valid for <b>7 days</b> from purchase
                       </p>
                     </div>
                   </div>
@@ -1165,8 +1165,8 @@ const handlePurchaseXpPass = async () => {
                     <Ticket className="h-4 w-4 text-blue-600" />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-medium text-sm">Daily Elite Ticket</h4>
-                    <p className="text-xs text-gray-500">Claim 1 elite ticket every 24 hours</p>
+                    <h4 className="font-medium text-sm">Daily Legendary Ticket</h4>
+                    <p className="text-xs text-gray-500">Claim 1 legendary ticket every 24 hours</p>
                   </div>
                   <Button
                     onClick={handleClaimLegendaryTicket}
@@ -1199,10 +1199,10 @@ const handlePurchaseXpPass = async () => {
                 <Alert className="bg-white border-gray-200 mb-2">
                   <AlertTitle className="text-gray-800 flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-blue-500" />
-                    Get {calculatePotentialEliteTickets()} Elite Tickets Now!
+                    Get {calculatePotentialEliteTickets()} Legendary Tickets Now!
                   </AlertTitle>
                   <AlertDescription className="text-gray-600 text-sm">
-                    Purchase Premium Pass now and claim elite tickets for all your previous level ups!
+                    Purchase Premium Pass now and claim legendary tickets for all your previous level ups!
                   </AlertDescription>
                 </Alert>
               )}
@@ -1269,10 +1269,10 @@ const handlePurchaseXpPass = async () => {
                       `}
                       >
                         <Ticket className="h-5 w-5 text-violet-500 mb-1" />
-                        <span className="text-xs font-medium">{reward.isSpecialLevel ? "6" : "3"} Tickets</span>
+                        <span className="text-xs font-medium">{reward.isSpecialLevel ? "3" : "1"} Tickets</span>
                         {reward.isSpecialLevel && !reward.standardClaimed && reward.level <= (user?.level || 1) && (
                           <span className="absolute -top-2 -right-2 bg-violet-500 text-white text-[10px] px-1 rounded-full">
-                            2x
+                            3x
                           </span>
                         )}
 
@@ -1345,7 +1345,7 @@ const handlePurchaseXpPass = async () => {
                         )}
 
                         <Ticket className="h-5 w-5 text-blue-500 mb-1" />
-                        <span className="text-xs font-medium">{reward.isSpecialLevel ? "2" : "1"} Elite</span>
+                        <span className="text-xs font-medium">{reward.isSpecialLevel ? "2" : "1"} Legendary</span>
                         {reward.isSpecialLevel &&
                           !reward.premiumClaimed &&
                           hasPremium &&
@@ -1475,7 +1475,7 @@ const handlePurchaseXpPass = async () => {
                       <Ticket className="h-4 w-4 text-blue-500" />
                       <span className="font-medium">x1</span>
                     </div>
-                    <span className="text-xs text-gray-500">Elite Ticket</span>
+                    <span className="text-xs text-gray-500">Legendary Ticket</span>
                   </div>
                 )}
               </motion.div>
@@ -1543,7 +1543,7 @@ const handlePurchaseXpPass = async () => {
                     <Ticket className="h-5 w-5 text-blue-500" />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-medium">Elite Tickets</h4>
+                    <h4 className="font-medium">Legendary Tickets</h4>
                     <p className="text-sm text-blue-600 font-bold">+{claimedRewardsInfo.eliteTickets}</p>
                   </div>
                 </div>
