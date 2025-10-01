@@ -2409,8 +2409,8 @@ const [copied, setCopied] = useState(false)
             </div>
           </motion.div>
 
-          {/* Quick Actions: Friends & Missions */}
-          <div className="mt-4 mb-20 grid grid-cols-2 gap-3">
+          {/* Quick Actions: Friends & Missions - COMMENTED OUT */}
+          {/* <div className="mt-4 mb-20 grid grid-cols-2 gap-3">
             <Link href="/friends" className="block w-full h-full">
               <div className="bg-gradient-to-br from-[#232526] to-[#414345] rounded-xl p-4 shadow-lg flex flex-col items-center justify-center min-h-[90px] h-full text-center transition border-2 border-yellow-400">
                 <div className="w-10 h-10 rounded-full bg-yellow-400 flex items-center justify-center mb-2 border border-yellow-300">
@@ -2427,7 +2427,7 @@ const [copied, setCopied] = useState(false)
                 <div className="text-base font-bold text-yellow-100">Missions</div>
               </div>
             </Link>
-          </div>
+          </div> */}
         </main>
 
        {showClaimAnimation && (
