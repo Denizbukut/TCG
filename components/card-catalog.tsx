@@ -15,7 +15,6 @@ type CardCatalogProps = {
 
 // Map database rarity to display categories
 const rarityMapping: Record<string, string> = {
-  goat: "G",
   legendary: "L",
   epic: "E",
   rare: "R",
@@ -25,7 +24,6 @@ const rarityMapping: Record<string, string> = {
 
 // Map display categories back to database rarities
 const categoryToRarities: Record<string, string[]> = {
-  G: ["goat"],
   L: ["legendary"],
   E: ["epic"],
   R: ["rare"],
@@ -159,8 +157,8 @@ export default function CardCatalog({ username, searchTerm = "" }: CardCatalogPr
     return acc
   }, {})
 
-  // Sort categories in order: G, U, E, R, B (WBC commented out)
-  const sortedCategories = ["G", "U", "E", "R", "B"].filter(
+  // Sort categories in order: L, E, R, C (WBC commented out)
+  const sortedCategories = ["L", "E", "R", "C"].filter(
     (category) => cardsByRarity[category] && cardsByRarity[category].length > 0,
   )
 
@@ -185,12 +183,9 @@ export default function CardCatalog({ username, searchTerm = "" }: CardCatalogPr
       )}
       
       <Tabs defaultValue="all" className="w-full text-black" onValueChange={setActiveTab}>
-      <TabsList className="grid w-full grid-cols-7 bg-white text-black">
+      <TabsList className="grid w-full grid-cols-5 bg-white text-black">
         <TabsTrigger value="all" className="text-black data-[state=active]:bg-gray-200 data-[state=active]:text-black">
           All
-        </TabsTrigger>
-        <TabsTrigger value="G" className="text-black data-[state=active]:bg-gray-200 data-[state=active]:text-black">
-          Goat
         </TabsTrigger>
         <TabsTrigger value="U" className="text-black data-[state=active]:bg-gray-200 data-[state=active]:text-black">
           Ultimate
@@ -217,9 +212,7 @@ export default function CardCatalog({ username, searchTerm = "" }: CardCatalogPr
                 {category}
               </Badge>
               <h3 className="text-lg font-semibold text-black">
-                {category === "G"
-                  ? "Goat"
-                  : category === "L"
+                {category === "L"
                   ? "Legendary"
                   : category === "E"
                   ? "Epic"
@@ -252,6 +245,7 @@ export default function CardCatalog({ username, searchTerm = "" }: CardCatalogPr
                     character={card.character}
                     imageUrl={card.image_url}
                     rarity={card.rarity}
+                    epoch={card.epoch}
                     owned={userCards[card.id]}
                     compact={true}
                   />
@@ -262,7 +256,7 @@ export default function CardCatalog({ username, searchTerm = "" }: CardCatalogPr
         ))}
       </TabsContent>
 
-      {["G", "U", "E", "R", "B"].map((category) => (
+      {["U", "E", "R", "B"].map((category) => (
         <TabsContent key={category} value={category} className="mt-4 text-black">
           <motion.div
             className="grid grid-cols-5 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2"
@@ -283,6 +277,7 @@ export default function CardCatalog({ username, searchTerm = "" }: CardCatalogPr
                   character={card.character}
                   imageUrl={card.image_url}
                   rarity={card.rarity}
+                  epoch={card.epoch}
                   owned={userCards[card.id]}
                   compact={true}
                 />
@@ -292,5 +287,6 @@ export default function CardCatalog({ username, searchTerm = "" }: CardCatalogPr
         </TabsContent>
       ))}
     </Tabs>
+    </div>
   )
 }

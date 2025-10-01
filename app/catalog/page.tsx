@@ -147,8 +147,8 @@ export default function CatalogPage() {
     return acc
   }, {})
 
-  // Sort categories in order: goat, ultimate, elite, rare, basic, wbc
-  const sortedCategories = ["goat", "ultimate", "elite", "rare", "basic", "wbc"].filter(
+  // Sort categories in order: legendary, epic, rare, common
+  const sortedCategories = ["legendary", "epic", "rare", "common"].filter(
     (category) => cardsByRarity[category] && cardsByRarity[category].length > 0,
   )
 
@@ -235,12 +235,10 @@ export default function CatalogPage() {
       <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
         <TabsList className="flex overflow-x-auto whitespace-nowrap no-scrollbar bg-black/80 border-yellow-500">
           <TabsTrigger value="all" className="text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">All</TabsTrigger>
-          <TabsTrigger value="goat" className="text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">Goat</TabsTrigger>
-          <TabsTrigger value="ultimate" className="text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">Ultimate</TabsTrigger>
-          <TabsTrigger value="elite" className="text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">Elite</TabsTrigger>
+          <TabsTrigger value="legendary" className="text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">Legendary</TabsTrigger>
+          <TabsTrigger value="epic" className="text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">Epic</TabsTrigger>
           <TabsTrigger value="rare" className="text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">Rare</TabsTrigger>
-          <TabsTrigger value="basic" className="text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">Basic</TabsTrigger>
-          <TabsTrigger value="wbc" className="text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">WBC</TabsTrigger>
+          <TabsTrigger value="common" className="text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">Common</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="mt-4">
@@ -286,7 +284,7 @@ export default function CatalogPage() {
           ))}
         </TabsContent>
 
-        {["goat", "ultimate", "elite", "rare", "basic", "wbc"].map((category) => (
+        {["legendary", "epic", "rare", "common"].map((category) => (
           <TabsContent key={category} value={category} className="mt-4">
             <motion.div
               className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3"

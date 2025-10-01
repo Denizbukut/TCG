@@ -1599,7 +1599,7 @@ const [copied, setCopied] = useState(false)
   return (
     <ProtectedRoute>
       <div 
-        className="flex flex-col h-screen text-white relative overflow-hidden"
+        className="flex flex-col min-h-screen text-white relative overflow-y-auto"
         style={{
           backgroundImage: 'url("/hintergrung.png")',
           backgroundSize: 'cover',
@@ -2397,6 +2397,9 @@ const [copied, setCopied] = useState(false)
             </Link>
           </div> */}
         </main>
+        
+        {/* Add bottom padding to ensure content is not hidden by MobileNav */}
+        <div className="h-20"></div>
 
        {showClaimAnimation && (
   <motion.div

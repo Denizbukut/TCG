@@ -221,8 +221,7 @@ export default function CollectionPage() {
       (activeTab === "legendary" && (card.rarity?.toLowerCase() === "legendary" || card.rarity?.toLowerCase() === "ultima" || card.rarity?.toLowerCase() === "ultimate")) || 
       (activeTab === "epic" && (card.rarity?.toLowerCase() === "epic" || card.rarity?.toLowerCase() === "elite")) ||
       (activeTab === "rare" && card.rarity?.toLowerCase() === "rare") ||
-      (activeTab === "common" && (card.rarity?.toLowerCase() === "common" || card.rarity?.toLowerCase() === "basic")) ||
-      (activeTab === "goat" && card.rarity?.toLowerCase() === "goat")
+      (activeTab === "common" && (card.rarity?.toLowerCase() === "common" || card.rarity?.toLowerCase() === "basic"))
       // (activeTab === "wbc" && card.rarity?.toLowerCase() === "wbc") // Commented out
 
     const matchesEpoch = selectedEpoch === "all" || card.epoch === selectedEpoch
@@ -627,7 +626,6 @@ export default function CollectionPage() {
                 { label: "Rare", value: collectionStats.rare, color: "text-blue-400" },
                 { label: "Epic", value: collectionStats.epic, color: "text-purple-400" },
                 { label: "Legendary", value: collectionStats.legendary, color: "text-amber-400" },
-                { label: "GOAT", value: collectionStats.goat, color: "text-red-400" },
               ].map((stat) => (
                 <div key={stat.label} className="bg-black/60 rounded-lg p-2 border border-yellow-500/50">
                   <div className={`text-lg font-semibold ${stat.color}`}>{stat.value}</div>
@@ -684,12 +682,9 @@ export default function CollectionPage() {
           )}
 
           <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-7 bg-black/80 border-yellow-500 h-9">
+            <TabsList className="grid w-full grid-cols-5 bg-black/80 border-yellow-500 h-9">
               <TabsTrigger value="all" className="text-xs h-7 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">
                 All
-              </TabsTrigger>
-              <TabsTrigger value="goat" className="text-xs h-7 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">
-                GOAT
               </TabsTrigger>
               <TabsTrigger value="legendary" className="text-xs h-7 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">
                 Legendary
@@ -792,12 +787,12 @@ export default function CollectionPage() {
       </main>
 
       <MobileNav />
-      <button
+      {/* <button
         onClick={() => setShowSquad(true)}
         className="mt-8 px-6 py-3 bg-green-600 text-white rounded-full font-bold shadow-lg hover:bg-green-700 transition"
       >
         My Squad
-      </button>
+      </button> */}
     </div>
   )
 }
