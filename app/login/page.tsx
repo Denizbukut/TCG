@@ -179,7 +179,7 @@ export default function LoginPage() {
       {/* Full screen background image using Next.js Image component for better optimization */}
       <div className="absolute inset-0 z-0">
         <img
-          src="/artwork-1.png"
+          src="/Futuristic 16_9 login screen background for a Crypto Trading Card Game app. _Dark cyberpunk atmosphere with glowing neon green and purple lights. _Multiple Worldcoin (WLD) coins are floating in space with glowing effects.-2.jpg"
           alt="Login background"
           className="absolute inset-0 w-full h-full object-cover"
         />

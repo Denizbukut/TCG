@@ -32,6 +32,7 @@ export default function CollectionPage() {
   const [availableEpochs, setAvailableEpochs] = useState<number[]>([])
   const [showSquad, setShowSquad] = useState(false);
 
+
   // Check URL parameters for direct squad access
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -110,12 +111,12 @@ export default function CollectionPage() {
           setLoading(false)
           return
         }
+        // Use individual card instances instead of user_cards
         const { data: userCardsData, error: userCardsError } = await supabase
-          .from("user_cards")
-          .select(`id, card_id, quantity, level`)
+          .from("user_card_instances")
+          .select(`id, card_id, level, favorite, obtained_at`)
           .eq("user_id", user.username)
-          .gt("quantity", 0)
-          .order('card_id', { ascending: true })
+          .order('obtained_at', { ascending: false })
 
         if (userCardsError) {
           console.error("Error fetching user cards:", userCardsError)
@@ -138,14 +139,35 @@ export default function CollectionPage() {
 
         console.log("Found user cards:", userCardsData.length, "for user:", user.username)
 
-        // 2. Deduplicate user cards by card_id - keep only one entry per card
-        const uniqueUserCards = userCardsData.reduce((acc, current) => {
-          const existingCard = acc.find(card => card.card_id === current.card_id && card.level === current.level)
-          if (!existingCard) {
-            acc.push(current)
+        // 2. Group individual instances by card_id and level
+        const groupedCards = new Map()
+        
+        userCardsData?.forEach(instance => {
+          const key = `${instance.card_id}-${instance.level}`
+          
+          if (!groupedCards.has(key)) {
+            groupedCards.set(key, {
+              card_id: instance.card_id,
+              level: instance.level,
+              quantity: 0,
+              instances: [],
+              favorite: false
+            })
           }
-          return acc
-        }, [] as typeof userCardsData)
+          
+          const group = groupedCards.get(key)
+          group.quantity += 1
+          group.instances.push({
+            id: instance.id,
+            favorite: instance.favorite,
+            obtained_at: instance.obtained_at
+          })
+          if (instance.favorite) {
+            group.favorite = true
+          }
+        })
+
+        const uniqueUserCards = Array.from(groupedCards.values())
 
         // 3. Get the card IDs to fetch
         const cardIds = uniqueUserCards.map((uc) => uc.card_id)
@@ -634,7 +656,7 @@ export default function CollectionPage() {
               ))}
             </div>
 
-            {/* Level System Info Button - Now positioned below the stats grid */}
+            {/* Level System Info Button */}
             <div className="mt-3 flex justify-center">
               <LevelSystemInfoDialog />
             </div>

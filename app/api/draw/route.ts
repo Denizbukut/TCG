@@ -1,6 +1,7 @@
 // ✅ app/api/draw/route.ts → korrekt für App Router
 import { NextResponse } from "next/server"
 import { drawCards, drawGodPacks } from "@/app/actions"
+import { drawCardsIndividual } from "@/app/actions/individual-cards"
 import { getSupabaseServerClient } from "@/lib/supabase"
 
 export async function POST(req: Request) {
@@ -12,7 +13,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing parameters" }, { status: 400 })
     }
 
-    // Check if user has active Premium Pass
+    // Check if user has active Premium Pass (only for regular packs)
     let hasPremiumPass = false
     if (cardType === "regular") {
       const supabase = getSupabaseServerClient()
@@ -33,7 +34,8 @@ export async function POST(req: Request) {
 
     let result = {}
     if(cardType !== "god") {
-      result = await drawCards(username, cardType, count, hasPremiumPass) 
+      // Use individual card system - each card gets its own ID
+      result = await drawCardsIndividual(username, cardType, count, hasPremiumPass) 
     }
     else {
       result = await drawGodPacks(username, count)
