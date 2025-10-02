@@ -387,7 +387,7 @@ export default function SBCPage() {
       rewards.push({
         type: 'tickets',
         amount: challenge.rewards_tickets,
-        text: `${challenge.rewards_tickets} Classic Tickets`,
+        text: `${challenge.rewards_tickets} Regular Tickets`,
         icon: getRewardIcon('tickets')
       })
     }
@@ -396,7 +396,7 @@ export default function SBCPage() {
       rewards.push({
         type: 'elite_tickets',
         amount: challenge.rewards_elite_tickets,
-        text: `${challenge.rewards_elite_tickets} Elite Tickets`,
+        text: `${challenge.rewards_elite_tickets} Legendary Tickets`,
         icon: getRewardIcon('elite_tickets')
       })
     }
@@ -449,9 +449,9 @@ export default function SBCPage() {
       case 'tokens':
         return `${amount} Tokens`
       case 'tickets':
-        return `${amount} Classic Tickets`
+        return `${amount} Regular Tickets`
       case 'elite_tickets':
-        return `${amount} Elite Tickets`
+        return `${amount} Legendary Tickets`
       case 'icon_tickets':
         return `${amount} Icon Tickets`
       case 'pack':
@@ -610,8 +610,8 @@ export default function SBCPage() {
         const rewards = (result as any)?.validation?.rewardsGiven || {}
         let rewardText = '🎉 Squad successfully exchanged!'
         
-        if (rewards.tickets > 0) rewardText += `\n+${rewards.tickets} Classic Tickets`
-        if (rewards.elite_tickets > 0) rewardText += `\n+${rewards.elite_tickets} Elite Tickets`
+        if (rewards.tickets > 0) rewardText += `\n+${rewards.tickets} Regular Tickets`
+        if (rewards.elite_tickets > 0) rewardText += `\n+${rewards.elite_tickets} Legendary Tickets`
         if (rewards.icon_tickets > 0) rewardText += `\n+${rewards.icon_tickets} Icon Tickets`
         if (rewards.tokens > 0) rewardText += `\n+${rewards.tokens} Tokens`
         if (rewards.wbc_card > 0) rewardText += `\n+1 WBC Card`

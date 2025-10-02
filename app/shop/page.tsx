@@ -555,12 +555,12 @@ await supabase.from("ticket_purchases").insert({
 
   // Legendary ticket packages
   const legendaryPackages = [
-    { id: "leg-1", amount: 1, price: 0.15 },
-    { id: "leg-5", amount: 5, price: 0.6 },
-    { id: "leg-10", amount: 10, price: 1 },
-    { id: "leg-20", amount: 20, price: 1.8 },
-    { id: "leg-50", amount: 50, price: 4 },
-    { id: "leg-500", amount: 500, price: 32 },
+    { id: "leg-1", amount: 1, price: 0.17 },
+    { id: "leg-5", amount: 5, price: 0.75 },
+    { id: "leg-10", amount: 10, price: 1.4 },
+    { id: "leg-20", amount: 20, price: 2.6 },
+    { id: "leg-50", amount: 50, price: 6 },
+    { id: "leg-500", amount: 500, price: 39 },
   ]
 
   // Icon Ticket Packages (20% teurer als Legendary)
@@ -585,13 +585,13 @@ await supabase.from("ticket_purchases").insert({
             Ticket Shop
           </h1>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded-full shadow-sm border border-gray-400/30 backdrop-blur-md">
-              <Ticket className="h-3.5 w-3.5 text-yellow-300" />
-              <span className="font-medium text-sm text-gray-100">{tickets}</span>
+            <div className="flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded-full shadow-sm border border-blue-400/30 backdrop-blur-md">
+              <Ticket className="h-3.5 w-3.5 text-blue-400" />
+              <span className="font-medium text-sm text-blue-100">{tickets}</span>
             </div>
-            <div className="flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded-full shadow-sm border border-gray-400/30 backdrop-blur-md">
-              <Ticket className="h-3.5 w-3.5 text-gray-300" />
-                              <span className="font-medium text-sm text-gray-100">{eliteTickets}</span>
+            <div className="flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded-full shadow-sm border border-purple-400/30 backdrop-blur-md">
+              <Ticket className="h-3.5 w-3.5 text-purple-400" />
+                              <span className="font-medium text-sm text-purple-100">{eliteTickets}</span>
             </div>
             {/* Icon Tickets - COMMENTED OUT */}
             {/* <div className="flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded-full shadow-sm border border-gray-400/30 backdrop-blur-md">
@@ -658,16 +658,16 @@ await supabase.from("ticket_purchases").insert({
                   <TabsList className="grid w-full grid-cols-2 h-12 rounded-2xl p-1 bg-gradient-to-r from-gray-900/60 via-gray-800/40 to-gray-900/60 mb-6 shadow-lg backdrop-blur-md">
                     <TabsTrigger
                       value="regular"
-                      className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-yellow-300 data-[state=active]:text-yellow-200 data-[state=active]:shadow transition-all font-semibold tracking-wide"
+                      className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-blue-300 data-[state=active]:text-blue-200 data-[state=active]:shadow transition-all font-semibold tracking-wide"
                     >
-                      <Ticket className="h-4 w-4 mr-2 text-yellow-300" />
+                      <Ticket className="h-4 w-4 mr-2 text-blue-300" />
                       Regular Tickets
                     </TabsTrigger>
                     <TabsTrigger
                       value="legendary"
-                      className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-gray-400 data-[state=active]:text-gray-200 data-[state=active]:shadow transition-all font-semibold tracking-wide"
+                      className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-purple-400 data-[state=active]:text-purple-200 data-[state=active]:shadow transition-all font-semibold tracking-wide"
                     >
-                      <Ticket className="h-4 w-4 mr-2 text-gray-300" />
+                      <Ticket className="h-4 w-4 mr-2 text-purple-300" />
                       Legendary Tickets
                     </TabsTrigger>
                     {/* <TabsTrigger
@@ -690,44 +690,44 @@ await supabase.from("ticket_purchases").insert({
             <motion.div
               key={pkg.id}
               whileHover={{ scale: 1.03, boxShadow: '0 0 32px 0 rgba(212,175,55,0.10)' }}
-              className="relative"
+              className="relative h-full"
             >
               <Card
-                className="overflow-hidden border-2 border-yellow-300/30 bg-gradient-to-br from-gray-900/60 to-gray-800/40 rounded-xl shadow-md backdrop-blur-md transition-all p-2"
+                className="overflow-hidden border-2 border-blue-300/30 bg-gradient-to-br from-gray-900/60 to-gray-800/40 rounded-xl shadow-md backdrop-blur-md transition-all p-2 h-full flex flex-col"
               >
                 {/* Shine Effekt */}
                 <motion.div
-                  className="absolute left-[-40%] top-0 w-1/2 h-full bg-gradient-to-r from-transparent via-yellow-100/10 to-transparent skew-x-[-20deg] pointer-events-none"
+                  className="absolute left-[-40%] top-0 w-1/2 h-full bg-gradient-to-r from-transparent via-blue-100/10 to-transparent skew-x-[-20deg] pointer-events-none"
                   animate={{ left: ['-40%', '120%'] }}
                   transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
                 />
                 {hasDiscount && (
-                  <div className="absolute top-0 right-0 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10">
+                  <div className="absolute top-0 right-0 bg-gradient-to-r from-blue-400 to-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10">
                     -{Math.round((1 - discountedPrice / originalPrice) * 100)}%
                   </div>
                 )}
                 <CardHeader className="p-2 pb-1 space-y-0">
-                  <CardTitle className="text-base font-extrabold flex items-center text-yellow-200 drop-shadow">
+                  <CardTitle className="text-base font-extrabold flex items-center text-blue-200 drop-shadow">
                     <span className="mr-1">{pkg.amount}</span>
-                    <Ticket className="h-4 w-4 text-yellow-300 drop-shadow-lg mx-1" />
+                    <Ticket className="h-4 w-4 text-blue-300 drop-shadow-lg mx-1" />
                     <span className="ml-1 text-xs">{pkg.amount === 1 ? "Regular Ticket" : "Regular Tickets"}</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-2 pt-0 pb-1">
-                  <Separator className="my-2 border-yellow-300/20" />
+                <CardContent className="p-2 pt-0 pb-1 flex-1">
+                  <Separator className="my-2 border-blue-300/20" />
                   <div className="flex items-center justify-between">
                     <div className="flex flex-col items-start">
                       {hasDiscount && (
-                        <span className="text-xs text-yellow-200/60 line-through">
+                        <span className="text-xs text-blue-200/60 line-through">
                           {price ? `${(originalPrice / price).toFixed(3)} WLD` : `${originalPrice.toFixed(3)} WLD`}
                         </span>
                       )}
-                      <span className="text-base font-bold text-yellow-100">
+                      <span className="text-base font-bold text-blue-100">
                         {price
                           ? `${(discountedPrice / price).toFixed(3)} WLD`
                           : `${discountedPrice.toFixed(3)} WLD`}
                       </span>
-                      <span className="text-xs text-yellow-100/80">
+                      <span className="text-xs text-blue-100/80">
                         (~${discountedPrice.toFixed(2)})
                       </span>
                     </div>
@@ -736,13 +736,13 @@ await supabase.from("ticket_purchases").insert({
                 <CardFooter className="p-2 pt-0">
                   <Button
                     size="sm"
-                    className="w-full bg-gradient-to-r from-gray-800/80 to-yellow-200/30 text-yellow-100 font-bold border-0 hover:scale-105 hover:shadow-lg transition backdrop-blur-md"
+                    className="w-full bg-gradient-to-r from-gray-800/80 to-blue-200/30 text-blue-100 font-bold border-0 hover:scale-105 hover:shadow-lg transition backdrop-blur-md"
                     onClick={() => sendPayment(originalPrice, pkg.id, pkg.amount, 'regular')}
                     disabled={isLoading[pkg.id]}
                   >
                     {isLoading[pkg.id] ? (
                       <>
-                        <div className="h-4 w-4 border-2 border-t-transparent border-yellow-300 rounded-full animate-spin mr-2"></div>
+                        <div className="h-4 w-4 border-2 border-t-transparent border-blue-300 rounded-full animate-spin mr-2"></div>
                         Processing...
                       </>
                     ) : (
@@ -768,42 +768,42 @@ await supabase.from("ticket_purchases").insert({
             <motion.div
               key={pkg.id}
               whileHover={{ scale: 1.03, boxShadow: '0 0 32px 0 rgba(180,180,180,0.10)' }}
-              className="relative"
+              className="relative h-full"
             >
               <Card
-                className="overflow-hidden border-2 border-gray-400/30 bg-gradient-to-br from-gray-900/60 to-gray-800/40 rounded-xl shadow-md backdrop-blur-md transition-all p-2"
+                className="overflow-hidden border-2 border-purple-400/30 bg-gradient-to-br from-gray-900/60 to-gray-800/40 rounded-xl shadow-md backdrop-blur-md transition-all p-2 h-full flex flex-col"
               >
                 <motion.div
-                  className="absolute left-[-40%] top-0 w-1/2 h-full bg-gradient-to-r from-transparent via-gray-200/10 to-transparent skew-x-[-20deg] pointer-events-none"
+                  className="absolute left-[-40%] top-0 w-1/2 h-full bg-gradient-to-r from-transparent via-purple-200/10 to-transparent skew-x-[-20deg] pointer-events-none"
                   animate={{ left: ['-40%', '120%'] }}
                   transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
                 />
                 {hasDiscount && (
-                  <div className="absolute top-0 right-0 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10">
+                  <div className="absolute top-0 right-0 bg-gradient-to-r from-purple-400 to-purple-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10">
                     -{Math.round((1 - discountedPrice / originalPrice) * 100)}%
                   </div>
                 )}
                 <CardHeader className="p-2 pb-1 space-y-0">
-                  <CardTitle className="text-base font-extrabold flex items-center text-gray-200 drop-shadow">
+                  <CardTitle className="text-base font-extrabold flex items-center text-purple-200 drop-shadow">
                     <span className="mr-1">{pkg.amount}</span>
-                    <Ticket className="h-4 w-4 text-gray-300 drop-shadow-lg mx-1" />
+                    <Ticket className="h-4 w-4 text-purple-300 drop-shadow-lg mx-1" />
                     <span className="ml-1 text-xs">{pkg.amount === 1 ? "Legendary Ticket" : "Legendary Tickets"}</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-2 pt-0 pb-1">
-                  <Separator className="my-2 border-gray-400/20" />
+                <CardContent className="p-2 pt-0 pb-1 flex-1">
+                  <Separator className="my-2 border-purple-400/20" />
                   <div className="flex flex-col items-start">
                     {hasDiscount && (
-                      <span className="text-xs text-gray-200/60 line-through">
+                      <span className="text-xs text-purple-200/60 line-through">
                         {price ? `${(originalPrice / price).toFixed(3)} WLD` : `${originalPrice.toFixed(3)} WLD`}
                       </span>
                     )}
-                    <span className="text-base font-bold text-gray-100">
+                    <span className="text-base font-bold text-purple-100">
                       {price
                         ? `${(discountedPrice / price).toFixed(3)} WLD`
                         : `${discountedPrice.toFixed(3)} WLD`}
                     </span>
-                    <span className="text-xs text-gray-100/80">
+                    <span className="text-xs text-purple-100/80">
                       (~${discountedPrice.toFixed(2)})
                     </span>
                   </div>
@@ -811,13 +811,13 @@ await supabase.from("ticket_purchases").insert({
                 <CardFooter className="p-2 pt-0">
                   <Button
                     size="sm"
-                    className="w-full bg-gradient-to-r from-gray-800/80 to-gray-400/30 text-gray-100 font-bold border-0 hover:scale-105 hover:shadow-lg transition backdrop-blur-md"
+                    className="w-full bg-gradient-to-r from-gray-800/80 to-purple-400/30 text-purple-100 font-bold border-0 hover:scale-105 hover:shadow-lg transition backdrop-blur-md"
                     onClick={() => sendPayment(originalPrice, pkg.id, pkg.amount, 'legendary')}
                     disabled={isLoading[pkg.id]}
                   >
                     {isLoading[pkg.id] ? (
                       <>
-                        <div className="h-4 w-4 border-2 border-t-transparent border-gray-400 rounded-full animate-spin mr-2"></div>
+                        <div className="h-4 w-4 border-2 border-t-transparent border-purple-300 rounded-full animate-spin mr-2"></div>
                         Processing...
                       </>
                     ) : (

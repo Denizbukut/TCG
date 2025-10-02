@@ -531,6 +531,47 @@ const [showInfo, setShowInfo] = useState(false)
     fetchXpPass()
   }, [refreshUserData, user?.username])
 
+  // Check Premium Pass status
+  useEffect(() => {
+    const fetchPremiumPass = async () => {
+      if (!user?.username) return
+      
+      try {
+        const supabase = getSupabaseBrowserClient()
+        if (!supabase) return
+
+        const { data, error } = await supabase
+          .from('premium_passes')
+          .select('active, expires_at')
+          .eq('user_id', user.username)
+          .eq('active', true)
+          .single()
+
+        if (!error && data) {
+          // Check if premium pass has expired
+          const now = new Date()
+          const expiresAt = new Date(data.expires_at as string)
+          const isActive = expiresAt > now
+          setHasPremiumPass(isActive)
+          console.log('🎫 Premium Pass Status:', { 
+            user: user.username, 
+            active: isActive, 
+            expiresAt: expiresAt.toISOString(),
+            now: now.toISOString()
+          })
+        } else {
+          setHasPremiumPass(false)
+          console.log('🎫 No Premium Pass found for user:', user.username)
+        }
+      } catch (error) {
+        console.error('Error checking Premium Pass:', error)
+        setHasPremiumPass(false)
+      }
+    }
+
+    fetchPremiumPass()
+  }, [user?.username])
+
   // Update tickets and legendary tickets when user changes
   useEffect(() => {
     if (user) {
@@ -543,9 +584,6 @@ const [showInfo, setShowInfo] = useState(false)
       // if (typeof user.icon_tickets === "number") {
       //   setIconTickets(user.icon_tickets)
       // }
-      if (typeof user.has_premium === "boolean") {
-        setHasPremiumPass(user.has_premium)
-      }
     }
   }, [user])
 
@@ -1059,13 +1097,13 @@ const [showInfo, setShowInfo] = useState(false)
             <div className="flex justify-between items-center">
               <h1 className="text-lg font-medium text-yellow-200">Card Packs</h1>
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 bg-black/80 px-3 py-1.5 rounded-full shadow-sm border border-yellow-400">
-                  <Ticket className="h-3.5 w-3.5 text-yellow-400" />
-                  <span className="font-medium text-sm text-yellow-200">{tickets}</span>
+                <div className="flex items-center gap-1 bg-black/80 px-3 py-1.5 rounded-full shadow-sm border border-blue-400">
+                  <Ticket className="h-3.5 w-3.5 text-blue-400" />
+                  <span className="font-medium text-sm text-blue-200">{tickets}</span>
                 </div>
-                <div className="flex items-center gap-1 bg-black/80 px-3 py-1.5 rounded-full shadow-sm border border-yellow-400">
-                  <Ticket className="h-3.5 w-3.5 text-yellow-400" />
-                  <span className="font-medium text-sm text-yellow-200">{eliteTickets}</span>
+                <div className="flex items-center gap-1 bg-black/80 px-3 py-1.5 rounded-full shadow-sm border border-purple-400">
+                  <Ticket className="h-3.5 w-3.5 text-purple-400" />
+                  <span className="font-medium text-sm text-purple-200">{eliteTickets}</span>
                 </div>
                 {/* <div className="flex items-center gap-1 bg-black/80 px-3 py-1.5 rounded-full shadow-sm border border-yellow-400">
                   <Crown className="h-3.5 w-3.5 text-yellow-400" />
@@ -1272,22 +1310,35 @@ const [showInfo, setShowInfo] = useState(false)
                           </div>
                         ) : activeTab === "regular" ? (
                           <div className="border border-gray-200 rounded-lg p-3 relative">
+                            {hasPremiumPass && (
+                              <div className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white text-xs px-2 py-1 rounded-full font-bold">
+                                PASS ACTIVE
+                              </div>
+                            )}
                             <div className="space-y-2">
                               <div className="flex justify-between items-center text-sm">
                                 <span className="text-gray-500">Common</span>
-                                <span className="text-gray-500">60%</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-500">{hasPremiumPass ? "50%" : "60%"}</span>
+                                </div>
                               </div>
                               <div className="flex justify-between items-center text-sm">
                                 <span className="text-blue-500">Rare</span>
-                                <span className="text-blue-500">34%</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-blue-500">{hasPremiumPass ? "34%" : "34%"}</span>
+                                </div>
                               </div>
                               <div className="flex justify-between items-center text-sm">
                                 <span className="text-purple-500">Epic</span>
-                                <span className="text-purple-500">5%</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-purple-500">{hasPremiumPass ? "14%" : "5%"}</span>
+                                </div>
                               </div>
                               <div className="flex justify-between items-center text-sm">
                                 <span className="text-amber-500">Legendary</span>
-                                <span className="text-amber-500">1%</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-amber-500">{hasPremiumPass ? "2%" : "1%"}</span>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -1323,25 +1374,25 @@ const [showInfo, setShowInfo] = useState(false)
                               <div className="flex justify-between items-center text-sm">
                                 <span className="text-gray-500">Common</span>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-gray-500">{hasPremiumPass ? "40%" : "50%"}</span>
+                                  <span className="text-gray-500">{hasPremiumPass ? "50%" : "60%"}</span>
                                 </div>
                               </div>
                               <div className="flex justify-between items-center text-sm">
                                 <span className="text-blue-500">Rare</span>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-blue-500">{hasPremiumPass ? "36%" : "34%"}</span>
+                                  <span className="text-blue-500">{hasPremiumPass ? "34%" : "34%"}</span>
                                 </div>
                               </div>
                               <div className="flex justify-between items-center text-sm">
                                 <span className="text-purple-500">Epic</span>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-purple-500">{hasPremiumPass ? "18%" : "14%"}</span>
+                                  <span className="text-purple-500">{hasPremiumPass ? "14%" : "5%"}</span>
                                 </div>
                               </div>
                               <div className="flex justify-between items-center text-sm">
                                 <span className="text-amber-500">Legendary</span>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-amber-500">{hasPremiumPass ? "6%" : "2%"}</span>
+                                  <span className="text-amber-500">{hasPremiumPass ? "2%" : "1%"}</span>
                                 </div>
                               </div>
                             </div>
@@ -1446,7 +1497,7 @@ const [showInfo, setShowInfo] = useState(false)
                                 className={
                                   activeTab === "legendary"
                                     ? "flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-xl py-4 shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    : "flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl py-4 shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    : "flex-1 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-xl py-4 shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                 }
                               >
                                 {isDrawing ? (
@@ -1472,7 +1523,7 @@ const [showInfo, setShowInfo] = useState(false)
                                     ? "flex-1 bg-gray-300 text-gray-500 rounded-xl py-4 shadow-sm cursor-not-allowed opacity-60"
                                     : activeTab === "legendary"
                                       ? "flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl py-4 shadow-lg hover:shadow-xl transition-all duration-200 border-2 border-blue-400"
-                                      : "flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-xl py-4 shadow-lg hover:shadow-xl transition-all duration-200 border-2 border-green-400"
+                                      : "flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl py-4 shadow-lg hover:shadow-xl transition-all duration-200 border-2 border-orange-400"
                                 }
                               >
                                 {isDrawing ? (
@@ -1499,7 +1550,7 @@ const [showInfo, setShowInfo] = useState(false)
                                   ? "w-full bg-gray-300 text-gray-500 rounded-xl py-4 shadow-sm cursor-not-allowed opacity-60"
                                   : activeTab === "legendary"
                                     ? "w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-xl py-4 shadow-lg hover:shadow-xl transition-all duration-200 border-2 border-purple-400"
-                                    : "w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-xl py-4 shadow-lg hover:shadow-xl transition-all duration-200 border-2 border-green-400"
+                                    : "w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl py-4 shadow-lg hover:shadow-xl transition-all duration-200 border-2 border-red-400"
                               }
                             >
                               {isDrawing ? (

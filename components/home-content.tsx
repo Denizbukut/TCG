@@ -2027,17 +2027,6 @@ const [copied, setCopied] = useState(false)
                       </>
                     )}
                     
-                    {/* Slide indicators */}
-                    <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex space-x-1">
-                      {referralSbcSlides.map((_, index) => (
-                        <div
-                          key={index}
-                          className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                            index === referralSbcIndex ? 'bg-white' : 'bg-white/30'
-                          }`}
-                        />
-                      ))}
-                    </div>
                   </motion.div>
                 </AnimatePresence>
               </div>
@@ -2500,11 +2489,11 @@ const [copied, setCopied] = useState(false)
       <ul className="text-sm text-yellow-200 space-y-2">
         <li className="flex items-center gap-2">
           <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
-          <strong className="text-yellow-100">+5</strong> Classic Tickets
+          <strong className="text-yellow-100">+5</strong> Regular Tickets
         </li>
         <li className="flex items-center gap-2">
           <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
-          <strong className="text-yellow-100">+3</strong> Elite Tickets
+          <strong className="text-yellow-100">+3</strong> Legendary Tickets
         </li>
         <li className="flex items-center gap-2">
           <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>

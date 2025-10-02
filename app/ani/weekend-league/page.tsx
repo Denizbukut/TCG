@@ -363,8 +363,8 @@ export default function WeekendLeaguePage() {
               <ul className="ml-4 mt-1 space-y-1">
                 <li>🥇 <strong>1st Place:</strong> 100 Icon Tickets + Level 5 Ultimate Neymar </li>
                 <li>🥈 <strong>2nd Place:</strong> 50 Icon Tickets</li>
-                <li>🥉 <strong>3rd Place:</strong> 25 Elite Tickets</li>
-                <li>🏅 <strong>4th Place:</strong> 25 Classic Tickets</li>
+                <li>🥉 <strong>3rd Place:</strong> 25 Legendary Tickets</li>
+                <li>🏅 <strong>4th Place:</strong> 25 Regular Tickets</li>
               </ul>
             </li>
           </ul>

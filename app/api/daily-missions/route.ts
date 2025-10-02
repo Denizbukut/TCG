@@ -9,9 +9,9 @@ export async function POST(req: Request) {
 
   const rewardMap: Record<string, string> = {
     open_regular_pack: "+1 Ticket",
-    open_legendary_pack: "+1 Elite Ticket",
-    open_3_legendary_packs: "+2 Elite Tickets",
-    draw_legendary_card: "+1 Elite Ticket",
+    open_legendary_pack: "+1 Legendary Ticket",
+    open_3_legendary_packs: "+2 Legendary Tickets",
+    draw_legendary_card: "+1 Legendary Ticket",
     login_streak: "+50 XP",
   }
 

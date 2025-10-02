@@ -610,7 +610,7 @@ export default function AniPage() {
                   disabled={isAniExchangeLoading || parseFloat(aniBalance) < 100}
                   className="w-full h-12 bg-[#0891b2] hover:bg-[#0e7490] text-white text-base font-semibold rounded-2xl"
                 >
-                  {isAniExchangeLoading ? "Processing..." : "Exchange 100 $ANI for 3 Elite Tickets"}
+                  {isAniExchangeLoading ? "Processing..." : "Exchange 100 $ANI for 3 Legendary Tickets"}
                 </Button>
               )}
             </div>

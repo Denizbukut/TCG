@@ -881,35 +881,35 @@ const handlePurchaseXpPass = async () => {
 
   // Completely redesigned drop rate comparison to make percentages clearly visible
   const renderDropRateComparison = () => {
-    // Standard pack rates
-    const standardRates = [
+    // Regular pack rates (without Premium Pass)
+    const regularRates = [
+      { rarity: "Common", rate: 60, color: "bg-gray-400" },
+      { rarity: "Rare", rate: 34, color: "bg-blue-500" },
+      { rarity: "Epic", rate: 5, color: "bg-purple-500" },
+      { rarity: "Legendary", rate: 1, color: "bg-blue-500" },
+    ]
+
+    // Regular pack rates (with Premium Pass)
+    const improvedRegularRates = [
       { rarity: "Common", rate: 50, color: "bg-gray-400" },
       { rarity: "Rare", rate: 34, color: "bg-blue-500" },
       { rarity: "Epic", rate: 14, color: "bg-purple-500" },
       { rarity: "Legendary", rate: 2, color: "bg-blue-500" },
     ]
 
-    // Premium pack rates
-    const premiumRates = [
-      { rarity: "Common", rate: 40, color: "bg-gray-400" },
-      { rarity: "Rare", rate: 36, color: "bg-blue-500" },
-      { rarity: "Epic", rate: 18, color: "bg-purple-500" },
-      { rarity: "Legendary", rate: 6, color: "bg-blue-500" },
-    ]
-
     return (
       <div className="mt-3 bg-white rounded-lg p-3">
         <div className="grid grid-cols-3 gap-2 mb-3">
           <div className="text-xs font-medium text-center">Rarity</div>
-          <div className="text-xs font-medium text-center">Standard</div>
-          <div className="text-xs font-medium text-center">Premium</div>
+          <div className="text-xs font-medium text-center">Regular</div>
+          <div className="text-xs font-medium text-center">With Pass</div>
         </div>
 
-        {standardRates.map((item, index) => (
+        {regularRates.map((item, index) => (
           <div key={item.rarity} className="grid grid-cols-3 gap-2 items-center mb-2">
             <div className="text-xs font-medium">{item.rarity}</div>
 
-            {/* Standard rate */}
+            {/* Regular rate */}
             <div className="flex items-center justify-center">
               <div
                 className={`w-8 h-8 rounded-full ${item.color} flex items-center justify-center text-white text-xs font-bold`}
@@ -918,13 +918,13 @@ const handlePurchaseXpPass = async () => {
               </div>
             </div>
 
-            {/* Premium rate with arrow */}
+            {/* Improved rate with arrow */}
             <div className="flex items-center justify-center">
               <ArrowRight className="h-3 w-3 text-blue-500 mr-1" />
               <div
                 className={`w-8 h-8 rounded-full ${item.color} flex items-center justify-center text-white text-xs font-bold`}
               >
-                {premiumRates[index].rate}%
+                {improvedRegularRates[index].rate}%
               </div>
             </div>
           </div>
@@ -1467,7 +1467,7 @@ const handlePurchaseXpPass = async () => {
                     <Ticket className="h-4 w-4 text-violet-500" />
                     <span className="font-medium">x3</span>
                   </div>
-                  <span className="text-xs text-gray-500">Classic Tickets</span>
+                  <span className="text-xs text-gray-500">Regular Tickets</span>
                 </div>
                 {hasPremium && (
                   <div className="flex flex-col items-center">
@@ -1531,7 +1531,7 @@ const handlePurchaseXpPass = async () => {
                     <Ticket className="h-5 w-5 text-violet-500" />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-medium">Classic Tickets</h4>
+                    <h4 className="font-medium">Regular Tickets</h4>
                     <p className="text-sm text-violet-600 font-bold">+{claimedRewardsInfo.standardTickets}</p>
                   </div>
                 </div>

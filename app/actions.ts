@@ -181,7 +181,7 @@ function getScoreForRarity(rarity: CardRarity): number {
   }
 }
 
-export async function drawCards(username: string, packType: string, count = 1) {
+export async function drawCards(username: string, packType: string, count = 1, hasPremiumPass = false) {
   try {
     const supabase = createSupabaseServer()
 
@@ -360,7 +360,7 @@ export async function drawCards(username: string, packType: string, count = 1) {
         await incrementMission(username, "open_regular_pack")
         
         // Verwende Rarity-basiertes System statt Rating
-        rarity = determineRarity("regular")
+        rarity = determineRarity("regular", hasPremiumPass)
         
         // Filter cards nach Rarity
         cardPool = availableCards.filter(card => card.rarity === rarity);
@@ -844,7 +844,7 @@ export async function getUserCards(username: string) {
 }
 
 // Helper function to determine card rarity based on pack type
-function determineRarity(packType: string): CardRarity {
+function determineRarity(packType: string, hasPremiumPass = false): CardRarity {
   const random = Math.random() * 100 // Random number between 0-100
 
   if (packType === "legendary") {
@@ -856,11 +856,19 @@ function determineRarity(packType: string): CardRarity {
     return "common" // Remaining 15%
   } else {
     // Regular pack with updated odds:
-    // 1% legendary, 5% epic, 34% elite, 60% common
-    if (random < 1) return "legendary"
-    if (random < 6) return "epic" // 1 + 5 = 6
-    if (random < 40) return "rare" // 6 + 34 = 40
-    return "common" // Remaining 60%
+    if (hasPremiumPass) {
+      // With Premium Pass: 2% legendary, 14% epic, 34% rare, 50% common
+      if (random < 2) return "legendary"
+      if (random < 16) return "epic" // 2 + 14 = 16
+      if (random < 50) return "rare" // 16 + 34 = 50
+      return "common" // Remaining 50%
+    } else {
+      // Without Premium Pass: 1% legendary, 5% epic, 34% rare, 60% common
+      if (random < 1) return "legendary"
+      if (random < 6) return "epic" // 1 + 5 = 6
+      if (random < 40) return "rare" // 6 + 34 = 40
+      return "common" // Remaining 60%
+    }
   }
 }
 
