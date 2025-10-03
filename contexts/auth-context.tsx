@@ -502,7 +502,7 @@ if (!isHumanVerified) {
         const supabase = getSupabaseBrowserClient()
         if (!supabase) return
 
-        const { error } = await supabase.from("users").update({ avatar_id: avatarId }).eq("username", user.username)
+        const { error } = await supabase.from("users").update({ avatar_id: avatarId }).eq("wallet_address", user.wallet_address)
 
         if (error) {
           console.error("Error updating avatar in database:", error)

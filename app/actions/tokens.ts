@@ -29,7 +29,8 @@ export async function claimDailyToken(walletAddress: string) {
     if (userError) {
       // Create user if not found
       const { error: createError } = await supabase.from("users").insert({
-        username: username,
+        wallet_address: walletAddress,
+        username: walletAddress, // Use wallet address as username for new users
         tokens: 1,
         token_last_claimed: new Date().toISOString(),
       })
@@ -70,7 +71,7 @@ export async function claimDailyToken(walletAddress: string) {
         tokens: newTokenCount,
         token_last_claimed: new Date().toISOString(),
       })
-      .eq("username", userData.username)
+      .eq("wallet_address", walletAddress)
 
     if (updateError) {
       return { success: false, error: "Failed to update tokens" }

@@ -32,11 +32,11 @@ interface SellCardDialogProps {
   isOpen: boolean
   onClose: () => void
   card: UserCard
-  username: string
+  walletAddress: string
   onSuccess?: () => void
 }
 
-export default function SellCardDialog({ isOpen, onClose, card, username, onSuccess }: SellCardDialogProps) {
+export default function SellCardDialog({ isOpen, onClose, card, walletAddress, onSuccess }: SellCardDialogProps) {
   const [price, setPrice] = useState<string>("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -74,20 +74,20 @@ export default function SellCardDialog({ isOpen, onClose, card, username, onSucc
         throw new Error("Could not connect to database")
       }
 
-      if (!username) return
+      if (!walletAddress) return
 
       // Aktive Listings zählen
       const { count: activeCount } = await supabase
         .from("market_listings")
         .select("*", { count: "exact", head: true })
-        .eq("seller_id", username)
+        .eq("seller_wallet_address", walletAddress)
         .eq("status", "active")
 
       // Verkauft-Zähler abfragen
       const { data: userData, error } = await supabase
         .from("users")
         .select("cards_sold_since_last_purchase")
-        .eq("username", username)
+        .eq("wallet_address", walletAddress)
         .single<{ cards_sold_since_last_purchase: number }>()
 
       if (!error && userData) {
@@ -99,7 +99,7 @@ export default function SellCardDialog({ isOpen, onClose, card, username, onSucc
     if (isOpen) {
       fetchSellLimits()
     }
-  }, [isOpen, username])
+  }, [isOpen, walletAddress])
 
   useEffect(() => {
     const fetchPrice = async () => {
@@ -244,14 +244,14 @@ export default function SellCardDialog({ isOpen, onClose, card, username, onSucc
 
   // Karte zum Verkauf anbieten
   const handleSell = async () => {
-    if (!isValidPrice || !username || !card) return
+    if (!isValidPrice || !walletAddress || !card) return
 
     setIsSubmitting(true)
     setError(null)
 
     try {
       console.log("Selling card:", {
-        username,
+        walletAddress,
         cardId: card.id,
         cardUuid: card.card_id,
         price: Number.parseFloat(parsedPrice.toFixed(2)),
@@ -260,7 +260,7 @@ export default function SellCardDialog({ isOpen, onClose, card, username, onSucc
 
       // Verwende die ID aus der user_cards-Tabelle
       const result = await createListing(
-        username,
+        walletAddress,
         card.id,
         card.card_id,
         Number.parseFloat(parsedPrice.toFixed(2)),

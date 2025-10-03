@@ -2,7 +2,6 @@
 
 import { createClient } from "@supabase/supabase-js"
 import { revalidatePath } from "next/cache"
-import { cache } from "react"
 
 // Create a server-side Supabase client
 function createSupabaseServer() {
@@ -13,8 +12,8 @@ function createSupabaseServer() {
   })
 }
 
-// Cache the daily deal to prevent excessive database queries
-export const getDailyDeal = cache(async (username: string) => {
+// Get the daily deal (cache removed to allow real-time updates)
+export const getDailyDeal = async (username: string) => {
   try {
     const supabase = createSupabaseServer()
     const today = new Date().toISOString().split("T")[0]
@@ -50,7 +49,7 @@ export const getDailyDeal = cache(async (username: string) => {
     const { data: interaction, error: interactionError } = await supabase
       .from("deal_interactions")
       .select("*")
-      .eq("user_id", username)
+      .eq("wallet_address", username)
       .eq("deal_id", deal.id)
       .single()
 
@@ -58,7 +57,7 @@ export const getDailyDeal = cache(async (username: string) => {
     if (interactionError && interactionError.code === "PGRST116") {
       // PGRST116 means no rows returned
       await supabase.from("deal_interactions").insert({
-        user_id: username,
+        wallet_address: username,
         deal_id: deal.id,
         seen: false,
         dismissed: false,
@@ -78,6 +77,34 @@ export const getDailyDeal = cache(async (username: string) => {
       console.error("Error fetching deal interaction:", interactionError)
     }
 
+    // Check if deal should be shown based on interaction status
+    console.log("=== getDailyDeal DEBUG ===")
+    console.log("Username:", username)
+    console.log("Deal ID:", deal.id)
+    console.log("Interaction:", interaction)
+    
+    if (interaction) {
+      console.log("Interaction found:", {
+        seen: interaction.seen,
+        dismissed: interaction.dismissed,
+        purchased: interaction.purchased
+      })
+      
+      // If deal has been dismissed or purchased, don't show it
+      if (interaction.dismissed || interaction.purchased) {
+        console.log("Deal should NOT be shown - dismissed or purchased")
+        return {
+          success: true,
+          deal: null, // Don't show the deal
+          interaction: interaction,
+        }
+      } else {
+        console.log("Deal should be shown - not dismissed or purchased")
+      }
+    } else {
+      console.log("No interaction found - deal should be shown")
+    }
+
     return {
       success: true,
       deal: formattedDeal,
@@ -91,26 +118,69 @@ export const getDailyDeal = cache(async (username: string) => {
     console.error("Error in getDailyDeal:", error)
     return { success: false, error: "Failed to fetch daily deal" }
   }
-})
+}
 
 // Mark deal as seen
 export async function markDealAsSeen(username: string, dealId: number) {
   try {
+    console.log("=== markDealAsSeen START ===")
+    console.log("Parameters:", { username, dealId })
+    
     const supabase = createSupabaseServer()
 
-    const { error } = await supabase
+    // First, try to get existing record
+    const { data: existingData, error: fetchError } = await supabase
       .from("deal_interactions")
-      .update({ seen: true })
-      .eq("user_id", username)
+      .select("*")
+      .eq("wallet_address", username)
       .eq("deal_id", dealId)
+      .single()
 
-    if (error) {
-      console.error("Error marking deal as seen:", error)
+    console.log("Existing record:", { existingData, fetchError })
+
+    if (fetchError && fetchError.code !== "PGRST116") {
+      console.error("Error fetching existing record:", fetchError)
+      return { success: false, error: "Failed to fetch existing record" }
+    }
+
+    let result;
+    if (existingData) {
+      // Update existing record
+      result = await supabase
+        .from("deal_interactions")
+        .update({
+          seen: true,
+          dismissed: false,
+          purchased: false,
+        })
+        .eq("wallet_address", username)
+        .eq("deal_id", dealId)
+        .select()
+    } else {
+      // Create new record
+      result = await supabase
+        .from("deal_interactions")
+        .insert({
+          wallet_address: username,
+          deal_id: dealId,
+          seen: true,
+          dismissed: false,
+          purchased: false,
+        })
+        .select()
+    }
+
+    console.log("Database operation result:", result)
+
+    if (result.error) {
+      console.error("Error in database operation:", result.error)
       return { success: false, error: "Failed to update deal status" }
     }
 
+    console.log("=== markDealAsSeen SUCCESS ===")
     return { success: true }
   } catch (error) {
+    console.error("=== markDealAsSeen ERROR ===")
     console.error("Error in markDealAsSeen:", error)
     return { success: false, error: "An unexpected error occurred" }
   }
@@ -119,21 +189,64 @@ export async function markDealAsSeen(username: string, dealId: number) {
 // Mark deal as dismissed
 export async function markDealAsDismissed(username: string, dealId: number) {
   try {
+    console.log("=== markDealAsDismissed START ===")
+    console.log("Parameters:", { username, dealId })
+    
     const supabase = createSupabaseServer()
 
-    const { error } = await supabase
+    // First, try to get existing record
+    const { data: existingData, error: fetchError } = await supabase
       .from("deal_interactions")
-      .update({ dismissed: true })
-      .eq("user_id", username)
+      .select("*")
+      .eq("wallet_address", username)
       .eq("deal_id", dealId)
+      .single()
 
-    if (error) {
-      console.error("Error marking deal as dismissed:", error)
+    console.log("Existing record for dismiss:", { existingData, fetchError })
+
+    if (fetchError && fetchError.code !== "PGRST116") {
+      console.error("Error fetching existing record for dismiss:", fetchError)
+      return { success: false, error: "Failed to fetch existing record" }
+    }
+
+    let result;
+    if (existingData) {
+      // Update existing record
+      result = await supabase
+        .from("deal_interactions")
+        .update({
+          seen: false,
+          dismissed: true,
+          purchased: false,
+        })
+        .eq("wallet_address", username)
+        .eq("deal_id", dealId)
+        .select()
+    } else {
+      // Create new record
+      result = await supabase
+        .from("deal_interactions")
+        .insert({
+          wallet_address: username,
+          deal_id: dealId,
+          seen: false,
+          dismissed: true,
+          purchased: false,
+        })
+        .select()
+    }
+
+    console.log("Database operation result for dismiss:", result)
+
+    if (result.error) {
+      console.error("Error in database operation for dismiss:", result.error)
       return { success: false, error: "Failed to update deal status" }
     }
 
+    console.log("=== markDealAsDismissed SUCCESS ===")
     return { success: true }
   } catch (error) {
+    console.error("=== markDealAsDismissed ERROR ===")
     console.error("Error in markDealAsDismissed:", error)
     return { success: false, error: "An unexpected error occurred" }
   }
@@ -146,7 +259,7 @@ export async function purchaseDeal(walletAddress: string, dealId: number) {
     await supabase
         .from("user_cards")
         .delete()
-        .eq("user_id", username)
+        .eq("walletaddress", walletAddress)
         .eq("quantity", 0)
     // Get the deal details
     const { data: deal, error: dealError } = await supabase.from("daily_deals").select("*").eq("id", dealId).single()
@@ -167,7 +280,7 @@ export async function purchaseDeal(walletAddress: string, dealId: number) {
     // Start a transaction to ensure all operations succeed or fail together
     // 1. Record the purchase
     const { error: purchaseError } = await supabase.from("deal_purchases").insert({
-      user_id: username,
+      wallet_address: walletAddress,
       deal_id: dealId,
       purchased_at: new Date().toISOString(),
     })
@@ -179,7 +292,7 @@ export async function purchaseDeal(walletAddress: string, dealId: number) {
 
     // 2. Add the card to user's collection (using user_card_instances)
     const { error: insertCardError } = await supabase.from("user_card_instances").insert({
-      user_id: username,
+      wallet_address: walletAddress,
       card_id: deal.card_id,
       level: deal.card_level,
       favorite: false,
@@ -191,11 +304,27 @@ export async function purchaseDeal(walletAddress: string, dealId: number) {
       return { success: false, error: "Failed to add card to your collection" }
     }
 
-    // 3. Add tickets to user's account
+    // 3. Update deal_interactions to mark as purchased
+    const { error: interactionError } = await supabase
+      .from("deal_interactions")
+      .upsert({
+        wallet_address: walletAddress,
+        deal_id: dealId,
+        seen: true,
+        dismissed: false,
+        purchased: true,
+      })
+
+    if (interactionError) {
+      console.error("Error updating deal interaction:", interactionError)
+      // Don't fail the purchase if this fails, just log it
+    }
+
+    // 4. Add tickets to user's account
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("tickets, elite_tickets")
-      .eq("wallet_address", walletAddress)
+      .eq("walletaddress", walletAddress)
       .single()
 
     if (userError) {
@@ -212,7 +341,7 @@ export async function purchaseDeal(walletAddress: string, dealId: number) {
         tickets: newTickets,
         elite_tickets: newEliteTickets,
       })
-      .eq("wallet_address", walletAddress)
+      .eq("walletaddress", walletAddress)
 
     if (updateError) {
       console.error("Error updating user tickets:", updateError)
@@ -233,7 +362,7 @@ export async function purchaseDeal(walletAddress: string, dealId: number) {
   }
 }
 
-export const getSpecialDeal = cache(async (walletAddress: string) => {
+export const getSpecialDeal = async (walletAddress: string) => {
   try {
     const supabase = createSupabaseServer();
     const today = new Date().toISOString().split("T")[0];
@@ -250,4 +379,4 @@ export const getSpecialDeal = cache(async (walletAddress: string) => {
   } catch (error) {
     return { success: false };
   }
-});
+};

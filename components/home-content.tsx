@@ -285,7 +285,7 @@ export default function Home() {
     const { data, error } = await supabase
       .from("users")
       .select("xp_color")
-      .eq("username", user.username)
+      .eq("wallet_address", user.wallet_address)
       .single()
 
     if (!error && data?.xp_color) {
@@ -538,7 +538,7 @@ const [copied, setCopied] = useState(false)
     if (user?.username) {
       const loadReferrals = async () => {
         try {
-          const referrals = await getReferredUsers(user.username)
+          const referrals = await getReferredUsers(user.wallet_address)
           setReferredUsers(referrals)
         } catch (error) {
           console.error("Error loading referrals:", error)
@@ -557,7 +557,7 @@ const [copied, setCopied] = useState(false)
         try {
           const [challengesData, progressData] = await Promise.all([
             getSBCChallenges(),
-            getUserSBCProgress(user.username)
+            getUserSBCProgress(user.wallet_address)
           ])
           setSbcChallenges(challengesData)
           setSbcUserProgress(progressData)
@@ -613,7 +613,7 @@ const [copied, setCopied] = useState(false)
         if (!supabase) return
 
         try {
-          const { data, error } = await supabase.from("users").select("world_id").eq("username", user.username).single()
+          const { data, error } = await supabase.from("users").select("world_id").eq("wallet_address", user.wallet_address).single()
 
           if (error) {
             console.error("Error fetching wallet address:", error)
@@ -655,7 +655,7 @@ const [copied, setCopied] = useState(false)
 
     setDailyDealLoading(true)
     try {
-      const result = await getDailyDeal(user.username)
+      const result = await getDailyDeal(user.wallet_address)
 
       if (result.success && result.deal) {
         setDailyDeal(result.deal)
@@ -779,7 +779,7 @@ const [copied, setCopied] = useState(false)
           const { data: premiumData, error: premiumError } = await supabase
             .from("premium_passes")
             .select("*")
-            .eq("user_id", user.username)
+            .eq("wallet_address", user.wallet_address)
             .eq("active", true)
             .single()
 
@@ -870,7 +870,7 @@ const [copied, setCopied] = useState(false)
         const { data: claimedRewardsData, error: claimedRewardsError } = await supabase
           .from("claimed_rewards")
           .select("*")
-          .eq("user_id", user.username)
+          .eq("wallet_address", user.wallet_address)
 
         if (claimedRewardsError) {
           console.error("Error fetching claimed rewards:", claimedRewardsError)
@@ -938,7 +938,7 @@ const [copied, setCopied] = useState(false)
 
     setClaimLoading(true)
     try {
-      const result = await claimDailyBonus(user.username)
+      const result = await claimDailyBonus(user.wallet_address)
 
       if (result.success) {
         // Show claim animation
@@ -1091,7 +1091,7 @@ const [copied, setCopied] = useState(false)
     supabase
       .from("xp_passes")
       .select("*")
-      .eq("user_id", user.username)
+      .eq("wallet_address", user.wallet_address)
       .eq("active", true)
       .single()
       .then(async ({ data }: { data: any }) => {
@@ -1109,7 +1109,7 @@ const [copied, setCopied] = useState(false)
     supabase
       .from("premium_passes")
       .select("*")
-      .eq("user_id", user.username)
+      .eq("wallet_address", user.wallet_address)
       .eq("active", true)
       .single()
       .then(async ({ data }: { data: any }) => {
@@ -1161,7 +1161,7 @@ const [copied, setCopied] = useState(false)
       (async () => {
         setSpecialDealLoading(true);
         try {
-          const result = await getSpecialDeal(user.username);
+          const result = await getSpecialDeal(user.wallet_address);
           if (result.success && result.deal) {
             setSpecialDeal(result.deal);
             setSpecialDealInteraction(result.interaction ?? null);

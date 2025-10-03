@@ -59,21 +59,24 @@ export async function claimDailyBonus(walletAddress: string) {
     // Get current user data including clan info
     const { data: userData, error: userError } = await supabase
       .from("users")
-      .select("walletAddress, tickets, ticket_last_claimed, clan_id")
+      .select("wallet_address, tickets, ticket_last_claimed, clan_id")
       .eq("wallet_address", walletAddress)
       .single()
 
     if (userError) {
+      console.error("Error checking if user exists:", userError)
+      
       // Create user if not found
       const { error: createError } = await supabase.from("users").insert({
-        walletAddress: walletAddress,
+        wallet_address: walletAddress,
+        username: walletAddress, // Use wallet address as username for new users
         tickets: 10,
-        legendary_tickets: 2,
+        elite_tickets: 2,
         ticket_last_claimed: new Date().toISOString(),
       })
 
       if (createError) {
-        console.error("Error creating user:", createError)
+        console.error("Error creating new user:", createError)
         return { success: false, error: "Failed to create user" }
       }
 
@@ -124,7 +127,7 @@ export async function claimDailyBonus(walletAddress: string) {
         tickets: newTicketCount,
         ticket_last_claimed: new Date().toISOString(),
       })
-      .eq("walletAddress", userData.walletAddress)
+      .eq("wallet_address", walletAddress)
 
     if (updateError) {
       return { success: false, error: "Failed to update tickets" }
@@ -135,7 +138,7 @@ export async function claimDailyBonus(walletAddress: string) {
       success: true,
       newTicketCount: newTicketCount || 0,
       nextClaimTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      clanBonus: ticketsToAward > 3,
+      clanBonus: ticketsToAward > 1,
     }
   } catch (error) {
     console.error("Error claiming daily bonus:", error)
@@ -281,6 +284,16 @@ export async function drawCards(walletAddress: string, packType: string, count =
     // Tickets abziehen
     const newTicketCount = currentTickets - count
 
+    console.log("Ticket deduction debug:", {
+      walletAddress,
+      packType,
+      isLegendary,
+      currentTickets,
+      count,
+      newTicketCount,
+      ticketField
+    })
+
     // Update-Daten vorbereiten
     const updateData: Record<string, any> = {}
     if (isLegendary) {
@@ -289,6 +302,8 @@ export async function drawCards(walletAddress: string, packType: string, count =
       updateData.tickets = newTicketCount
     }
 
+    console.log("Update data:", updateData)
+
     // Update user tickets in database
     const { error: updateError } = await supabase.from("users").update(updateData).eq("wallet_address", walletAddress)
 
@@ -296,6 +311,8 @@ export async function drawCards(walletAddress: string, packType: string, count =
       console.error("Error updating tickets:", updateError)
       return { success: false, error: "Failed to update tickets" }
     }
+
+    console.log("Tickets successfully updated in database")
 
     // Check if user has premium pass
     const hasPremium = userData.has_premium || false
@@ -740,7 +757,7 @@ if (!clanError && clanData) {
       console.error("Error fetching updated user data:", updatedUserError)
     }
 
-    return {
+    const returnData = {
       success: true,
       drawnCards,
       newTicketCount: !isLegendary ? newTicketCount : updatedUser?.tickets || userData.tickets,
@@ -759,6 +776,15 @@ if (!clanError && clanData) {
         godAvatar: hasGodAvatar,
       },
     }
+
+    console.log("Returning ticket data:", {
+      isLegendary,
+      newTicketCount: returnData.newTicketCount,
+      newEliteTicketCount: returnData.newEliteTicketCount,
+      originalNewTicketCount: newTicketCount
+    })
+
+    return returnData
   } catch (error) {
     console.error("Error drawing cards:", error)
     return { success: false, error: "Failed to draw cards" }

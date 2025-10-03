@@ -15,12 +15,12 @@ function createSupabaseServer() {
 // Typ-Definitionen
 type MarketListing = {
   id: string
-  seller_id: string // This will now be wallet_address
+  seller_wallet_address: string
   card_id: string
   price: number
   created_at: string
   status: "active" | "sold" | "cancelled"
-  buyer_id?: string // This will now be wallet_address
+  buyer_wallet_address?: string
   sold_at?: string
   user_card_id: number | string
   card_level: number
@@ -257,7 +257,7 @@ export async function getMarketListings(page = 1, pageSize = DEFAULT_PAGE_SIZE, 
     // Efficiently fetch related data in batches
     // 1. Extract unique IDs for related data
     const cardIds = [...new Set(listings.map((listing: MarketListing) => listing.card_id))]
-    const sellerIds = [...new Set(listings.map((listing: MarketListing) => listing.seller_id))]
+    const sellerIds = [...new Set(listings.map((listing: MarketListing) => listing.seller_wallet_address))]
 
     // 2. Fetch card details in a single query
     const { data: cards, error: cardsError } = await supabase
@@ -299,12 +299,12 @@ export async function getMarketListings(page = 1, pageSize = DEFAULT_PAGE_SIZE, 
     // 6. Combine the data
     const listingsWithDetails = filteredListings.map((listing: MarketListing) => {
       const card = cardMap.get(listing.card_id)
-      const seller = userMap.get(listing.seller_id)
+      const seller = userMap.get(listing.seller_wallet_address)
 
       return {
         ...listing,
         card,
-        seller_username: seller?.username || listing.seller_id,
+        seller_username: seller?.username || listing.seller_wallet_address,
         seller_world_id: listing.seller_world_id || seller?.world_id,
       }
     })
@@ -416,7 +416,7 @@ export async function getUserListings(walletAddress: string, page = 1, pageSize 
       return {
         ...listing,
         card,
-        seller_username: username,
+        seller_username: walletAddress,
       }
     })
 
@@ -469,9 +469,9 @@ export async function checkUserListingLimit(walletAddress: string) {
   }
 }
 
-// Ändere die createListing-Funktion, um mit username als ID zu arbeiten
+// Ändere die createListing-Funktion, um mit wallet_address zu arbeiten
 export async function createListing(
-  username: string,
+  walletAddress: string,
   userCardId: number | string,
   cardId: string,
   price: number,
@@ -480,7 +480,7 @@ export async function createListing(
   try {
     // Detailliertes Logging für Debugging
     console.log("=== CREATE LISTING START ===")
-    console.log("Parameters:", { username, userCardId, cardId, price, cardLevel })
+    console.log("Parameters:", { walletAddress, userCardId, cardId, price, cardLevel })
 
     const supabase = createSupabaseServer()
 
@@ -488,7 +488,7 @@ export async function createListing(
     const { count, error: countError } = await supabase
       .from("market_listings")
       .select("*", { count: "exact", head: true })
-      .eq("seller_id", walletAddress)
+      .eq("seller_wallet_address", walletAddress)
       .eq("status", "active")
 
     if (countError) {
@@ -521,8 +521,8 @@ export async function createListing(
       }
     }
 
-    // Hole die Benutzerinformationen (username ist bereits die ID)
-    console.log("Fetching user data for:", username)
+    // Hole die Benutzerinformationen (walletAddress ist bereits die ID)
+    console.log("Fetching user data for:", walletAddress)
     const { data: initialUserData, error: userError } = await supabase
       .from("users")
       .select("world_id")
@@ -535,25 +535,21 @@ export async function createListing(
     }
 
     if (!initialUserData) {
-      console.error("User data is null for username:", username)
+      console.error("User data is null for walletAddress:", walletAddress)
       return { success: false, error: "User not found in database" }
     }
 
     console.log("User data:", initialUserData)
-    const worldId = initialUserData.world_id
-    console.log("World ID for listing:", worldId)
-    
-    if (!worldId) {
-      return { success: false, error: "User has no World ID. Please connect your wallet first." }
-    } 
+    const worldId = initialUserData.world_id || null
+    console.log("World ID for listing:", worldId) 
 
     // Überprüfe, ob der Benutzer die Karte besitzt
-    console.log("Checking if user owns card:", { userCardId, username })
+    console.log("Checking if user owns card:", { userCardId, walletAddress })
     const { data: userCard, error: userCardError } = await supabase
       .from("user_card_instances")
       .select("id, level")
       .eq("id", userCardId)
-      .eq("user_id", walletAddress)
+      .eq("wallet_address", walletAddress)
       .maybeSingle()
 
     if (userCardError) {
@@ -562,7 +558,7 @@ export async function createListing(
     }
 
     if (!userCard) {
-      console.error("User card not found:", { userCardId, username })
+      console.error("User card not found:", { userCardId, walletAddress })
       return { success: false, error: "Card not found in your collection" }
     }
 
@@ -571,12 +567,12 @@ export async function createListing(
     // user_card_instances hat keine quantity Spalte - jede Instanz ist eine Karte
 
     // Überprüfe, ob der Benutzer bereits eine Karte dieser Art (unabhängig vom Level) zum Verkauf anbietet
-    console.log("Checking if user has already listed this card type:", { cardId, username })
+    console.log("Checking if user has already listed this card type:", { cardId, walletAddress })
     const { data: existingListings, error: existingListingsError } = await supabase
       .from("market_listings")
       .select("id, card_level")
       .eq("card_id", cardId)
-      .eq("seller_id", walletAddress)
+      .eq("seller_wallet_address", walletAddress)
       .eq("status", "active")
 
     if (existingListingsError) {
@@ -669,7 +665,7 @@ export async function createListing(
     const currentScore = scoreUserData.score || 0
     const newScore = Math.max(0, currentScore - scoreForCard) // Ensure score doesn't go below 0
 
-    console.log(`Deducting score for listing: ${username}: ${currentScore} -> ${newScore} (-${scoreForCard} points)`)
+    console.log(`Deducting score for listing: ${walletAddress}: ${currentScore} -> ${newScore} (-${scoreForCard} points)`)
 
     // Update user's score
     const { error: updateScoreError } = await supabase
@@ -684,7 +680,7 @@ export async function createListing(
 
     // Erstelle das Listing
     console.log("Creating listing with data:", {
-      seller_id: username, // Verwende username als seller_id
+      seller_wallet_address: walletAddress, // Verwende wallet_address als seller_wallet_address
       seller_world_id: worldId,
       card_id: cardId,
       price,
@@ -696,7 +692,7 @@ export async function createListing(
     const { data: listing, error: listingError } = await supabase
       .from("market_listings")
       .insert({
-        seller_id: walletAddress, // Verwende wallet_address als seller_id
+        seller_wallet_address: walletAddress, // Verwende wallet_address als seller_wallet_address
         seller_world_id: worldId,
         card_id: cardId,
         price,
@@ -717,12 +713,12 @@ export async function createListing(
     console.log("Seller world ID in created listing:", listing.seller_world_id)
 
     // Lösche die Karteninstanz (da user_card_instances keine quantity hat)
-    console.log("Deleting user card instance:", { userCardId, username })
+    console.log("Deleting user card instance:", { userCardId, walletAddress })
     const { error: updateError } = await supabase
       .from("user_card_instances")
       .delete()
       .eq("id", userCardId)
-      .eq("user_id", walletAddress)
+      .eq("wallet_address", walletAddress)
 
     if (updateError) {
       console.error("Error updating user card quantity:", updateError)
@@ -873,7 +869,7 @@ await supabase
     const { error: updateError } = await supabase
       .from("user_card_instances")
       .update({ 
-        user_id: username,
+        wallet_address: walletAddress,
         obtained_at: new Date().toISOString().split("T")[0]
       })
       .eq("id", sellerCard.id)
@@ -895,7 +891,7 @@ await supabase
     // 10. Trade speichern
     await supabase.from("trades").insert({
       seller_id: listing.seller_id,
-      buyer_id: username,
+      buyer_wallet_address: walletAddress,
       user_card_id: listing.user_card_id,
       card_id: listing.card_id,
       price: listing.price,
@@ -964,7 +960,7 @@ export async function cancelListing(walletAddress: string, listingId: string) {
         const currentScore = sellerData.score || 0
         const newScore = currentScore + scoreForCard
 
-        console.log(`Restoring score on cancellation: ${username}: ${currentScore} -> ${newScore}`)
+        console.log(`Restoring score on cancellation: ${walletAddress}: ${currentScore} -> ${newScore}`)
 
         // Update seller's score
         const { error: updateScoreError } = await supabase
@@ -981,7 +977,7 @@ export async function cancelListing(walletAddress: string, listingId: string) {
 
     // Gib die Karte zurück (neue Instanz hinzufügen)
     const { error: insertCardError } = await supabase.from("user_card_instances").insert({
-      user_id: username,
+      wallet_address: walletAddress,
       card_id: listing.card_id,
       level: listing.card_level || 1,
       favorite: false,
@@ -1122,7 +1118,7 @@ export async function getTransactionHistory(walletAddress: string, page = 1, pag
     const { count, error: countError } = await supabase
       .from("market_listings")
       .select("*", { count: "exact", head: true })
-      .or(`seller_id.eq.${username},buyer_id.eq.${username}`)
+      .or(`seller_wallet_address.eq.${walletAddress},buyer_wallet_address.eq.${walletAddress}`)
       .eq("status", "sold")
 
     if (countError) {
@@ -1134,7 +1130,7 @@ export async function getTransactionHistory(walletAddress: string, page = 1, pag
     const { data: listings, error } = await supabase
       .from("market_listings")
       .select("*")
-      .or(`seller_id.eq.${username},buyer_id.eq.${username}`)
+      .or(`seller_wallet_address.eq.${walletAddress},buyer_wallet_address.eq.${walletAddress}`)
       .eq("status", "sold")
       .order("sold_at", { ascending: false })
       .range(offset, offset + pageSize - 1)
@@ -1179,14 +1175,14 @@ export async function getTransactionHistory(walletAddress: string, page = 1, pag
     // Combine the data
     const transactionsWithDetails = listings.map((listing: MarketListing) => {
       const card = cardMap.get(listing.card_id)
-      const isSeller = listing.seller_id === username
+      const isSeller = listing.seller_wallet_address === walletAddress
 
       return {
         ...listing,
         card,
         transaction_type: isSeller ? "sold" : "purchased",
-        other_party: isSeller ? listing.buyer_id : listing.seller_id,
-        seller_username: listing.seller_id, // Add seller_username to match the Transaction type
+        other_party: isSeller ? listing.buyer_wallet_address : listing.seller_wallet_address,
+        seller_username: listing.seller_wallet_address, // Add seller_username to match the Transaction type
       }
     })
 

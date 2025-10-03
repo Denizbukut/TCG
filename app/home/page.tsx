@@ -92,7 +92,7 @@ export default function HomePage() {
     setClaimLoading(true)
     try {
       // Call the server action to claim the bonus
-      const result = await claimDailyBonus(user.username)
+      const result = await claimDailyBonus(user.wallet_address)
 
       if (result.success) {
         // Update the user's tickets in the auth context

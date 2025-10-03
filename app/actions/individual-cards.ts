@@ -261,6 +261,15 @@ export async function drawCardsIndividual(walletAddress: string, packType: strin
       : userData.tickets - count
     const newScore = userData.score + totalScoreToAdd
 
+    console.log("=== TICKET DEDUCTION DEBUG ===")
+    console.log("Before update:", {
+      isLegendary,
+      originalTickets: userData.tickets,
+      originalEliteTickets: userData.elite_tickets,
+      count,
+      newTicketCount
+    })
+
     const { error: updateError } = await supabase
       .from("users")
       .update({
@@ -274,16 +283,27 @@ export async function drawCardsIndividual(walletAddress: string, packType: strin
       return { success: false, error: "Failed to update user data" }
     }
 
+    console.log("Tickets successfully updated in database")
+
     revalidatePath("/leaderboard")
 
     console.log("=== drawCardsIndividual SUCCESS ===")
     console.log("Returning:", { success: true, cards: drawnCards, scoreAdded: totalScoreToAdd })
     
+    console.log("=== drawCardsIndividual RETURNING ===")
+    console.log("Ticket data:", {
+      isLegendary,
+      newTicketCount,
+      originalTickets: userData.tickets,
+      originalEliteTickets: userData.elite_tickets
+    })
+
     return {
       success: true,
       cards: drawnCards,
       addedInstances,
-      newTicketCount,
+      newTicketCount: isLegendary ? userData.tickets : newTicketCount,
+      newEliteTicketCount: isLegendary ? newTicketCount : userData.elite_tickets,
       newScore,
       scoreAdded: totalScoreToAdd
     }

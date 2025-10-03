@@ -125,10 +125,20 @@ export default function DealOfTheDayDialog({
 
   const handleDismiss = async () => {
     try {
-      await markDealAsDismissed(username, deal.id)
+      console.log("=== FRONTEND: Dismissing deal ===")
+      console.log("Username:", username)
+      console.log("Deal ID:", deal.id)
+      
+      const result = await markDealAsDismissed(username, deal.id)
+      console.log("=== FRONTEND: markDealAsDismissed result ===")
+      console.log(result)
+      
       onClose()
     } catch (error) {
-      console.error("Error dismissing deal:", error)
+      console.error("=== FRONTEND: Error dismissing deal ===")
+      console.error("Error details:", error)
+      console.error("Error message:", (error as Error)?.message)
+      console.error("Error stack:", (error as Error)?.stack)
     }
   }
   const erc20TransferAbi = [{
@@ -211,30 +221,26 @@ export default function DealOfTheDayDialog({
   
   // Mark deal as seen when dialog opens
   useEffect(() => {
-    let isMounted = true
-    let shouldMark = false
-    console.log(deal.card_image_url + "Aasdsad")
-    if (isOpen && deal) {
-      setHasOpened(true)
-      shouldMark = !hasMarkedAsSeen.current
-    }
-
-    if (shouldMark) {
-      setShouldMarkAsSeen(true)
-    }
-
-    return () => {
-      isMounted = false
-    }
-  }, [isOpen, deal])
-
-  useEffect(() => {
-    if (shouldMarkAsSeen) {
-      markDealAsSeen(username, deal.id).catch(console.error)
+    if (isOpen && deal && !hasMarkedAsSeen.current) {
+      console.log("=== FRONTEND: Marking deal as seen ===")
+      console.log("Username:", username)
+      console.log("Deal ID:", deal.id)
+      
+      markDealAsSeen(username, deal.id)
+        .then(result => {
+          console.log("=== FRONTEND: markDealAsSeen result ===")
+          console.log(result)
+        })
+        .catch(error => {
+          console.error("=== FRONTEND: markDealAsSeen error ===")
+          console.error("Error details:", error)
+          console.error("Error message:", (error as Error)?.message)
+          console.error("Error stack:", (error as Error)?.stack)
+        })
+      
       hasMarkedAsSeen.current = true
-      setShouldMarkAsSeen(false)
     }
-  }, [shouldMarkAsSeen, username, deal?.id])
+  }, [isOpen, deal, username])
 
   useEffect(() => {
     // Reset the ref when dialog closes

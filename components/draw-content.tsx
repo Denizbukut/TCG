@@ -453,7 +453,7 @@ const [showInfo, setShowInfo] = useState(false)
         const { data: userData, error: userError } = await supabase
           .from("users")
           .select("clan_id")
-          .eq("username", user.username)
+          .eq("wallet_address", user.wallet_address)
           .single()
 
         if (userError || !userData?.clan_id) {
@@ -690,8 +690,8 @@ const [showInfo, setShowInfo] = useState(false)
 
         // Mission tracking für legendary cards
         const legendaryCards = result.cards?.filter((card: any) => card.rarity === "legendary") || []
-        if (legendaryCards.length > 0 && user?.username) {
-          await incrementMission(user.username, "draw_legendary_card", legendaryCards.length)
+        if (legendaryCards.length > 0 && user?.wallet_address) {
+          await incrementMission(user.wallet_address, "draw_legendary_card", legendaryCards.length)
         }
 
         const premierLeagueCards = result.cards?.filter((card: any) => card.league_id === "3cd1fa22-d6fd-466a-8fe2-ca5c661d015d") || []
@@ -714,18 +714,18 @@ const [showInfo, setShowInfo] = useState(false)
 
         // Mission tracking for godlike cards
         const godlikeCards = result.cards?.filter((card: any) => card.rarity === "godlike") || []
-        if (godlikeCards.length > 0 && user?.username) {
-          await incrementMission(user.username, "draw_godlike_card", godlikeCards.length)
+        if (godlikeCards.length > 0 && user?.wallet_address) {
+          await incrementMission(user.wallet_address, "draw_godlike_card", godlikeCards.length)
         }
 
-        if (cardType === "legendary" && user?.username) {
-          await incrementMission(user.username, "open_legendary_pack", count)
-          await incrementMission(user.username, "open_3_legendary_packs", count)
+        if (cardType === "legendary" && user?.wallet_address) {
+          await incrementMission(user.wallet_address, "open_legendary_pack", count)
+          await incrementMission(user.wallet_address, "open_3_legendary_packs", count)
           if (user.clan_id !== undefined) {
             await incrementClanMission(user.clan_id, "legendary_packs", count)
           }
-        } else if (user?.username) {
-          await incrementMission(user.username, "open_regular_pack", count)
+        } else if (user?.wallet_address) {
+          await incrementMission(user.wallet_address, "open_regular_pack", count)
           if (user.clan_id !== undefined) {
             await incrementClanMission(user.clan_id, "regular_packs", count)
           }
@@ -752,9 +752,20 @@ const [showInfo, setShowInfo] = useState(false)
 
           // God pack doesn't affect ticket counts
           if (cardType !== "god") {
+            // Use the actual returned values from the server
             const newTicketCount = result.newTicketCount ?? tickets
             const newEliteTicketCount = result.newEliteTicketCount ?? eliteTickets
             // const newIconTicketCount = result.newIconTicketCount ?? iconTickets
+            
+            console.log("Ticket update:", {
+              cardType,
+              oldTickets: tickets,
+              oldEliteTickets: eliteTickets,
+              newTicketCount,
+              newEliteTicketCount,
+              result
+            })
+            
             setTickets(newTicketCount)
             setEliteTickets(newEliteTicketCount)
             // setIconTickets(newIconTicketCount)

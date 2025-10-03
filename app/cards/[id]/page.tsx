@@ -87,8 +87,8 @@ function toUserCard(data: unknown): UserCard | null {
     return null
   }
 
-  if (typeof obj.user_id !== "string") {
-    console.error("User card missing user_id or user_id is not a string:", obj.user_id)
+  if (typeof obj.wallet_address !== "string") {
+    console.error("User card missing wallet_address or wallet_address is not a string:", obj.wallet_address)
     return null
   }
 
@@ -115,8 +115,8 @@ function toUserCard(data: unknown): UserCard | null {
   return {
     // Convert id to string regardless of whether it's a number or string
     id: String(obj.id),
-    user_id: obj.user_id,
-    card_id: obj.card_id,
+    user_id: obj.wallet_address as string,
+    card_id: obj.card_id as string,
     quantity: quantity,
     level:
       typeof obj.level === "number"
@@ -240,7 +240,7 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
 
       setUserCard({
         id: "virtual",
-        user_id: user.username,
+        user_id: user.wallet_address, // Keep user_id for compatibility
         card_id: id,
         quantity: typeof quantity === 'number' ? quantity : 1,
         level: typeof level === 'number' ? level : 1,
@@ -326,7 +326,7 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
       let userCardsQuery = supabase
         .from("user_card_instances")
         .select("*")
-        .eq("user_id", user.username)
+        .eq("wallet_address", user.wallet_address)
         .eq("card_id", actualCardId);
 
       if (specificLevel !== null) {
@@ -355,7 +355,7 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
         const { data: allUserCards, error: allUserCardsError } = await supabase
           .from("user_card_instances")
           .select("*")
-          .eq("user_id", user.username)
+          .eq("wallet_address", user.wallet_address)
         
         console.log("All user cards for this user:", allUserCards)
         console.log("All user cards error:", allUserCardsError)
@@ -391,7 +391,7 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
       // Erstelle UserCard-Objekte mit der korrekten Anzahl
       const validUserCards = Object.entries(levelCounts).map(([level, count]) => ({
         id: `virtual-${level}`,
-        user_id: user.username,
+        user_id: user.wallet_address, // Keep user_id for compatibility
         card_id: actualCardId,
         quantity: count,
         level: parseInt(level),
@@ -500,14 +500,14 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
   if (!user || !card) return;
 
   try {
-    console.log("Starting level up for:", { username: user.username, cardId: card.id, level: uc.level || 1 });
+    console.log("Starting level up for:", { walletAddress: user.wallet_address, cardId: card.id, level: uc.level || 1 });
     
     // Use the new individual card leveling system
     const response = await fetch("/api/level-up", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        username: user.username,
+        username: user.wallet_address, // Send wallet_address instead of username
         cardId: card.id,
         level: uc.level || 1
       })
@@ -561,7 +561,7 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
     const { data, error } = await supabase
       .from("user_card_instances")
       .select("*")
-      .eq("user_id", user.username)
+      .eq("wallet_address", user.wallet_address)
       .eq("card_id", userCardItem.card_id)
       .eq("level", Number(userCardItem.level))
       .limit(1)
@@ -603,7 +603,7 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
         const { data: updatedUserCardsData, error: userCardsError } = await supabase
           .from("user_card_instances")
           .select("*")
-          .eq("user_id", user.username)
+          .eq("wallet_address", user.wallet_address)
           .eq("card_id", card.id);
 
         if (!userCardsError && updatedUserCardsData) {
@@ -1235,7 +1235,7 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
             level: selectedUserCard.level || 1,
             quantity: selectedUserCard.quantity,
           }}
-          username={user?.username || ""}
+          walletAddress={user?.wallet_address || ""}
           onSuccess={handleSellSuccess}
         />
       )}

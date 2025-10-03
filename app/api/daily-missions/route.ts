@@ -5,6 +5,7 @@ export async function POST(req: Request) {
   const { username } = await req.json()
   if (!username) return NextResponse.json({ success: false, error: "No username provided" })
 
+  // TODO: Convert username to wallet_address or use wallet_address directly
   const { missions, bonusClaimed } = await getDailyMissions(username)
 
   const rewardMap: Record<string, string> = {

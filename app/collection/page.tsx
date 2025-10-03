@@ -120,7 +120,7 @@ export default function CollectionPage() {
         const { data: userCardsData, error: userCardsError } = await supabase
           .from("user_card_instances")
           .select(`id, card_id, level, favorite, obtained_at`)
-          .eq("user_id", user.username)
+          .eq("wallet_address", user.wallet_address)
           .order('obtained_at', { ascending: false })
 
         if (userCardsError) {

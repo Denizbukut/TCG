@@ -25,7 +25,7 @@ export default function ModernMissionsPage() {
     if (!user) return
     const res = await fetch("/api/daily-missions", {
       method: "POST",
-      body: JSON.stringify({ username: user.username }),
+      body: JSON.stringify({ username: user.wallet_address }),
       headers: { "Content-Type": "application/json" },
     })
     const data = await res.json()
@@ -42,7 +42,7 @@ export default function ModernMissionsPage() {
 
   const handleClaim = async (key: string) => {
     if (!user) return
-    const res = await claimMissionReward(user.username, key)
+    const res = await claimMissionReward(user.wallet_address, key)
     if (res.success) {
       toast.success("Reward claimed! ✨")
       await refreshUserData()
@@ -53,7 +53,7 @@ export default function ModernMissionsPage() {
   const handleBonusClaim = async () => {
     if (!user) return
     setClaimingBonus(true)
-    const res = await claimBonusReward(user.username)
+    const res = await claimBonusReward(user.wallet_address)
     if (res.success) {
       toast.success("Bonus elite ticket claimed! 🎉")
       await refreshUserData()

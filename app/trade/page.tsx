@@ -323,7 +323,7 @@ export default function TradePage() {
 
     setLoading(true)
     try {
-      const result = await getUserListings(user.username, pageToLoad, 20)
+      const result = await getUserListings(user.wallet_address, pageToLoad, 20)
       if (result.success) {
         setUserListings(result.listings || [])
         setListingCount(result.listingCount || 0)
@@ -357,7 +357,7 @@ export default function TradePage() {
 
     setLoading(true)
     try {
-      const result = await getTransactionHistory(user.username, pageToLoad, 20)
+      const result = await getTransactionHistory(user.wallet_address, pageToLoad, 20)
       if (result.success) {
         // Explicitly cast the transactions to the Transaction type
         const transactionData = result.transactions || []
@@ -534,7 +534,7 @@ export default function TradePage() {
 
     const payload: PayCommandInput = {
       reference: id,
-      to: selectedListing?.seller_world_id, // my wallet
+      to: selectedListing?.seller_world_id ?? "", // my wallet
       tokens: [
         {
           symbol: Tokens.WLD,
@@ -558,7 +558,7 @@ export default function TradePage() {
 
     setPurchaseLoading(true)
     try {
-      const result = await purchaseCard(user.username, selectedListing.id)
+      const result = await purchaseCard(user.wallet_address, selectedListing.id)
       if (result.success) {
         setShowPurchaseDialog(false)
         setShowPurchaseSuccess(true)
@@ -589,7 +589,7 @@ export default function TradePage() {
 
     setCancelLoading(true)
     try {
-      const result = await cancelListing(user.username, listingId)
+      const result = await cancelListing(user.wallet_address, listingId)
       if (result.success) {
         toast({
           title: "Success",
