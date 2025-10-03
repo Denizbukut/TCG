@@ -15,7 +15,7 @@ function createSupabaseServer() {
 /**
  * Claims daily token for a user
  */
-export async function claimDailyToken(username: string) {
+export async function claimDailyToken(walletAddress: string) {
   try {
     const supabase = createSupabaseServer()
 
@@ -23,7 +23,7 @@ export async function claimDailyToken(username: string) {
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("username, tokens, token_last_claimed")
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
       .single()
 
     if (userError) {

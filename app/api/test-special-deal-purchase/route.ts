@@ -62,37 +62,17 @@ export async function POST(request: Request) {
       })
     }
 
-    // 3. Add card to collection
-    const { data: existingCard, error: existingCardError } = await supabase
-      .from('user_cards')
-      .select('id, quantity')
-      .eq('user_id', username)
-      .eq('card_id', deal.card_id)
-      .eq('level', deal.card_level)
-      .single()
-
-    if (existingCardError && existingCardError.code === 'PGRST116') {
-      // Card doesn't exist, add it
-      const { error: insertError } = await supabase.from('user_cards').insert({
-        user_id: username,
-        card_id: deal.card_id,
-        level: deal.card_level,
-        quantity: 1,
-        obtained_at: new Date().toISOString(),
-      })
-      if (insertError) {
-        console.error('Error adding card:', insertError)
-      }
-    } else if (!existingCardError) {
-      // Card exists, increment quantity
-      const currentQuantity = Number(existingCard.quantity) || 1
-      const { error: updateError } = await supabase
-        .from('user_cards')
-        .update({ quantity: currentQuantity + 1 })
-        .eq('id', existingCard.id)
-      if (updateError) {
-        console.error('Error updating card quantity:', updateError)
-      }
+    // 3. Add card to collection (using user_card_instances)
+    const { error: insertError } = await supabase.from('user_card_instances').insert({
+      user_id: username,
+      card_id: deal.card_id,
+      level: deal.card_level,
+      favorite: false,
+      obtained_at: new Date().toISOString(),
+    })
+    
+    if (insertError) {
+      console.error('Error adding card:', insertError)
     }
 
     // 4. Add tickets

@@ -140,7 +140,7 @@ export async function markDealAsDismissed(username: string, dealId: number) {
 }
 
 // Purchase deal
-export async function purchaseDeal(username: string, dealId: number) {
+export async function purchaseDeal(walletAddress: string, dealId: number) {
   try {
     const supabase = createSupabaseServer()
     await supabase
@@ -177,53 +177,25 @@ export async function purchaseDeal(username: string, dealId: number) {
       return { success: false, error: "Failed to record purchase" }
     }
 
-    // 2. Add the card to user's collection
-    // First check if user already has this card
-    const { data: existingCard, error: existingCardError } = await supabase
-      .from("user_cards")
-      .select("id, level, quantity")
-      .eq("user_id", username)
-      .eq("card_id", deal.card_id)
-      .eq("level", deal.card_level)
-      .single()
+    // 2. Add the card to user's collection (using user_card_instances)
+    const { error: insertCardError } = await supabase.from("user_card_instances").insert({
+      user_id: username,
+      card_id: deal.card_id,
+      level: deal.card_level,
+      favorite: false,
+      obtained_at: new Date().toISOString(),
+    })
 
-    // If user already has the card at the same level, increment quantity
-    if (existingCardError && existingCardError.code === "PGRST116") {
-      // Card doesn't exist at this level, add it
-      const { error: insertCardError } = await supabase.from("user_cards").insert({
-        user_id: username,
-        card_id: deal.card_id,
-        level: deal.card_level,
-        quantity: 1,
-        obtained_at: new Date().toISOString(),
-      })
-
-      if (insertCardError) {
-        console.error("Error adding card to collection:", insertCardError)
-        return { success: false, error: "Failed to add card to your collection" }
-      }
-    } else if (existingCardError) {
-      console.error("Error checking existing card:", existingCardError)
-      return { success: false, error: "Failed to check your card collection" }
-    } else {
-      // Card exists at this level, increment quantity
-      const newQuantity = (existingCard.quantity || 1) + 1
-      const { error: updateCardError } = await supabase
-        .from("user_cards")
-        .update({ quantity: newQuantity })
-        .eq("id", existingCard.id)
-
-      if (updateCardError) {
-        console.error("Error updating card quantity:", updateCardError)
-        return { success: false, error: "Failed to update card quantity" }
-      }
+    if (insertCardError) {
+      console.error("Error adding card to collection:", insertCardError)
+      return { success: false, error: "Failed to add card to your collection" }
     }
 
     // 3. Add tickets to user's account
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("tickets, elite_tickets")
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
       .single()
 
     if (userError) {
@@ -240,7 +212,7 @@ export async function purchaseDeal(username: string, dealId: number) {
         tickets: newTickets,
         elite_tickets: newEliteTickets,
       })
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
 
     if (updateError) {
       console.error("Error updating user tickets:", updateError)
@@ -261,7 +233,7 @@ export async function purchaseDeal(username: string, dealId: number) {
   }
 }
 
-export const getSpecialDeal = cache(async (username: string) => {
+export const getSpecialDeal = cache(async (walletAddress: string) => {
   try {
     const supabase = createSupabaseServer();
     const today = new Date().toISOString().split("T")[0];

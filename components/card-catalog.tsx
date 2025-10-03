@@ -36,33 +36,14 @@ export default function CardCatalog({ username, searchTerm = "" }: CardCatalogPr
   const [userCards, setUserCards] = useState<Record<string, boolean>>({})
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("all")
-  const [debugInfo, setDebugInfo] = useState<string>("🚀 Component loaded, waiting for data...")
-
-  // EMERGENCY TEST: Add WBC card manually
-  useEffect(() => {
-    const testWbcCard = {
-      id: 'emergency-wbc-test',
-      name: 'TEST WBC CARD',
-      character: 'TEST WBC CARD',
-      image_url: '/world-soccer/Douewbc.webp',
-      rarity: 'wbc',
-      epoch: 1
-    }
-    setAllCards([testWbcCard])
-    setDebugInfo("🔥 EMERGENCY TEST: Added manual WBC card!")
-    setLoading(false)
-  }, [])
 
   useEffect(() => {
     async function fetchCards() {
       setLoading(true)
       const supabase = getSupabaseBrowserClient()
 
-      setDebugInfo("🔍 Starting to fetch cards...")
-
       // Fetch all cards without any filters
       if(!supabase) {
-        setDebugInfo("❌ ERROR: No Supabase client!")
         return
       }
       
@@ -72,41 +53,75 @@ export default function CardCatalog({ username, searchTerm = "" }: CardCatalogPr
 
       if (cardsError) {
         console.error("Error fetching cards:", cardsError)
-        setDebugInfo(`❌ ERROR: ${cardsError.message}`)
         setAllCards([])
       } else {
-        // Debug: Check if WBC card is loaded
-        const totalCards = cards?.length || 0
-        const wbcCard = cards?.find(card => card.name === 'doue' && card.rarity === 'wbc')
-        const ibrahimovic = cards?.find(card => (card.name as string)?.toLowerCase().includes('ibrahimovic'))
-        const allDoueCards = cards?.filter(card => card.name === 'doue')
-        
-        setDebugInfo(`✅ Total: ${totalCards} | WBC doue: ${wbcCard ? 'FOUND' : 'NOT FOUND'} | Ibrahimovic: ${ibrahimovic ? 'FOUND' : 'NOT FOUND'} | All doue cards: ${allDoueCards?.length} | Obtainable false cards: ${cards?.filter(c => c.obtainable === false).length}`)
-        
-        console.log("WBC Card details:", wbcCard)
-        console.log("All doue cards:", allDoueCards)
-        console.log("Cards with obtainable=false:", cards?.filter(c => c.obtainable === false))
         
         setAllCards(cards || [])
       }
 
       // Fetch user's cards if username is provided
       if (username) {
+        console.log("=== LOADING USER CARDS ===")
+        console.log("Username:", username)
+        console.log("Supabase client:", supabase)
+        
+        // Lade alle user_card_instances und zähle sie pro card_id
         const { data: userCardData, error: userCardsError } = await supabase
-          .from("user_cards")
+          .from("user_card_instances")
           .select("card_id")
           .eq("user_id", username)
-          .gt("quantity", 0)
+          
+        console.log("UserCards query result:")
+        console.log("  - userCardData:", userCardData)
+        console.log("  - userCardsError:", userCardsError)
+        
+        // Debug: Zeige die ersten UserCard-Daten
+        if (userCardData && userCardData.length > 0) {
+          console.log("First user card data:", userCardData[0])
+          console.log("Card ID in first card:", userCardData[0]?.card_id)
+        } else {
+          console.log("=== NO USER CARDS FOUND IN CARD GALLERY ===")
+          console.log("Username being searched:", username)
+          
+          // Debug: Prüfe alle UserCards für diesen User
+          const { data: allUserCards, error: allUserCardsError } = await supabase
+            .from("user_card_instances")
+            .select("*")
+            .eq("user_id", username)
+          
+          console.log("All user cards for this user:", allUserCards)
+          console.log("All user cards error:", allUserCardsError)
+        }
 
-        if (!userCardsError && userCardData) {
+        if (userCardsError) {
+          console.error("Error loading user cards:", userCardsError)
+          setUserCards({})
+        } else if (userCardData && userCardData.length > 0) {
+          console.log("User card instances found:", userCardData.length)
+          console.log("User card data:", userCardData)
+          
+          // Zähle die Anzahl der Instanzen pro Card ID
           const userCardMap: Record<string, boolean> = {}
-           userCardData.forEach((item) => {
-            userCardMap[item.card_id as string] = true
+          const cardCounts: Record<string, number> = {}
+          
+          userCardData.forEach((item) => {
+            const cardId = item.card_id as string
+            cardCounts[cardId] = (cardCounts[cardId] || 0) + 1
+            userCardMap[cardId] = true // Markiere als besessen
+            console.log(`Card ${cardId}: ${cardCounts[cardId]} instances`)
           })
+          
+          console.log("User card map:", userCardMap)
+          console.log("Card counts:", cardCounts)
+          console.log("User card map keys:", Object.keys(userCardMap))
           setUserCards(userCardMap)
-          } else {
+        } else {
+          console.log("No user cards found - userCardData:", userCardData)
           setUserCards({})
         }
+      } else {
+        console.log("No username provided, skipping user cards")
+        setUserCards({})
       }
 
       setLoading(false)
@@ -162,6 +177,24 @@ export default function CardCatalog({ username, searchTerm = "" }: CardCatalogPr
     (category) => cardsByRarity[category] && cardsByRarity[category].length > 0,
   )
 
+  // Debug: Show user card ownership
+  console.log("=== USER CARD OWNERSHIP ===")
+  console.log("Total user cards:", Object.keys(userCards).length)
+  console.log("User cards:", userCards)
+  
+  // Debug: Show sample card ownership
+  if (filteredCards.length > 0) {
+    console.log("=== SAMPLE CARD OWNERSHIP ===")
+    filteredCards.slice(0, 5).forEach(card => {
+      const isOwned = userCards[card.id]
+      console.log(`Card "${card.name}" (${card.id}): owned=${isOwned}`)
+      console.log(`  - Card ID in userCards: ${card.id in userCards}`)
+      console.log(`  - UserCards keys: ${Object.keys(userCards)}`)
+      console.log(`  - UserCards values: ${Object.values(userCards)}`)
+      console.log(`  - Will be passed to CardItem as owned=${isOwned}`)
+    })
+  }
+
   if (loading) {
     return (
       <div className="grid grid-cols-5 gap-2 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8">
@@ -176,11 +209,6 @@ export default function CardCatalog({ username, searchTerm = "" }: CardCatalogPr
 
   return (
     <div className="w-full">
-      {debugInfo && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4">
-          <strong>Debug:</strong> {debugInfo}
-        </div>
-      )}
       
       <Tabs defaultValue="all" className="w-full text-black" onValueChange={setActiveTab}>
       <TabsList className="grid w-full grid-cols-5 bg-white text-black">
@@ -248,6 +276,8 @@ export default function CardCatalog({ username, searchTerm = "" }: CardCatalogPr
                     epoch={card.epoch}
                     owned={userCards[card.id]}
                     compact={true}
+                    hideQuantity={true}
+                    isCollection={false}
                   />
                 </motion.div>
               ))}
@@ -280,6 +310,8 @@ export default function CardCatalog({ username, searchTerm = "" }: CardCatalogPr
                   epoch={card.epoch}
                   owned={userCards[card.id]}
                   compact={true}
+                  hideQuantity={true}
+                  isCollection={false}
                 />
               </motion.div>
             ))}

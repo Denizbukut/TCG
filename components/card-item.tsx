@@ -201,7 +201,7 @@ const handleCardClick = () => {
           disableCardLink
             ? "w-full h-full overflow-hidden bg-transparent"
             : "h-full rounded-xl overflow-hidden hover:shadow-lg transition-shadow duration-300",
-          owned ? "" : "opacity-60 grayscale"
+          owned ? "" : "opacity-60"
         )}
       >
         <div className={disableCardLink ? "w-full h-full relative" : "relative aspect-[3/4] w-full h-full overflow-hidden"}>

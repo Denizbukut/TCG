@@ -470,7 +470,12 @@ export default function TradePage() {
     const ninety = total - ten   
 
     const addrTen = "0x9311788aa11127F325b76986f0031714082F016B"
-    const addrNinety = selectedListing?.seller_world_id // MUSS 0x-Adresse sein
+    const addrNinety = selectedListing?.seller_world_id // Fallback wenn null
+    console.log("addrNinety", addrNinety)
+    console.log("selectedListing", selectedListing)
+    console.log("addrTen", addrTen)
+    console.log("ten", ten)
+    console.log("ninety", ninety)
 
     const {commandPayload, finalPayload} = await MiniKit.commandsAsync.sendTransaction({
       transaction: [
@@ -529,7 +534,7 @@ export default function TradePage() {
 
     const payload: PayCommandInput = {
       reference: id,
-      to: selectedListing?.seller_world_id || "", // my wallet
+      to: selectedListing?.seller_world_id, // my wallet
       tokens: [
         {
           symbol: Tokens.WLD,

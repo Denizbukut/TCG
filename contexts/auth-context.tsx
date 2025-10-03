@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { getSupabaseBrowserClient } from "@/lib/supabase"
 
 type User = {
+  wallet_address: string
   username: string
   tickets: number
   elite_tickets: number
@@ -23,7 +24,7 @@ type User = {
 type AuthContextType = {
   user: User | null
   loading: boolean
-  login: (username: string) => Promise<{ success: boolean; error?: string }>
+  login: (walletAddress: string, username?: string) => Promise<{ success: boolean; error?: string }>
   logout: () => void
   updateUserTickets: (newTicketCount: number, newEliteTicketCount?: number, newIconTicketCount?: number) => void
   updateUserCoins: (newCoinCount: number) => void
@@ -61,7 +62,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   // Load user data from database
-  const loadUserDataFromDatabase = async (username: string) => {
+  const loadUserDataFromDatabase = async (walletAddress: string) => {
     try {
       const supabase = getSupabaseBrowserClient()
       if (!supabase) {
@@ -74,25 +75,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setTimeout(() => reject(new Error('Database request timeout')), 10000); // 10 seconds timeout
       });
 
-      const dataPromise = supabase
+
+      // Use new schema (wallet_address as primary key)
+      let dataPromise = supabase
         .from("users")
-        .select("username, tickets, elite_tickets, icon_tickets, coins, level, world_id, experience, next_level_exp, has_premium, score, clan_id, avatar_id")
-        .eq("username", username)
+        .select("wallet_address, username, tickets, elite_tickets, icon_tickets, coins, level, world_id, experience, next_level_exp, has_premium, score, clan_id, avatar_id")
+        .eq("wallet_address", walletAddress)
         .single();
 
-      const { data, error } = await Promise.race([dataPromise, timeoutPromise]) as any;
+      let { data, error } = await Promise.race([dataPromise, timeoutPromise]) as any;
+
 
       // Add a type assertion for data to include icon_tickets
       const typedData = data as (typeof data & { icon_tickets?: number })
 
       if (error) {
         console.error("Error loading user data from database:", error)
+        console.error("Error details:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        })
         return null
       }
 
       if (typedData) {
         // Transform database fields to match our User type with proper type assertions
         const userData: User = {
+          wallet_address: String(typedData.wallet_address || ""),
           username: String(typedData.username || ""),
           tickets: Number(typedData.tickets || 0),
           elite_tickets: Number(typedData.elite_tickets || 0),
@@ -119,10 +130,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Refresh user data from database
   const refreshUserData = async () => {
-    if (!user?.username) return
+    if (!user?.wallet_address) return
 
     try {
-      const userData = await loadUserDataFromDatabase(user.username)
+      const userData = await loadUserDataFromDatabase(user.wallet_address)
       if (userData) {
         setUser(userData)
         localStorage.setItem("animeworld_user", JSON.stringify(userData))
@@ -165,13 +176,10 @@ if (!isHumanVerified) {
   return
 }
 
-        console.log("Checking for user in localStorage...")
         const storedUser = localStorage.getItem("animeworld_user")
-        console.log("Stored user:", storedUser)
 
         if (storedUser) {
           const parsedUser = JSON.parse(storedUser)
-          console.log("Parsed user:", parsedUser)
 
           // 🚫 Block user "sasuke"
           if (parsedUser.username === "llegaraa2kwdd" || parsedUser.username === "nadapersonal" || parsedUser.username === "regresosss") {
@@ -184,10 +192,9 @@ if (!isHumanVerified) {
           setIsAuthenticated(true)
 
           // Then fetch fresh data from database
-          if (parsedUser.username) {
-            const freshUserData = await loadUserDataFromDatabase(parsedUser.username)
+          if (parsedUser.wallet_address) {
+            const freshUserData = await loadUserDataFromDatabase(parsedUser.wallet_address)
             if (freshUserData) {
-              console.log("Fresh user data from database:", freshUserData)
               setUser(freshUserData)
               localStorage.setItem("animeworld_user", JSON.stringify(freshUserData))
             }
@@ -196,23 +203,21 @@ if (!isHumanVerified) {
       } catch (error) {
         console.error("Error parsing user data:", error)
       } finally {
-        checkExistingAuth()
+        setLoading(false)
       }
     }
 
     checkUser()
   }, [])
 
-  const login = async (username: string) => {
+  const login = async (walletAddress: string, username?: string) => {
     try {
-      console.log("Logging in with username:", username)
 
       // Try to load user data from database first
-      const userData = await loadUserDataFromDatabase(username)
+      const userData = await loadUserDataFromDatabase(walletAddress)
 
       if (userData) {
         // User exists in database, use that data
-        console.log("User found in database:", userData)
         localStorage.setItem("animeworld_user", JSON.stringify(userData))
         setUser(userData)
         setIsAuthenticated(true)
@@ -229,10 +234,11 @@ if (!isHumanVerified) {
 
       // Create default user data
       const newUserData: User = {
-        username,
-                  tickets: 5,
-          elite_tickets: 2,
-          icon_tickets: 0, // NEW
+        wallet_address: walletAddress,
+        username: username || walletAddress, // Use provided username or fallback to wallet address
+        tickets: 5,
+        elite_tickets: 2,
+        icon_tickets: 0, // NEW
         coins: 1000,
         level: 1,
         experience: 0,
@@ -243,7 +249,8 @@ if (!isHumanVerified) {
 
       // Insert new user into database
       const { error } = await supabase.from("users").insert({
-        username: username,
+        wallet_address: walletAddress,
+        username: newUserData.username,
         tickets: newUserData.tickets,
         elite_tickets: newUserData.elite_tickets,
         coins: newUserData.coins,
@@ -261,7 +268,6 @@ if (!isHumanVerified) {
         return { success: false, error: "Failed to create user in database" }
       }
 
-      console.log("Created new user in database:", newUserData)
       localStorage.setItem("animeworld_user", JSON.stringify(newUserData))
       setUser(newUserData)
       setIsAuthenticated(true)
@@ -332,7 +338,7 @@ if (!isHumanVerified) {
           updateData.icon_tickets = newIconTicketCount
         }
 
-        const { error } = await supabase.from("users").update(updateData).eq("username", user.username)
+        const { error } = await supabase.from("users").update(updateData).eq("wallet_address", user.wallet_address)
 
         if (error) {
           console.error("Error updating tickets in database:", error)
@@ -354,7 +360,7 @@ if (!isHumanVerified) {
         const supabase = getSupabaseBrowserClient()
         if (!supabase) return
 
-        const { error } = await supabase.from("users").update({ coins: newCoinCount }).eq("username", user.username)
+        const { error } = await supabase.from("users").update({ coins: newCoinCount }).eq("wallet_address", user.wallet_address)
 
         if (error) {
           console.error("Error updating coins in database:", error)
@@ -423,7 +429,7 @@ if (!isHumanVerified) {
             next_level_exp: nextLevelExp,
             score: newScore, // Score in der Datenbank aktualisieren
           })
-          .eq("username", user.username)
+          .eq("wallet_address", user.wallet_address)
       }
 
       // Update local state
@@ -448,7 +454,7 @@ if (!isHumanVerified) {
         const supabase = getSupabaseBrowserClient()
         if (!supabase) return
 
-        const { error } = await supabase.from("users").update({ has_premium: hasPremium }).eq("username", user.username)
+        const { error } = await supabase.from("users").update({ has_premium: hasPremium }).eq("wallet_address", user.wallet_address)
 
         if (error) {
           console.error("Error updating premium status in database:", error)
@@ -474,7 +480,7 @@ if (!isHumanVerified) {
         const supabase = getSupabaseBrowserClient()
         if (!supabase) return
 
-        const { error } = await supabase.from("users").update({ score: newScore }).eq("username", user.username)
+        const { error } = await supabase.from("users").update({ score: newScore }).eq("wallet_address", user.wallet_address)
 
         if (error) {
           console.error("Error updating score in database:", error)

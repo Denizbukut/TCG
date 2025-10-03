@@ -15,12 +15,12 @@ function createSupabaseServer() {
 // Typ-Definitionen
 type MarketListing = {
   id: string
-  seller_id: string
+  seller_id: string // This will now be wallet_address
   card_id: string
   price: number
   created_at: string
   status: "active" | "sold" | "cancelled"
-  buyer_id?: string
+  buyer_id?: string // This will now be wallet_address
   sold_at?: string
   user_card_id: number | string
   card_level: number
@@ -111,7 +111,7 @@ export async function getMarketListings(page = 1, pageSize = DEFAULT_PAGE_SIZE, 
     }
 
     // Build the base query for fetching
-    let baseQuery = supabase.from("market_listings").select("*").eq("status", "active")
+    let baseQuery = supabase.from("market_listings").select("*, seller_world_id").eq("status", "active")
 
     // Apply filters to the base query
     if (filters.minPrice !== undefined) {
@@ -305,7 +305,7 @@ export async function getMarketListings(page = 1, pageSize = DEFAULT_PAGE_SIZE, 
         ...listing,
         card,
         seller_username: seller?.username || listing.seller_id,
-        seller_world_id: seller?.world_id || null,
+        seller_world_id: listing.seller_world_id || seller?.world_id,
       }
     })
 
@@ -344,7 +344,7 @@ export async function getMarketListings(page = 1, pageSize = DEFAULT_PAGE_SIZE, 
 /**
  * Holt die Marketplace-Listings eines bestimmten Benutzers
  */
-export async function getUserListings(username: string, page = 1, pageSize = DEFAULT_PAGE_SIZE) {
+export async function getUserListings(walletAddress: string, page = 1, pageSize = DEFAULT_PAGE_SIZE) {
   try {
     const supabase = createSupabaseServer()
     const offset = (page - 1) * pageSize
@@ -353,7 +353,7 @@ export async function getUserListings(username: string, page = 1, pageSize = DEF
     const { count, error: countError } = await supabase
       .from("market_listings")
       .select("*", { count: "exact", head: true })
-      .eq("seller_id", username)
+      .eq("seller_id", walletAddress)
       .eq("status", "active")
 
     if (countError) {
@@ -365,7 +365,7 @@ export async function getUserListings(username: string, page = 1, pageSize = DEF
     const { data: listings, error } = await supabase
       .from("market_listings")
       .select("*")
-      .eq("seller_id", username)
+      .eq("seller_id", walletAddress)
       .eq("status", "active")
       .order("created_at", { ascending: false })
       .range(offset, offset + pageSize - 1)
@@ -441,7 +441,7 @@ export async function getUserListings(username: string, page = 1, pageSize = DEF
 /**
  * Überprüft, ob ein Benutzer das Limit für Listings erreicht hat
  */
-export async function checkUserListingLimit(username: string) {
+export async function checkUserListingLimit(walletAddress: string) {
   try {
     const supabase = createSupabaseServer()
 
@@ -449,7 +449,7 @@ export async function checkUserListingLimit(username: string) {
     const { count, error } = await supabase
       .from("market_listings")
       .select("*", { count: "exact", head: true })
-      .eq("seller_id", username)
+      .eq("seller_id", walletAddress)
       .eq("status", "active")
 
     if (error) {
@@ -488,7 +488,7 @@ export async function createListing(
     const { count, error: countError } = await supabase
       .from("market_listings")
       .select("*", { count: "exact", head: true })
-      .eq("seller_id", username)
+      .eq("seller_id", walletAddress)
       .eq("status", "active")
 
     if (countError) {
@@ -507,7 +507,7 @@ export async function createListing(
     const { data: userData, error: userErr } = await supabase
       .from("users")
       .select("cards_sold_since_last_purchase")
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
       .single()
 
     if (userErr || !userData) {
@@ -526,7 +526,7 @@ export async function createListing(
     const { data: initialUserData, error: userError } = await supabase
       .from("users")
       .select("world_id")
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
       .single()
 
     if (userError) {
@@ -541,14 +541,19 @@ export async function createListing(
 
     console.log("User data:", initialUserData)
     const worldId = initialUserData.world_id
+    console.log("World ID for listing:", worldId)
+    
+    if (!worldId) {
+      return { success: false, error: "User has no World ID. Please connect your wallet first." }
+    } 
 
     // Überprüfe, ob der Benutzer die Karte besitzt
     console.log("Checking if user owns card:", { userCardId, username })
     const { data: userCard, error: userCardError } = await supabase
-      .from("user_cards")
-      .select("quantity, level")
+      .from("user_card_instances")
+      .select("id, level")
       .eq("id", userCardId)
-      .eq("user_id", username)
+      .eq("user_id", walletAddress)
       .maybeSingle()
 
     if (userCardError) {
@@ -563,9 +568,7 @@ export async function createListing(
 
     console.log("User card data:", userCard)
 
-    if (userCard.quantity < 1) {
-      return { success: false, error: "You don't have enough copies of this card" }
-    }
+    // user_card_instances hat keine quantity Spalte - jede Instanz ist eine Karte
 
     // Überprüfe, ob der Benutzer bereits eine Karte dieser Art (unabhängig vom Level) zum Verkauf anbietet
     console.log("Checking if user has already listed this card type:", { cardId, username })
@@ -573,7 +576,7 @@ export async function createListing(
       .from("market_listings")
       .select("id, card_level")
       .eq("card_id", cardId)
-      .eq("seller_id", username)
+      .eq("seller_id", walletAddress)
       .eq("status", "active")
 
     if (existingListingsError) {
@@ -654,7 +657,7 @@ export async function createListing(
     const { data: scoreUserData, error: userScoreError } = await supabase
       .from("users")
       .select("score")
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
       .single()
 
     if (userScoreError) {
@@ -672,7 +675,7 @@ export async function createListing(
     const { error: updateScoreError } = await supabase
       .from("users")
       .update({ score: newScore })
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
 
     if (updateScoreError) {
       console.error("Error updating score for listing:", updateScoreError)
@@ -688,11 +691,12 @@ export async function createListing(
       user_card_id: userCardId,
       card_level: cardLevel || userCard.level,
     })
+    console.log("World ID being saved:", worldId, "Type:", typeof worldId)
 
     const { data: listing, error: listingError } = await supabase
       .from("market_listings")
       .insert({
-        seller_id: username, // Verwende username als seller_id
+        seller_id: walletAddress, // Verwende wallet_address als seller_id
         seller_world_id: worldId,
         card_id: cardId,
         price,
@@ -710,14 +714,15 @@ export async function createListing(
     }
 
     console.log("Listing created successfully:", listing)
+    console.log("Seller world ID in created listing:", listing.seller_world_id)
 
-    // Reduziere die Kartenanzahl des Benutzers um 1
-    console.log("Updating user card quantity:", { userCardId, username, newQuantity: userCard.quantity - 1 })
+    // Lösche die Karteninstanz (da user_card_instances keine quantity hat)
+    console.log("Deleting user card instance:", { userCardId, username })
     const { error: updateError } = await supabase
-      .from("user_cards")
-      .update({ quantity: userCard.quantity - 1 })
+      .from("user_card_instances")
+      .delete()
       .eq("id", userCardId)
-      .eq("user_id", username)
+      .eq("user_id", walletAddress)
 
     if (updateError) {
       console.error("Error updating user card quantity:", updateError)
@@ -745,22 +750,21 @@ export async function createListing(
 /**
  * Kauft eine Karte vom Marketplace
  */
-export async function purchaseCard(username: string, listingId: string) {
+export async function purchaseCard(walletAddress: string, listingId: string) {
   try {
     const supabase = createSupabaseServer()
 
-    // 1. Käuferdaten aufräumen
-    await supabase
-      .from("user_cards")
-      .delete()
-      .eq("user_id", username)
-      .eq("quantity", 0)
+    // 1. Käuferdaten aufräumen - user_card_instances hat keine quantity Spalte
+    // await supabase
+    //   .from("user_card_instances")
+    //   .delete()
+    //   .eq("user_id", username)
 
     // 2. Käuferdaten holen
     const { data: buyerData, error: buyerError } = await supabase
       .from("users")
       .select("coins, score")
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
       .single()
 
     if (buyerError || !buyerData) {
@@ -780,14 +784,14 @@ export async function purchaseCard(username: string, listingId: string) {
     }
 
     // 4. Selbstkauf verhindern
-    if (listing.seller_id === username) {
+    if (listing.seller_id === walletAddress) {
       return { success: false, error: "You cannot buy your own card" }
     }
      // Käufer cards_sold_since_last_purchase auf 0 setzen
     await supabase
       .from("users")
       .update({ cards_sold_since_last_purchase: 0 })
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
 
     // 5. Score vorbereiten
     const { data: cardDetails, error: cardError } = await supabase
@@ -849,12 +853,12 @@ await supabase
     await supabase
       .from("users")
       .update({ score: buyerScore + scoreForCard })
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
 
     // 7. Verkäuferkarte bearbeiten
     let { data: sellerCard, error: sellerCardError } = await supabase
-      .from("user_cards")
-      .select("id, quantity")
+      .from("user_card_instances")
+      .select("id")
       .eq("id", listing.user_card_id)
       .eq("user_id", listing.seller_id)
       .eq("card_id", listing.card_id)
@@ -862,82 +866,20 @@ await supabase
       .single()
 
     if (sellerCardError || !sellerCard) {
-      console.warn("Seller card not found by user_card_id – creating fallback card...")
-
-      const { error: recreateError } = await supabase.from("user_cards").insert({
-        id: listing.user_card_id, // gleiche ID wie im Listing
-        user_id: listing.seller_id,
-        card_id: listing.card_id,
-        quantity: 1,
-        level: listing.card_level || 1,
-        favorite: false,
-        obtained_at: new Date().toISOString().split("T")[0],
-      })
-      if (recreateError) {
-    return { success: false, error: "Failed to recreate seller's card entry: " + recreateError.message }
-  }
-
-  // Jetzt sellerCard neu laden
-  const { data: recreatedCard, error: refetchError } = await supabase
-    .from("user_cards")
-    .select("id, quantity")
-    .eq("id", listing.user_card_id)
-    .eq("user_id", listing.seller_id)
-    .eq("card_id", listing.card_id)
-    .eq("level", listing.card_level)
-    .single()
-
-  if (refetchError || !recreatedCard) {
-    return { success: false, error: "Card recreated, but failed to fetch it again." }
-  }
-
-  sellerCard = recreatedCard // 🧠 Setze sellerCard, damit der folgende Code funktioniert
-}
-
-    if (sellerCard.quantity > 1) {
-      await supabase
-        .from("user_cards")
-        .update({ quantity: sellerCard.quantity - 1 })
-        .eq("id", sellerCard.id)
-        .eq("level", listing.card_level)
-    } else {
-      await supabase
-        .from("user_cards")
-        .delete()
-        .eq("id", sellerCard.id)
-        .eq("level", listing.card_level)
+      return { success: false, error: "Seller card not found. Cannot complete purchase." }
     }
 
-    // 8. Käuferkarte prüfen: gleiche card_id + level
-    const { data: buyerCard, error: buyerCardError } = await supabase
-      .from("user_cards")
-      .select("id, quantity")
-      .eq("user_id", username)
-      .eq("card_id", listing.card_id)
-      .eq("level", listing.card_level)
-      .single()
-
-    if (buyerCard && !buyerCardError) {
-      // Karte existiert → quantity erhöhen
-      await supabase
-        .from("user_cards")
-        .update({ quantity: buyerCard.quantity + 1 })
-        .eq("id", buyerCard.id)
-        .eq("level", listing.card_level)
-    } else {
-      // Neue Karte anlegen
-      const { error: insertError } = await supabase.from("user_cards").insert({
+    // 8. Übertrage die Karte vom Verkäufer zum Käufer
+    const { error: updateError } = await supabase
+      .from("user_card_instances")
+      .update({ 
         user_id: username,
-        card_id: listing.card_id,
-        quantity: 1,
-        level: listing.card_level || 1,
-        favorite: false,
-        obtained_at: new Date().toISOString().split("T")[0],
+        obtained_at: new Date().toISOString().split("T")[0]
       })
+      .eq("id", sellerCard.id)
 
-      if (insertError) {
-        return { success: false, error: "Failed to add card to your collection" }
-      }
+    if (updateError) {
+      return { success: false, error: "Failed to transfer card to buyer" }
     }
 
     // 9. Listing aktualisieren
@@ -945,7 +887,7 @@ await supabase
       .from("market_listings")
       .update({
         status: "sold",
-        buyer_id: username,
+        buyer_id: walletAddress,
         sold_at: new Date().toISOString(),
       })
       .eq("id", listingId)
@@ -975,7 +917,7 @@ await supabase
  * Storniert ein Listing und gibt die Karte zurück
  * Jetzt wird der Eintrag komplett aus der Datenbank gelöscht
  */
-export async function cancelListing(username: string, listingId: string) {
+export async function cancelListing(walletAddress: string, listingId: string) {
   try {
     const supabase = createSupabaseServer()
 
@@ -984,7 +926,7 @@ export async function cancelListing(username: string, listingId: string) {
       .from("market_listings")
       .select("*")
       .eq("id", listingId)
-      .eq("seller_id", username)
+      .eq("seller_id", walletAddress)
       .eq("status", "active")
       .single()
 
@@ -1011,7 +953,7 @@ export async function cancelListing(username: string, listingId: string) {
       const { data: sellerData, error: sellerError } = await supabase
         .from("users")
         .select("score")
-        .eq("username", username)
+        .eq("wallet_address", walletAddress)
         .single()
 
       if (sellerError || !sellerData) {
@@ -1028,7 +970,7 @@ export async function cancelListing(username: string, listingId: string) {
         const { error: updateScoreError } = await supabase
           .from("users")
           .update({ score: newScore })
-          .eq("username", username)
+          .eq("wallet_address", walletAddress)
 
         if (updateScoreError) {
           console.error("Error restoring score on cancellation:", updateScoreError)
@@ -1037,48 +979,19 @@ export async function cancelListing(username: string, listingId: string) {
       }
     }
 
-    // Gib die Karte zurück
-    // Prüfe zuerst, ob der Benutzer die Karte bereits besitzt
-    const { data: existingCard, error: existingCardError } = await supabase
-      .from("user_cards")
-      .select("id, quantity")
-      .eq("user_id", username)
-      .eq("card_id", listing.card_id)
-      .eq("level", listing.card_level)
-      .single()
-
-    if (existingCardError && existingCardError.code !== "PGRST116") {
-      console.error("Error checking existing card:", existingCardError)
-      return { success: false, error: "Failed to check if you already own this card" }
-    }
-
-    if (existingCard) {
-      // Aktualisiere die Anzahl, wenn der Benutzer die Karte bereits besitzt
-      const { error: updateCardError } = await supabase
-        .from("user_cards")
-        .update({ quantity: existingCard.quantity + 1 })
-        .eq("id", existingCard.id)
-
-      if (updateCardError) {
-        console.error("Error updating card quantity:", updateCardError)
-        return { success: false, error: "Failed to return card to your collection" }
-      }
-    } else {
-      // Füge eine neue Karte hinzu, wenn der Benutzer sie nicht mehr besitzt
-      const { error: insertCardError } = await supabase.from("user_cards").insert({
-        user_id: username,
-        card_id: listing.card_id,
-        quantity: 1,
-        level: listing.card_level || 1,
-        favorite: false,
-        obtained_at: new Date().toISOString().split("T")[0], // Format as YYYY-MM-DD
-      })
+    // Gib die Karte zurück (neue Instanz hinzufügen)
+    const { error: insertCardError } = await supabase.from("user_card_instances").insert({
+      user_id: username,
+      card_id: listing.card_id,
+      level: listing.card_level || 1,
+      favorite: false,
+      obtained_at: new Date().toISOString().split("T")[0], // Format as YYYY-MM-DD
+    })
 
       if (insertCardError) {
         console.error("Error adding card to collection:", insertCardError)
         return { success: false, error: "Failed to return card to your collection" }
       }
-    }
 
     // Lösche das Listing komplett aus der Datenbank
     const { error: deleteError } = await supabase.from("market_listings").delete().eq("id", listingId)
@@ -1100,7 +1013,7 @@ export async function cancelListing(username: string, listingId: string) {
 /**
  * Aktualisiert den Preis eines Listings
  */
-export async function updateListingPrice(username: string, listingId: string, newPrice: number) {
+export async function updateListingPrice(walletAddress: string, listingId: string, newPrice: number) {
   try {
     const supabase = createSupabaseServer()
 
@@ -1109,7 +1022,7 @@ export async function updateListingPrice(username: string, listingId: string, ne
       .from("market_listings")
       .select("*")
       .eq("id", listingId)
-      .eq("seller_id", username)
+      .eq("seller_id", walletAddress)
       .eq("status", "active")
       .single()
 
@@ -1200,7 +1113,7 @@ export async function updateListingPrice(username: string, listingId: string, ne
 /**
  * Holt den Transaktionsverlauf eines Benutzers mit Pagination
  */
-export async function getTransactionHistory(username: string, page = 1, pageSize = DEFAULT_PAGE_SIZE) {
+export async function getTransactionHistory(walletAddress: string, page = 1, pageSize = DEFAULT_PAGE_SIZE) {
   try {
     const supabase = createSupabaseServer()
     const offset = (page - 1) * pageSize

@@ -6,10 +6,10 @@ import { getSupabaseServerClient } from "@/lib/supabase"
 
 export async function POST(req: Request) {
   try {
-    const { username, cardType, count = 1 } = await req.json()
+    const { walletAddress, cardType, count = 1 } = await req.json()
     console.log("drawapi")
 
-    if (!username || !cardType) {
+    if (!walletAddress || !cardType) {
       return NextResponse.json({ error: "Missing parameters" }, { status: 400 })
     }
 
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
       const { data: premiumPassData } = await supabase
         .from("premium_passes")
         .select("active, expires_at")
-        .eq("user_id", username)
+        .eq("wallet_address", walletAddress)
         .eq("active", true)
         .single()
 
@@ -35,10 +35,10 @@ export async function POST(req: Request) {
     let result = {}
     if(cardType !== "god") {
       // Use individual card system - each card gets its own ID
-      result = await drawCardsIndividual(username, cardType, count, hasPremiumPass) 
+      result = await drawCardsIndividual(walletAddress, cardType, count, hasPremiumPass) 
     }
     else {
-      result = await drawGodPacks(username, count)
+      result = await drawGodPacks(walletAddress, count)
     }
     
 

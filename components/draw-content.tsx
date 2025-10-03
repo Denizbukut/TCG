@@ -207,7 +207,7 @@ const [showInfo, setShowInfo] = useState(false)
   // Check if user has active Icon Pass
   useEffect(() => {
     const checkIconPass = async () => {
-      if (!user?.username) return
+      if (!user?.wallet_address) return
       
       try {
         const supabase = getSupabaseBrowserClient()
@@ -216,7 +216,7 @@ const [showInfo, setShowInfo] = useState(false)
         const { data, error } = await supabase
           .from('icon_passes')
           .select('*')
-          .eq('user_id', user.username)
+          .eq('wallet_address', user.wallet_address)
           .eq('active', true)
           .single()
 
@@ -451,7 +451,7 @@ const [showInfo, setShowInfo] = useState(false)
   // Check user's clan role for XP bonuses
   useEffect(() => {
     const fetchUserClanRole = async () => {
-      if (!user?.username) return
+      if (!user?.wallet_address) return
 
       const supabase = getSupabaseBrowserClient()
       if (!supabase) return
@@ -472,7 +472,7 @@ const [showInfo, setShowInfo] = useState(false)
           .from("clan_members")
           .select("role")
           .eq("clan_id", userData.clan_id)
-          .eq("user_id", user.username)
+          .eq("wallet_address", user.wallet_address)
           .single()
 
         if (!memberError && memberData) {
@@ -509,7 +509,7 @@ const [showInfo, setShowInfo] = useState(false)
     refreshUserData?.()
 
     const fetchXpPass = async () => {
-      if (!user?.username) return
+      if (!user?.wallet_address) return
 
       const supabase = getSupabaseBrowserClient()
       if (!supabase) return
@@ -517,7 +517,7 @@ const [showInfo, setShowInfo] = useState(false)
       const { data, error } = await supabase
         .from("xp_passes")
         .select("active")
-        .eq("user_id", user.username)
+        .eq("wallet_address", user.wallet_address)
         .eq("active", true)
         .single()
 
@@ -529,12 +529,12 @@ const [showInfo, setShowInfo] = useState(false)
     }
 
     fetchXpPass()
-  }, [refreshUserData, user?.username])
+  }, [refreshUserData, user?.wallet_address])
 
   // Check Premium Pass status
   useEffect(() => {
     const fetchPremiumPass = async () => {
-      if (!user?.username) return
+      if (!user?.wallet_address) return
       
       try {
         const supabase = getSupabaseBrowserClient()
@@ -543,7 +543,7 @@ const [showInfo, setShowInfo] = useState(false)
         const { data, error } = await supabase
           .from('premium_passes')
           .select('active, expires_at')
-          .eq('user_id', user.username)
+          .eq('wallet_address', user.wallet_address)
           .eq('active', true)
           .single()
 
@@ -554,14 +554,14 @@ const [showInfo, setShowInfo] = useState(false)
           const isActive = expiresAt > now
           setHasPremiumPass(isActive)
           console.log('🎫 Premium Pass Status:', { 
-            user: user.username, 
+            user: user.wallet_address, 
             active: isActive, 
             expiresAt: expiresAt.toISOString(),
             now: now.toISOString()
           })
         } else {
           setHasPremiumPass(false)
-          console.log('🎫 No Premium Pass found for user:', user.username)
+          console.log('🎫 No Premium Pass found for user:', user.wallet_address)
         }
       } catch (error) {
         console.error('Error checking Premium Pass:', error)
@@ -570,7 +570,7 @@ const [showInfo, setShowInfo] = useState(false)
     }
 
     fetchPremiumPass()
-  }, [user?.username])
+  }, [user?.wallet_address])
 
   // Update tickets and legendary tickets when user changes
   useEffect(() => {

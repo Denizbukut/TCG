@@ -35,7 +35,7 @@ export async function createClan(username: string, name: string, description: st
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("clan_id")
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
       .single()
 
     if (userError) {
@@ -78,7 +78,7 @@ export async function createClan(username: string, name: string, description: st
     const { error: updateError } = await supabase
       .from("users")
       .update({ clan_id: clan.id })
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
 
     if (updateError) {
       console.error("Error updating user clan:", updateError)
@@ -152,7 +152,7 @@ export async function requestJoinClan(username: string, clanId: number) {
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("clan_id")
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
       .single()
 
     if (userError) {
@@ -295,7 +295,7 @@ export async function leaveClan(username: string) {
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("clan_id")
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
       .single()
 
     if (userError) {
@@ -328,7 +328,7 @@ export async function leaveClan(username: string) {
     const { error: updateError } = await supabase
       .from("users")
       .update({ clan_id: null })
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
 
     if (updateError) {
       console.error("Error removing user from clan:", updateError)
@@ -658,7 +658,7 @@ if (userError) {
   }
 }
 
-export async function joinClanDirectly(username: string, clanId: number) {
+export async function joinClanDirectly(walletAddress: string, clanId: number) {
   try {
     const supabase = createSupabaseServer()
 
@@ -666,7 +666,7 @@ export async function joinClanDirectly(username: string, clanId: number) {
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("clan_id")
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
       .single()
 
     if (userError || !userData) {
@@ -693,7 +693,7 @@ export async function joinClanDirectly(username: string, clanId: number) {
     const { error: updateUserError } = await supabase
       .from("users")
       .update({ clan_id: clanId })
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
 
     if (updateUserError) {
       return { success: false, error: "Fehler beim Beitreten zum Clan" }
@@ -755,7 +755,7 @@ export async function joinClanDirectly(username: string, clanId: number) {
 
 
 // Benutzer-Clan abrufen
-export async function getUserClan(username: string) {
+export async function getUserClan(walletAddress: string) {
   try {
     const supabase = createSupabaseServer()
 
@@ -763,7 +763,7 @@ export async function getUserClan(username: string) {
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("clan_id")
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
       .single()
 
     if (userError) {
@@ -795,14 +795,14 @@ export async function getUserClan(username: string) {
 }
 
 // Claim level 5 reward (10 tickets each) for clan members
-export async function claimLevel5Reward(username: string) {
+export async function claimLevel5Reward(walletAddress: string) {
   try {
     const supabase = createSupabaseServer()
 
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("clan_id, tickets, legendary_tickets")
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
       .single()
 
     if (userError || !userData?.clan_id) {
@@ -863,7 +863,7 @@ export async function claimLevel5Reward(username: string) {
     await supabase
       .from("users")
       .update({ tickets: newTickets, legendary_tickets: newLegendary })
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
 
     return { success: true, tickets: newTickets, legendary_tickets: newLegendary }
   } catch (error) {

@@ -7,10 +7,10 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const username = searchParams.get('username')
+    const walletAddress = searchParams.get('walletAddress')
     
-    if (!username) {
-      return NextResponse.json({ error: 'Username parameter required' }, { status: 400 })
+    if (!walletAddress) {
+      return NextResponse.json({ error: 'Wallet address parameter required' }, { status: 400 })
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
           character
         )
       `)
-      .eq('user_id', username)
+      .eq('wallet_address', walletAddress)
       .gt('quantity', 0)
 
     if (userCardsError) {
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      username,
+      walletAddress,
       totalCards: userCards?.length || 0,
       uniqueRarities,
       rarityDistribution,

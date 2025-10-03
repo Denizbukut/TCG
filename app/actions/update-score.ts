@@ -30,7 +30,7 @@ function createSupabaseServer() {
   })
 }
 
-export async function updateScoreForCards(username: string, cards: any[]) {
+export async function updateScoreForCards(walletAddress: string, cards: any[]) {
   try {
     const supabase = createSupabaseServer()
 
@@ -45,7 +45,7 @@ export async function updateScoreForCards(username: string, cards: any[]) {
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("score")
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
       .single()
 
     if (userError) {
@@ -58,11 +58,11 @@ export async function updateScoreForCards(username: string, cards: any[]) {
     const newScore = currentScore + totalScoreToAdd
 
     console.log(
-      `[updateScoreForCards] UPDATING SCORE: ${username} - Current: ${currentScore}, Adding: ${totalScoreToAdd}, New: ${newScore}`,
+      `[updateScoreForCards] UPDATING SCORE: ${walletAddress} - Current: ${currentScore}, Adding: ${totalScoreToAdd}, New: ${newScore}`,
     )
 
     // Aktualisiere den Score in der Datenbank
-    const { error: updateError } = await supabase.from("users").update({ score: newScore }).eq("username", username)
+    const { error: updateError } = await supabase.from("users").update({ score: newScore }).eq("wallet_address", walletAddress)
 
     if (updateError) {
       console.error("[updateScoreForCards] Error updating score:", updateError)
@@ -73,7 +73,7 @@ export async function updateScoreForCards(username: string, cards: any[]) {
     const { data: verifyData, error: verifyError } = await supabase
       .from("users")
       .select("score")
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
       .single()
 
     if (verifyError) {
@@ -114,7 +114,7 @@ export async function updateScoreForLevelUp(username: string) {
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("score")
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
       .single()
 
     if (userError) {
@@ -131,7 +131,7 @@ export async function updateScoreForLevelUp(username: string) {
     )
 
     // Aktualisiere den Score in der Datenbank
-    const { error: updateError } = await supabase.from("users").update({ score: newScore }).eq("username", username)
+    const { error: updateError } = await supabase.from("users").update({ score: newScore }).eq("wallet_address", walletAddress)
 
     if (updateError) {
       console.error("[updateScoreForLevelUp] Error updating score:", updateError)

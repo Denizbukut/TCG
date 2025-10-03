@@ -35,7 +35,6 @@ interface Card {
   rarity: string
   type?: string
   description?: string
-  overall_rating?: number
 }
 
 // Helper functions to safely convert data to our types
@@ -63,12 +62,10 @@ function toCard(data: unknown): Card | null {
     image_url: typeof obj.image_url === "string" ? obj.image_url : undefined,
     type: typeof obj.type === "string" ? obj.type : undefined,
     description: typeof obj.description === "string" ? obj.description : undefined,
-    overall_rating: typeof obj.overall_rating === "number" ? obj.overall_rating : undefined,
   }
   
   console.log("toCard function - input:", obj);
   console.log("toCard function - output:", result);
-  console.log("toCard function - overall_rating type:", typeof obj.overall_rating, "value:", obj.overall_rating);
   
   return result
 }
@@ -197,12 +194,12 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
         try {
           const { data: cardData, error: cardError } = await supabase
             .from("cards")
-            .select("overall_rating")
+            .select("id, name, character, image_url, rarity, type, description")
             .eq("id", id)
             .single();
 
           if (!cardError && cardData) {
-            console.log("Collection card - overall_rating from DB:", cardData.overall_rating);
+            console.log("Collection card - card data from DB:", cardData);
             
             setCard({
               id,
@@ -210,10 +207,9 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
               character,
               image_url: imageUrl,
               rarity,
-              overall_rating: typeof cardData.overall_rating === 'number' ? cardData.overall_rating : undefined,
             });
           } else {
-            console.log("Collection card - no overall_rating found, using default");
+            console.log("Collection card - no card data found, using default");
             setCard({
               id,
               name,
@@ -277,15 +273,25 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
       // Card-Daten laden
       const { data: cardData, error: cardError } = await supabase
         .from("cards")
-        .select("*, overall_rating")
+        .select("*")
         .eq("id", actualCardId)
         .single();
 
-      if (cardError || !cardData) {
+      if (cardError) {
         console.error("Error loading card:", cardError);
         toast({
           title: "Error",
-          description: "Failed to load card data",
+          description: `Failed to load card data: ${cardError.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (!cardData) {
+        console.error("No card data found for ID:", actualCardId);
+        toast({
+          title: "Card Not Found",
+          description: "This card does not exist in the database",
           variant: "destructive",
         });
         return;
@@ -293,26 +299,32 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
 
       // Debug: Log card data
       console.log("Card data from database:", cardData);
-      console.log("Overall rating from database:", cardData?.overall_rating);
+      console.log("Card data from database:", cardData);
 
       const validCard = toCard(cardData);
       if (!validCard) {
-        toast({
-          title: "Error",
-          description: "Invalid card data received",
-          variant: "destructive",
-        });
-        return;
+        console.error("Invalid card data:", cardData);
+        // Fallback: Create card manually if toCard fails
+        const fallbackCard: Card = {
+          id: String(cardData.id || actualCardId),
+          name: String(cardData.name || "Unknown Card"),
+          character: String(cardData.character || "Unknown"),
+          image_url: typeof cardData.image_url === "string" ? cardData.image_url : undefined,
+          rarity: String(cardData.rarity || "common") as "common" | "rare" | "epic" | "elite" | "legendary" | "ultimate",
+          type: typeof cardData.type === "string" ? cardData.type : undefined,
+          description: typeof cardData.description === "string" ? cardData.description : undefined,
+        };
+        setCard(fallbackCard);
+      } else {
+        setCard(validCard);
       }
 
       // Debug: Log processed card
-      console.log("Processed card:", validCard);
+      console.log("Processed card:", validCard || "Using fallback card");
 
-      setCard(validCard);
-
-      // UserCards laden
+      // UserCards laden - verwende user_card_instances Tabelle
       let userCardsQuery = supabase
-        .from("user_cards")
+        .from("user_card_instances")
         .select("*")
         .eq("user_id", user.username)
         .eq("card_id", actualCardId);
@@ -323,14 +335,71 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
 
       const { data: userCardsData, error: userCardsError } = await userCardsQuery;
 
+      console.log("=== CARD DETAIL PAGE DEBUG ===")
+      console.log("UserCardsError:", userCardsError)
+      console.log("UserCardsData:", userCardsData)
+      console.log("UserCardsData length:", userCardsData?.length)
+      console.log("Card ID:", actualCardId)
+      console.log("User ID:", user.username)
+      
+      // Debug: Zeige die ersten UserCard-Daten
+      if (userCardsData && userCardsData.length > 0) {
+        console.log("First user card data:", userCardsData[0])
+        console.log("Quantity in first card:", userCardsData[0]?.quantity)
+      } else {
+        console.log("=== NO USER CARDS FOUND ===")
+        console.log("Card ID being searched:", actualCardId)
+        console.log("User ID being searched:", user.username)
+        
+        // Debug: Prüfe alle UserCards für diesen User
+        const { data: allUserCards, error: allUserCardsError } = await supabase
+          .from("user_card_instances")
+          .select("*")
+          .eq("user_id", user.username)
+        
+        console.log("All user cards for this user:", allUserCards)
+        console.log("All user cards error:", allUserCardsError)
+        
+        if (allUserCards && allUserCards.length > 0) {
+          console.log("User has cards, but not this one. Available card IDs:")
+          allUserCards.forEach((card, index) => {
+            console.log(`  ${index + 1}. Card ID: ${card.card_id}`)
+          })
+        }
+      }
+
       if (userCardsError || !userCardsData || userCardsData.length === 0) {
+        console.log("Setting owned to false")
         setOwned(false);
         return;
       }
 
+      console.log("=== CARD DETAIL PAGE DEBUG ===")
+      console.log("UserCardsData found:", userCardsData.length, "cards")
+      console.log("Setting owned to true")
       setOwned(true);
 
-      const validUserCards = toUserCards(userCardsData);
+      // Zähle die Anzahl der Instanzen pro Level
+      const levelCounts: Record<number, number> = {}
+      userCardsData.forEach((item: any) => {
+        const level = item.level || 1
+        levelCounts[level] = (levelCounts[level] || 0) + 1
+      })
+      
+      console.log("Level counts:", levelCounts)
+      
+      // Erstelle UserCard-Objekte mit der korrekten Anzahl
+      const validUserCards = Object.entries(levelCounts).map(([level, count]) => ({
+        id: `virtual-${level}`,
+        user_id: user.username,
+        card_id: actualCardId,
+        quantity: count,
+        level: parseInt(level),
+        favorite: false,
+        obtained_at: undefined
+      }))
+      
+      console.log("Valid user cards with counts:", validUserCards)
       setAllUserCards(validUserCards);
 
       const preferredCard =
@@ -361,7 +430,7 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
     try {
       if (!supabase) return
 
-      const { error } = await supabase.from("user_cards").update({ favorite: !favorite }).eq("id", userCard.id)
+      const { error } = await supabase.from("user_card_instances").update({ favorite: !favorite }).eq("id", userCard.id)
 
       if (error) {
         console.error("Error updating favorite status:", error)
@@ -490,7 +559,7 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
     const supabase = getSupabaseBrowserClient();
     if (!supabase || !user) return;
     const { data, error } = await supabase
-      .from("user_cards")
+      .from("user_card_instances")
       .select("*")
       .eq("user_id", user.username)
       .eq("card_id", userCardItem.card_id)
@@ -532,7 +601,7 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
         if (!supabase) return;
 
         const { data: updatedUserCardsData, error: userCardsError } = await supabase
-          .from("user_cards")
+          .from("user_card_instances")
           .select("*")
           .eq("user_id", user.username)
           .eq("card_id", card.id);
@@ -1163,7 +1232,6 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
             character: card.character,
             image_url: card.image_url,
             rarity: card.rarity as "common" | "rare" | "epic" | "elite" | "legendary" | "ultimate",
-            overall_rating: card.overall_rating,
             level: selectedUserCard.level || 1,
             quantity: selectedUserCard.quantity,
           }}

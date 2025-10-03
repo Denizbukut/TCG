@@ -544,12 +544,12 @@ await supabase.from("ticket_purchases").insert({
 
   // Regular ticket packages
   const regularPackages = [
-    { id: "reg-1", amount: 1, price: 0.11 },
-    { id: "reg-5", amount: 5, price: 0.35 },
-    { id: "reg-10", amount: 10, price: 0.6 },
-    { id: "reg-20", amount: 20, price: 1.05 },
-    { id: "reg-50", amount: 50, price: 2.2 },
-    { id: "reg-500", amount: 500, price: 15 },
+    { id: "reg-1", amount: 1, price: 0.13 },
+    { id: "reg-5", amount: 5, price: 0.55 },
+    { id: "reg-10", amount: 10, price: 0.8 },
+    { id: "reg-20", amount: 20, price: 1.65 },
+    { id: "reg-50", amount: 50, price: 3.2 },
+    { id: "reg-100", amount: 100, price: 5.3 },
     
   ]
 
@@ -560,7 +560,7 @@ await supabase.from("ticket_purchases").insert({
     { id: "leg-10", amount: 10, price: 1.4 },
     { id: "leg-20", amount: 20, price: 2.6 },
     { id: "leg-50", amount: 50, price: 6 },
-    { id: "leg-500", amount: 500, price: 39 },
+    { id: "leg-100", amount: 100, price: 10 },
   ]
 
   // Icon Ticket Packages (20% teurer als Legendary)

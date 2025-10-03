@@ -7,10 +7,10 @@ export async function GET(request: NextRequest) {
   const weekStart = WEEKLY_CONTEST_CONFIG.weekStart
 
   const { searchParams } = new URL(request.url)
-  const username = searchParams.get("username")
+  const walletAddress = searchParams.get("walletAddress")
 
-  if (!username) {
-    return NextResponse.json({ success: false, error: "Username is required" }, { status: 400 })
+  if (!walletAddress) {
+    return NextResponse.json({ success: false, error: "Wallet address is required" }, { status: 400 })
   }
 
   try {
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       .from("weekly_contest_entries")
       .select("legendary_count")
       .eq("week_start_date", weekStart)
-      .eq("user_id", username)
+      .eq("wallet_address", walletAddress)
       .single()
 
     if (userError && userError.code !== "PGRST116") {

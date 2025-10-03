@@ -52,21 +52,21 @@ function createSupabaseServer() {
 /**
  * Claims daily login bonus for a user
  */
-export async function claimDailyBonus(username: string) {
+export async function claimDailyBonus(walletAddress: string) {
   try {
     const supabase = createSupabaseServer()
 
     // Get current user data including clan info
     const { data: userData, error: userError } = await supabase
       .from("users")
-      .select("username, tickets, ticket_last_claimed, clan_id")
-      .eq("username", username)
+      .select("walletAddress, tickets, ticket_last_claimed, clan_id")
+      .eq("wallet_address", walletAddress)
       .single()
 
     if (userError) {
       // Create user if not found
       const { error: createError } = await supabase.from("users").insert({
-        username: username,
+        walletAddress: walletAddress,
         tickets: 10,
         legendary_tickets: 2,
         ticket_last_claimed: new Date().toISOString(),
@@ -124,7 +124,7 @@ export async function claimDailyBonus(username: string) {
         tickets: newTicketCount,
         ticket_last_claimed: new Date().toISOString(),
       })
-      .eq("username", userData.username)
+      .eq("walletAddress", userData.walletAddress)
 
     if (updateError) {
       return { success: false, error: "Failed to update tickets" }
@@ -181,21 +181,21 @@ function getScoreForRarity(rarity: CardRarity): number {
   }
 }
 
-export async function drawCards(username: string, packType: string, count = 1, hasPremiumPass = false) {
+export async function drawCards(walletAddress: string, packType: string, count = 1, hasPremiumPass = false) {
   try {
     const supabase = createSupabaseServer()
 
     // Check if user is banned
-    if (isUserBanned(username)) {
+    if (isUserBanned(walletAddress)) {
       return { success: false, error: "You are banned from drawing packs." }
     }
 
     // Remove cards with quantity 0
-    console.log(`Removing cards with quantity 0 for user ${username}...`)
+    console.log(`Removing cards with quantity 0 for user ${walletAddress}...`)
     const { data: removedCards, error: removeError } = await supabase
       .from("user_cards")
       .delete()
-      .eq("user_id", username)
+      .eq("user_id", walletAddress)
       .eq("quantity", 0)
       .select()
 
@@ -209,7 +209,7 @@ export async function drawCards(username: string, packType: string, count = 1, h
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("*, clan_id, avatar_id")
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
       .single()
 
     if (userError) {
@@ -230,10 +230,10 @@ export async function drawCards(username: string, packType: string, count = 1, h
       if (!avatarError && avatarData) {
         if (avatarData.rarity === "epic") {
           hasEpicAvatar = true
-          console.log(`🎭 Epic Avatar detected for user ${username} - Ultimate drop rate bonus active!`)
+          console.log(`🎭 Epic Avatar detected for user ${walletAddress} - Ultimate drop rate bonus active!`)
         } else if (avatarData.rarity === "god") {
           hasGodAvatar = true
-          console.log(`👑 God Avatar detected for user ${username} - Icon Pack drop rate bonus active!`)
+          console.log(`👑 God Avatar detected for user ${walletAddress} - Icon Pack drop rate bonus active!`)
         }
       }
     }
@@ -246,7 +246,7 @@ export async function drawCards(username: string, packType: string, count = 1, h
         .from("clan_members")
         .select("role")
         .eq("clan_id", userData.clan_id)
-        .eq("user_id", username)
+        .eq("user_id", walletAddress)
         .single()
 
       if (!memberError && memberData) {
@@ -290,7 +290,7 @@ export async function drawCards(username: string, packType: string, count = 1, h
     }
 
     // Update user tickets in database
-    const { error: updateError } = await supabase.from("users").update(updateData).eq("username", username)
+    const { error: updateError } = await supabase.from("users").update(updateData).eq("wallet_address", walletAddress)
 
     if (updateError) {
       console.error("Error updating tickets:", updateError)
@@ -306,7 +306,7 @@ export async function drawCards(username: string, packType: string, count = 1, h
       const { data: iconPassData, error: iconPassError } = await supabase
         .from('icon_passes')
         .select('*')
-        .eq('user_id', username)
+        .eq('user_id', walletAddress)
         .eq('active', true)
         .single()
 
@@ -317,12 +317,12 @@ export async function drawCards(username: string, packType: string, count = 1, h
         hasIconPass = expiryDate > now
         
         if (hasIconPass) {
-          console.log(`✅ Icon Pass active for user ${username}, expires: ${expiryDate}`)
+          console.log(`✅ Icon Pass active for user ${walletAddress}, expires: ${expiryDate}`)
         } else {
-          console.log(`❌ Icon Pass expired for user ${username}, expired: ${expiryDate}`)
+          console.log(`❌ Icon Pass expired for user ${walletAddress}, expired: ${expiryDate}`)
         }
       } else {
-        console.log(`❌ No active Icon Pass found for user ${username}`)
+        console.log(`❌ No active Icon Pass found for user ${walletAddress}`)
       }
     } catch (error) {
       console.error('Error checking Icon Pass:', error)
@@ -357,7 +357,7 @@ export async function drawCards(username: string, packType: string, count = 1, h
       let cardPool: any[]
 
       if (!isLegendary) {
-        await incrementMission(username, "open_regular_pack")
+        await incrementMission(walletAddress, "open_regular_pack")
         
         // Verwende Rarity-basiertes System statt Rating
         rarity = determineRarity("regular", hasPremiumPass)
@@ -374,7 +374,7 @@ export async function drawCards(username: string, packType: string, count = 1, h
         const selectedCard = cardPool[Math.floor(Math.random() * cardPool.length)];
         drawnCards.push(selectedCard);
         if (selectedCard.rarity === "ultimate") {
-          await incrementMission(username, "draw_legendary_card");
+          await incrementMission(walletAddress, "draw_legendary_card");
         }
         // Calculate score for this card
         const cardPoints = getScoreForRarity(selectedCard.rarity);
@@ -384,7 +384,7 @@ export async function drawCards(username: string, packType: string, count = 1, h
         const { data: existingCard, error: existingCardError } = await supabase
           .from("user_cards")
           .select("*")
-          .eq("user_id", username)
+          .eq("user_id", walletAddress)
           .eq("card_id", selectedCard.id)
           .eq("level", 1)
           .single();
@@ -405,7 +405,7 @@ export async function drawCards(username: string, packType: string, count = 1, h
           const { data: insertedCard, error: insertCardError } = await supabase
             .from("user_cards")
             .insert({
-              user_id: username,
+              user_id: walletAddress,
               card_id: selectedCard.id,
               quantity: 1,
               level: 1,
@@ -434,7 +434,7 @@ export async function drawCards(username: string, packType: string, count = 1, h
         // Rating 92+: 0.000000000000000000000444444%
         
         let rating = 0;
-        console.log(`📊 Using Icon Pack rates for user ${username}`)
+        console.log(`📊 Using Icon Pack rates for user ${walletAddress}`)
         
         if (random < 30.35) {
           rating = Math.floor(Math.random() * 5) + 75; // 75–79
@@ -457,8 +457,8 @@ export async function drawCards(username: string, packType: string, count = 1, h
         } else {
           rating = 92;
         }
-        // Filter cards nach overall_rating
-        let cardPool = availableCards.filter(card => card.overall_rating == rating);
+        // Filter cards nach rarity (fallback für overall_rating)
+        let cardPool = availableCards.filter(card => card.rarity === "epic");
         // Fallback falls keine Karte mit rating vorhanden
         if (!cardPool || cardPool.length === 0) {
           cardPool = epicCards.length > 0 ? epicCards : availableCards;
@@ -467,7 +467,7 @@ export async function drawCards(username: string, packType: string, count = 1, h
         const selectedCard = cardPool[Math.floor(Math.random() * cardPool.length)];
         drawnCards.push(selectedCard);
         if (selectedCard.rarity === "ultimate") {
-          await incrementMission(username, "draw_legendary_card");
+          await incrementMission(walletAddress, "draw_legendary_card");
         }
         // Calculate score for this card
         const cardPoints = getScoreForRarity(selectedCard.rarity);
@@ -477,7 +477,7 @@ export async function drawCards(username: string, packType: string, count = 1, h
         const { data: existingCard, error: existingCardError } = await supabase
           .from("user_cards")
           .select("*")
-          .eq("user_id", username)
+          .eq("user_id", walletAddress)
           .eq("card_id", selectedCard.id)
           .eq("level", 1)
           .single();
@@ -498,7 +498,7 @@ export async function drawCards(username: string, packType: string, count = 1, h
           const { data: insertedCard, error: insertCardError } = await supabase
             .from("user_cards")
             .insert({
-              user_id: username,
+              user_id: walletAddress,
               card_id: selectedCard.id,
               quantity: 1,
               level: 1,
@@ -564,7 +564,7 @@ export async function drawCards(username: string, packType: string, count = 1, h
       drawnCards.push(selectedCard)
 
       if (selectedCard.rarity === "ultimate") {
-        await incrementMission(username, "draw_legendary_card")
+        await incrementMission(walletAddress, "draw_legendary_card")
       }
 
       // Calculate score for this card
@@ -578,7 +578,7 @@ export async function drawCards(username: string, packType: string, count = 1, h
       const { data: existingCard, error: existingCardError } = await supabase
         .from("user_cards")
         .select("*")
-        .eq("user_id", username)
+        .eq("user_id", walletAddress)
         .eq("card_id", selectedCard.id)
         .eq("level", 1)
         .single()
@@ -613,7 +613,7 @@ export async function drawCards(username: string, packType: string, count = 1, h
         const { data: insertedCard, error: insertCardError } = await supabase
           .from("user_cards")
           .insert({
-            user_id: username,
+            user_id: walletAddress,
             card_id: selectedCard.id,
             quantity: 1,
             level: 1,
@@ -634,7 +634,7 @@ export async function drawCards(username: string, packType: string, count = 1, h
     let xpAmount = isLegendary ? 100 * count : 50 * count
 
     // Special case for jiraiya user
-    if (username === "jiraiya") {
+    if (walletAddress === "jiraiya") {
       xpAmount = 10 * count
     }
 
@@ -644,7 +644,7 @@ export async function drawCards(username: string, packType: string, count = 1, h
     }
 
     // Founder bonus: +5% XP from all pack openings
-    if (userClanRole === "leader" || (userData.clan_id && userData.username === userData.founder_id)) {
+    if (userClanRole === "leader" || (userData.clan_id && userData.walletAddress === userData.founder_id)) {
       xpAmount = Math.floor(xpAmount * 1.05)
     }
 
@@ -652,7 +652,7 @@ export async function drawCards(username: string, packType: string, count = 1, h
     const { data: xpPassData } = await supabase
       .from("xp_passes")
       .select("active")
-      .eq("user_id", username)
+      .eq("user_id", walletAddress)
       .eq("active", true)
       .single()
 
@@ -666,7 +666,7 @@ export async function drawCards(username: string, packType: string, count = 1, h
     const { data: currentUserData, error: currentUserError } = await supabase
       .from("users")
       .select("score")
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
       .single()
 
     if (currentUserError) {
@@ -677,12 +677,12 @@ export async function drawCards(username: string, packType: string, count = 1, h
     const currentScore = currentUserData.score || 0
     const newScore = Math.floor(currentScore + totalScoreToAdd)
 
-    console.log(`UPDATING SCORE: ${username} - Current: ${currentScore}, Adding: ${totalScoreToAdd}, New: ${newScore}`)
+    console.log(`UPDATING SCORE: ${walletAddress} - Current: ${currentScore}, Adding: ${totalScoreToAdd}, New: ${newScore}`)
 
     const { error: scoreUpdateError } = await supabase
       .from("users")
       .update({ score: newScore })
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
 
     if (scoreUpdateError) {
       console.error("Error updating score:", scoreUpdateError)
@@ -733,7 +733,7 @@ if (!clanError && clanData) {
     const { data: updatedUser, error: updatedUserError } = await supabase
       .from("users")
       .select("tickets, elite_tickets, icon_tickets, score")
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
       .single()
 
     if (updatedUserError) {
@@ -768,24 +768,21 @@ if (!clanError && clanData) {
 /**
  * Gets all cards in a user's collection
  */
-export async function getUserCards(username: string) {
+export async function getUserCards(walletAddress: string) {
   try {
     const supabase = createSupabaseServer()
 
-    // Ändere die Abfrage, um die ID aus der user_cards-Tabelle zurückzugeben
-    // Wichtig: Wir holen nur Karten mit quantity > 0, da nur diese in der Sammlung angezeigt werden sollen
+    // Ändere die Abfrage, um die ID aus der user_card_instances-Tabelle zurückzugeben
     const { data: userCards, error: userCardsError } = await supabase
-      .from("user_cards")
+      .from("user_card_instances")
       .select(`
         id,
         card_id,
         level,
-        quantity,
         favorite,
         obtained_at
       `)
-      .eq("user_id", username)
-      .gt("quantity", 0)
+      .eq("user_id", walletAddress)
 
     if (userCardsError) {
       console.error("Error fetching user cards:", userCardsError)
@@ -820,7 +817,7 @@ export async function getUserCards(username: string) {
         if (!cardDetails) return null
 
         return {
-          id: userCard.id, // Die eindeutige ID aus der user_cards-Tabelle
+          id: userCard.id, // Die eindeutige ID aus der user_card_instances-Tabelle
           card_id: userCard.card_id,
           name: cardDetails.name,
           character: cardDetails.character,
@@ -829,7 +826,7 @@ export async function getUserCards(username: string) {
           type: cardDetails.type,
           description: cardDetails.description,
           level: userCard.level || 1,
-          quantity: userCard.quantity || 1,
+          quantity: 1, // Jede Instanz ist eine Karte
           favorite: userCard.favorite || false,
           obtained_at: userCard.obtained_at,
         }
@@ -876,7 +873,7 @@ function determineRarity(packType: string, hasPremiumPass = false): CardRarity {
  * Utility-Funktion zum Bereinigen von Karten mit Quantity 0
  * Diese Funktion kann verwendet werden, um Karten mit Quantity 0 zu entfernen oder auf 1 zu setzen
  */
-export async function cleanupZeroQuantityCards(username: string, action: 'remove' | 'fix' = 'fix') {
+export async function cleanupZeroQuantityCards(walletAddress: string, action: 'remove' | 'fix' = 'fix') {
   try {
     const supabase = createSupabaseServer()
     
@@ -884,7 +881,7 @@ export async function cleanupZeroQuantityCards(username: string, action: 'remove
     const { data: zeroCards, error: fetchError } = await supabase
       .from("user_cards")
       .select("*")
-      .eq("user_id", username)
+      .eq("user_id", walletAddress)
       .eq("quantity", 0)
     
     if (fetchError) {
@@ -903,7 +900,7 @@ export async function cleanupZeroQuantityCards(username: string, action: 'remove
       const { error: deleteError } = await supabase
         .from("user_cards")
         .delete()
-        .eq("user_id", username)
+        .eq("user_id", walletAddress)
         .eq("quantity", 0)
       
       if (deleteError) {
@@ -940,23 +937,23 @@ export async function cleanupZeroQuantityCards(username: string, action: 'remove
   }
 }
 
-export async function drawGodPacks(username: string, count = 1) {
+export async function drawGodPacks(walletAddress: string, count = 1) {
   try {
     const supabase = createSupabaseServer()
 
     // Check if user is banned
-    if (isUserBanned(username)) {
+    if (isUserBanned(walletAddress)) {
       return { success: false, error: "You are banned from drawing packs." }
     }
 
     // Remove cards with quantity 0
-    await supabase.from("user_cards").delete().eq("user_id", username).eq("quantity", 0)
+    await supabase.from("user_cards").delete().eq("user_id", walletAddress).eq("quantity", 0)
 
     // Get user data + clan info
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("*, clan_id")
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
       .single()
 
     if (userError || !userData) return { success: false, error: "User not found" }
@@ -967,7 +964,7 @@ export async function drawGodPacks(username: string, count = 1) {
         .from("clan_members")
         .select("role")
         .eq("clan_id", userData.clan_id)
-        .eq("user_id", username)
+        .eq("user_id", walletAddress)
         .single()
 
       userClanRole = memberData?.role || null
@@ -979,7 +976,7 @@ export async function drawGodPacks(username: string, count = 1) {
     const { error: updateError } = await supabase
       .from("users")
       .update({ icon_tickets: newIconTicketCount })
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
 
     if (updateError) throw new Error("Could not update icon tickets")
 
@@ -988,7 +985,7 @@ export async function drawGodPacks(username: string, count = 1) {
     const { data: usageData } = await supabase
       .from("god_pack_daily_usage")
       .select("*")
-      .eq("user_id", username)
+      .eq("user_id", walletAddress)
       .eq("usage_date", today)
       .single()
 
@@ -1006,12 +1003,11 @@ export async function drawGodPacks(username: string, count = 1) {
       .from("cards")
       .select("*")
       .eq("obtainable", true)
-    // Ziehe nur aus goat/godlike/elite/ultimate Karten mit overall_rating >= 84
+    // Ziehe nur aus goat/godlike/elite/ultimate Karten
     const goatCards = (cards || []).filter((c) => {
       const r = c.rarity;
-      const rating = Number(c.overall_rating);
       return (
-        (r === "goat" || r === "godlike" || r === "elite" || r === "ultimate") && rating >= 84
+        (r === "goat" || r === "godlike" || r === "elite" || r === "ultimate")
       );
     });
     const drawnCards = []
@@ -1048,8 +1044,8 @@ export async function drawGodPacks(username: string, count = 1) {
           break
         }
       }
-      // Ziehe aus goatCards mit passendem overall_rating
-      let pool = goatCards.filter(card => Number(card.overall_rating) === selectedRating)
+      // Ziehe aus goatCards mit passender rarity
+      let pool = goatCards.filter(card => card.rarity === "ultimate")
       if (!pool || pool.length === 0) {
         // Fallback: Ziehe aus allen goatCards
         pool = goatCards
@@ -1062,25 +1058,18 @@ export async function drawGodPacks(username: string, count = 1) {
       const { data: existingCard } = await supabase
         .from("user_cards")
         .select("*")
-        .eq("user_id", username)
+        .eq("user_id", walletAddress)
         .eq("card_id", selectedCard.id)
         .eq("level", 1)
         .single()
-      if (existingCard) {
-        await supabase
-          .from("user_cards")
-          .update({ quantity: existingCard.quantity + 1 })
-          .eq("id", existingCard.id)
-      } else {
-        await supabase.from("user_cards").insert({
-          user_id: username,
-          card_id: selectedCard.id,
-          quantity: 1,
-          level: 1,
-          favorite: false,
-          obtained_at: today,
-        })
-      }
+      // Add card instance (no quantity management needed)
+      await supabase.from("user_card_instances").insert({
+        user_id: walletAddress,
+        card_id: selectedCard.id,
+        level: 1,
+        favorite: false,
+        obtained_at: today,
+      })
     }
 
     // Update god_pack_daily_usage
@@ -1091,7 +1080,7 @@ export async function drawGodPacks(username: string, count = 1) {
         .eq("id", usageData.id)
     } else {
       await supabase.from("god_pack_daily_usage").insert({
-        user_id: username,
+        user_id: walletAddress,
         usage_date: today,
         packs_opened: drawCount,
       })
@@ -1099,10 +1088,10 @@ export async function drawGodPacks(username: string, count = 1) {
 
     // Update score
     const cardScore = Math.round(totalScoreToAdd)
-    const { data: userScoreData } = await supabase.from("users").select("score").eq("username", username).single()
+    const { data: userScoreData } = await supabase.from("users").select("score").eq("wallet_address", walletAddress).single()
     const newScore = (userScoreData?.score || 0) + cardScore
 
-    await supabase.from("users").update({ score: newScore }).eq("username", username)
+    await supabase.from("users").update({ score: newScore }).eq("wallet_address", walletAddress)
 
     // Update clan XP
     if (userData.clan_id) {
@@ -1136,12 +1125,12 @@ export async function drawGodPacks(username: string, count = 1) {
     // Calculate XP with bonuses
     let xpAmount = 200 * drawCount
     if (userClanRole === "xp_hunter") xpAmount = Math.floor(xpAmount * 1.05)
-    if (userClanRole === "leader" || userData.username === userData.founder_id) xpAmount = Math.floor(xpAmount * 1.05)
+    if (userClanRole === "leader" || userData.walletAddress === userData.founder_id) xpAmount = Math.floor(xpAmount * 1.05)
 
     const { data: xpPass } = await supabase
       .from("xp_passes")
       .select("active")
-      .eq("user_id", username)
+      .eq("user_id", walletAddress)
       .eq("active", true)
       .single()
 

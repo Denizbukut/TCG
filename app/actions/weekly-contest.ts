@@ -9,7 +9,7 @@ function createSupabaseServer() {
   })
 }
 
-export async function incrementLegendaryDraw(username: string, count = 1) {
+export async function incrementLegendaryDraw(walletAddress: string, count = 1) {
   const supabase = createSupabaseServer()
   const weekStart = WEEKLY_CONTEST_CONFIG.weekStart
   const contestEnd = getContestEndDate()
@@ -37,7 +37,7 @@ export async function incrementLegendaryDraw(username: string, count = 1) {
     await supabase
       .from("weekly_contest_entries")
       .update({ legendary_count: currentCount + count, updated_at: new Date().toISOString() })
-      .eq("user_id", username)
+      .eq("wallet_address", walletAddress)
       .eq("week_start_date", weekStart)
   }
 

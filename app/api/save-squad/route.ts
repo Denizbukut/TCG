@@ -14,15 +14,15 @@ const slotMap = [
 export async function GET(request: Request) {
   // User aus Cookie holen (hier: username)
   const cookieStore = await cookies();
-  const usernameCookie = cookieStore.get("animeworld_user")?.value;
+  const userCookie = cookieStore.get("animeworld_user")?.value;
   let user_id = null;
   if (usernameCookie) {
     try {
-      user_id = JSON.parse(usernameCookie).username;
+      user_id = JSON.parse(userCookie).wallet_address;
     } catch {}
   }
   if (!user_id) {
-    return NextResponse.json({ error: "Not authenticated", debug: { cookie: usernameCookie, user_id } }, { status: 401 });
+    return NextResponse.json({ error: "Not authenticated", debug: { cookie: userCookie, user_id } }, { status: 401 });
   }
   const supabase = createSupabaseServerClient(cookieStore);
   // Squad aus DB holen
@@ -44,15 +44,15 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const cookieStore = await cookies();
-  const usernameCookie = cookieStore.get("animeworld_user")?.value;
+  const userCookie = cookieStore.get("animeworld_user")?.value;
   let user_id = null;
   if (usernameCookie) {
     try {
-      user_id = JSON.parse(usernameCookie).username;
+      user_id = JSON.parse(userCookie).wallet_address;
     } catch {}
   }
   if (!user_id) {
-    return NextResponse.json({ error: "Not authenticated", debug: { cookie: usernameCookie, user_id } }, { status: 401 });
+    return NextResponse.json({ error: "Not authenticated", debug: { cookie: userCookie, user_id } }, { status: 401 });
   }
   const supabase = createSupabaseServerClient(cookieStore);
   const body = await request.json();

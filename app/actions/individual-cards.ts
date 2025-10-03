@@ -50,7 +50,7 @@ function determineRarity(packType: string, hasPremiumPass = false): CardRarity {
 // Function to add a card instance to user's collection
 async function addCardInstance(
   supabase: any,
-  username: string,
+  walletAddress: string,
   cardId: string,
   level: number = 1,
   favorite: boolean = false
@@ -59,7 +59,7 @@ async function addCardInstance(
     const { data: insertedCard, error: insertCardError } = await supabase
       .from("user_card_instances")
       .insert({
-        user_id: username,
+        user_id: walletAddress,
         card_id: cardId,
         level: level,
         favorite: favorite,
@@ -81,22 +81,22 @@ async function addCardInstance(
 }
 
 // Main function to draw cards with individual instances
-export async function drawCardsIndividual(username: string, packType: string, count = 1, hasPremiumPass = false) {
+export async function drawCardsIndividual(walletAddress: string, packType: string, count = 1, hasPremiumPass = false) {
   try {
     const supabase = getSupabaseServerClient()
     console.log("Supabase client created successfully")
 
     // Check if user is banned
-    if (isUserBanned(username)) {
+    if (isUserBanned(walletAddress)) {
       return { success: false, error: "You are banned from drawing packs." }
     }
 
     // Get user data
-    console.log("Fetching user data for username:", username)
+    console.log("Fetching user data for walletAddress:", walletAddress)
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("tickets, elite_tickets, score, clan_id")
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
       .single()
     
     console.log("User data result:", { userData, userError })
@@ -183,7 +183,7 @@ export async function drawCardsIndividual(username: string, packType: string, co
 
       // Prepare card instance for batch insert
       cardInstancesToInsert.push({
-        user_id: username,
+        user_id: walletAddress,
         card_id: selectedCard.id,
         level: 1,
         favorite: false,
@@ -224,7 +224,7 @@ export async function drawCardsIndividual(username: string, packType: string, co
         [isLegendary ? "elite_tickets" : "tickets"]: newTicketCount,
         score: newScore
       })
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
 
     if (updateError) {
       console.error("Error updating user data:", updateError)
@@ -248,7 +248,7 @@ export async function drawCardsIndividual(username: string, packType: string, co
 }
 
 // Function to get user's cards with individual instances
-export async function getUserCardsIndividual(username: string) {
+export async function getUserCardsIndividual(walletAddress: string) {
   try {
     const supabase = getSupabaseServerClient()
 
@@ -269,7 +269,7 @@ export async function getUserCardsIndividual(username: string) {
           rarity
         )
       `)
-      .eq("user_id", username)
+      .eq("user_id", walletAddress)
       .order("obtained_at", { ascending: false })
 
     if (instancesError) {
@@ -324,16 +324,16 @@ export async function getUserCardsIndividual(username: string) {
 }
 
 // Function to level up cards (combine two cards of same type and level)
-export async function levelUpCardIndividual(username: string, cardId: string, level: number) {
+export async function levelUpCardIndividual(walletAddress: string, cardId: string, level: number) {
   try {
     const supabase = getSupabaseServerClient()
-    console.log(`Attempting to level up card ${cardId} for user ${username} from level ${level}`)
+    console.log(`Attempting to level up card ${cardId} for user ${walletAddress} from level ${level}`)
 
     // Get two instances of the same card and level
     const { data: instances, error: fetchError } = await supabase
       .from("user_card_instances")
       .select("id")
-      .eq("user_id", username)
+      .eq("user_id", walletAddress)
       .eq("card_id", cardId)
       .eq("level", level)
       .limit(2)
@@ -364,7 +364,7 @@ export async function levelUpCardIndividual(username: string, cardId: string, le
     }
 
     // Add one instance of the next level
-    const addResult = await addCardInstance(supabase, username, cardId, level + 1, false)
+    const addResult = await addCardInstance(supabase, walletAddress, cardId, level + 1, false)
     
     if (!addResult.success) {
       console.error("Failed to add leveled up card:", addResult.error)
@@ -380,9 +380,9 @@ export async function levelUpCardIndividual(username: string, cardId: string, le
 }
 
 // Test function to manually test level up
-export async function testLevelUp(username: string) {
+export async function testLevelUp(walletAddress: string) {
   try {
-    console.log(`Testing level up for user: ${username}`)
+    console.log(`Testing level up for user: ${walletAddress}`)
     
     const supabase = getSupabaseServerClient()
     
@@ -390,7 +390,7 @@ export async function testLevelUp(username: string) {
     const { data: allInstances, error: allError } = await supabase
       .from("user_card_instances")
       .select("id, card_id, level")
-      .eq("user_id", username)
+      .eq("user_id", walletAddress)
       .order("id", { ascending: true })
     
     console.log("All instances for user:", { allInstances, allError })
@@ -423,7 +423,7 @@ export async function testLevelUp(username: string) {
     
     console.log(`Found suitable group: cardId=${cardId}, level=${level}, count=${(suitableGroup as any[]).length}`)
     
-    return await levelUpCardIndividual(username, cardId, level)
+    return await levelUpCardIndividual(walletAddress, cardId, level)
   } catch (error) {
     console.error("Error in testLevelUp:", error)
     return { success: false, error: `Test failed: ${error instanceof Error ? error.message : String(error)}` }

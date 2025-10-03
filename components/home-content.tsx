@@ -11,6 +11,7 @@ import { getSBCChallenges, getUserSBCProgress, type SBCChallenge, type SBCUserPr
 import ProtectedRoute from "@/components/protected-route"
 import MobileNav from "@/components/mobile-nav"
 import { Button } from "@/components/ui/button"
+import CardCatalog from "@/components/card-catalog"
 import { useRouter } from "next/navigation"
 import { getTimeUntilContestEnd, isContestActive } from "@/lib/weekly-contest-config"
 
@@ -91,12 +92,6 @@ interface LevelReward {
   isSpecialLevel?: boolean
 }
 
-interface UserAvatarData {
-  avatar_id: number
-  avatars?: {
-    image_url: string
-  }
-}
 
 interface DailyDeal {
   id: number
@@ -151,19 +146,9 @@ const xpPassBenefits = [
   'XP leaderboard access',
 ]
 
-// AvatarOption Interface für Avatare
-interface AvatarOption {
-  id: number;
-  image_url: string;
-  rarity: string;
-  is_free: boolean;
-  price: number;
-  url: string;
-  is_active?: boolean; // Optional for backward compatibility
-}
 
 export default function Home() {
-  const { user, updateUserTickets, refreshUserData, updateUserAvatar } = useAuth()
+  const { user, updateUserTickets, refreshUserData } = useAuth()
   const [claimLoading, setClaimLoading] = useState(false)
   const [referralLoading, setReferralLoading] = useState(false)
   const [alreadyClaimed, setAlreadyClaimed] = useState(false)
@@ -179,7 +164,6 @@ export default function Home() {
   const lastFetchedRef = useRef<number>(0)
   const [contestCountdown, setContestCountdown] = useState(getTimeUntilContestEnd())
   const [userClanInfo, setUserClanInfo] = useState<ClanInfo | null>(null)
-  const [showAvatarDialog, setShowAvatarDialog] = useState(false)
   const [referredUsers, setReferredUsers] = useState<
   {
     id: number
@@ -188,11 +172,7 @@ export default function Home() {
     reward_claimed: boolean
   }[]
 >([])
-  const [showBuyAvatarDialog, setShowBuyAvatarDialog] = useState(false)
-  const [selectedAvatarToBuy, setSelectedAvatarToBuy] = useState<AvatarOption | null>(null)
   
-  const [currentAvatarUrl, setCurrentAvatarUrl] = useState("")
-  const [currentAvatarId, setCurrentAvatarId] = useState(1)
   const [currentXpColor, setCurrentXpColor] = useState("pink")
   // const [iconTickets, setIconTickets] = useState(0)
   
@@ -276,7 +256,6 @@ export default function Home() {
 
   useEffect(() => {
     if (user?.username) {
-      loadUserAvatar()
       loadUserXpColor()
     }
   }, [user?.username])
@@ -296,55 +275,6 @@ export default function Home() {
     }
   }, [])
 
-  const loadUserAvatar = async () => {
-    if (!user?.username) return
-    const supabase = getSupabaseBrowserClient()
-    if (!supabase) return
-    
-    // Check if user is admin
-    const isAdmin = user.username === 'jiraiya' || user.username === 'badbunny.3547' || user.username === 'damla123' || user.username === 'xgrokxd'
-    
-    // Use avatar_id from Auth-Context instead of fetching from database
-    const avatarId = user.avatar_id || 1
-    
-    // First, check if the avatar exists in the avatars table
-    const { data: avatarData, error: avatarError } = await supabase
-      .from("avatars")
-      .select("id, image_url, rarity, is_free, is_active")
-      .eq("id", avatarId)
-      .single()
-    
-    // For admins, allow inactive avatars; for others, only active avatars
-    if (!avatarError && avatarData?.image_url && (isAdmin || avatarData.is_active)) {
-      setCurrentAvatarId(Number(avatarId))
-      setCurrentAvatarUrl(String(avatarData.image_url))
-    } else {
-      
-      // Fallback: Try to get the first available avatar (active for non-admins, any for admins)
-      const fallbackQuery = supabase
-        .from("avatars")
-        .select("id, image_url, rarity, is_free")
-        .eq("is_free", true)
-        .limit(1)
-      
-      if (!isAdmin) {
-        fallbackQuery.eq("is_active", true)
-      }
-      
-      const { data: fallbackAvatar, error: fallbackError } = await fallbackQuery.single()
-      
-      if (!fallbackError && fallbackAvatar?.image_url) {
-        setCurrentAvatarId(Number(fallbackAvatar.id))
-        setCurrentAvatarUrl(String(fallbackAvatar.image_url))
-        // Update the user's avatar_id in the database
-        await updateUserAvatar(Number(fallbackAvatar.id))
-      } else {
-        // Set a default placeholder
-        setCurrentAvatarId(1)
-        setCurrentAvatarUrl("/placeholder.svg")
-      }
-    }
-  }
 
   const loadUserXpColor = async () => {
     if (!user?.username) return
@@ -494,7 +424,7 @@ const [copied, setCopied] = useState(false)
         const { data: userData, error: fetchError } = await supabase
           .from("users")
         .select("tickets, legendary_tickets")
-          .eq("username", user.username)
+          .eq("wallet_address", user.wallet_address)
           .single()
         if (fetchError) {
           throw new Error("Could not fetch user data")
@@ -517,7 +447,7 @@ const [copied, setCopied] = useState(false)
             tickets: newTicketCount,
             legendary_tickets: newLegendaryTicketCount,
           })
-          .eq("username", user.username)
+          .eq("wallet_address", user.wallet_address)
         if (updateError) {
           throw new Error("Failed to update tickets")
         }
@@ -566,7 +496,7 @@ const [copied, setCopied] = useState(false)
           const { data: userData, error: userError } = await supabase
             .from("users")
             .select("clan_id")
-            .eq("username", user.username)
+            .eq("wallet_address", user.wallet_address)
             .single()
 
           if (userError || !userData || !userData.clan_id) {
@@ -758,7 +688,7 @@ const [copied, setCopied] = useState(false)
 
   // Check if user can claim tickets and tokens and update countdown timers
   useEffect(() => {
-    if (!user?.username || hasCheckedClaims.current) return
+    if (!user?.wallet_address || hasCheckedClaims.current) return
 
     hasCheckedClaims.current = true
 
@@ -771,7 +701,7 @@ const [copied, setCopied] = useState(false)
         const { data, error } = await supabase
           .from("users")
           .select("ticket_last_claimed, token_last_claimed, tickets, elite_tickets, icon_tickets, tokens, has_premium")
-          .eq("username", user.username)
+          .eq("wallet_address", user.wallet_address)
           .single()
 
         if (error) {
@@ -1204,143 +1134,12 @@ const [copied, setCopied] = useState(false)
     }
   }, [user])
 
-  // Avatar-Auswahl-Dialog State
-  const [avatarUrl, setAvatarUrl] = useState<string>(currentAvatarUrl || "https://ani-labs.xyz/pika.jpg")
-
-  // Demo: Statisches Array mit Avataren (später aus DB laden)
-  const [avatarOptions, setAvatarOptions] = useState<AvatarOption[]>([])
-
-  // Lade Avatare und Freischaltungen aus Supabase
-  useEffect(() => {
-    const fetchAvatars = async () => {
-      const supabase = getSupabaseBrowserClient()
-      if (!supabase || !user?.username) return
-      
-      // Check if user is admin
-      const isAdmin = user.username === 'jiraiya' || user.username === 'badbunny.3547' || user.username === 'damla123' || user.username === 'xgrokxd'
-      
-      // Load avatars - admins see all avatars, others only active ones
-      const { data: avatars, error } = await supabase
-        .from("avatars")
-        .select("id, image_url, rarity, is_free, price_tokens, is_active")
-        .order('id')
-        .then(result => {
-          if (isAdmin) {
-            // Admins see all avatars
-            return result
-          } else {
-            // Non-admins only see active avatars
-            return supabase
-              .from("avatars")
-              .select("id, image_url, rarity, is_free, price_tokens, is_active")
-              .eq("is_active", true)
-              .order('id')
-          }
-        })
-      
-      if (error) {
-        console.error('Error loading avatars:', error)
-        return
-      }
-
-      // Load unlocked avatars for the user
-      const { data: unlocked } = await supabase.from("user_avatar_purchases").select("avatar_id").eq("user_id", user.username)
-      const unlockedIds = unlocked ? unlocked.map(a => a.avatar_id) : []
-      
-      // Calculate dynamic avatar prices based on WLD price
-      const calculateAvatarPrice = (rarity: string) => {
-        if (!price) return 0 // Fallback if WLD price not available
-        
-        let calculatedPrice = 0
-        if (rarity === 'epic') {
-          calculatedPrice = 1.0 / price // $1.00 USD / WLD price
-        } else if (rarity === 'god') {
-          calculatedPrice = 5.0 / price // $5.00 USD / WLD price
-        }
-        
-        // Round to 2 decimal places
-        return Math.round(calculatedPrice * 100) / 100
-      }
-      
-      // Set is_free for unlocked avatars - admins see all avatars but respect is_free status
-      const merged: AvatarOption[] = (avatars ?? []).map(a => ({
-        id: Number(a.id),
-        image_url: String(a.image_url),
-        rarity: String(a.rarity),
-        is_free: Boolean(a.is_free) || unlockedIds.includes(a.id), // Respect actual is_free status
-        price: calculateAvatarPrice(String(a.rarity)), // Dynamic price calculation
-        url: String(a.image_url),
-        is_active: Boolean(a.is_active) // Add this for display purposes
-      }))
-      setAvatarOptions(merged)
-    }
-    fetchAvatars()
-  }, [user?.username, price]) // Re-fetch when WLD price changes
 
 
 
-  // Payment status for avatar purchase
-  const [buyingAvatar, setBuyingAvatar] = useState(false)
 
-  // Simulate payment for avatar purchase
-  const sendPaymentForAvatar = async (avatar: AvatarOption) => {
-    setBuyingAvatar(true)
-    try {
-      // Preis in WLD (Demo: 1 WLD pro Preis-Token)
-      const wldAmount = avatar.price
-      const recipient = "0x9311788aa11127F325b76986f0031714082F016B"
-      // Referenz auf max. 36 Zeichen kürzen (z. B. Avatar-Rarity und Preis)
-      const reference = `avatar_${avatar.rarity}_${avatar.price}_${Date.now()}`.slice(0, 36)
-      const payload = {
-        reference,
-        to: recipient,
-        tokens: [
-          {
-            symbol: Tokens.WLD,
-            token_amount: tokenToDecimals(wldAmount, Tokens.WLD).toString(),
-          },
-        ],
-        description: `Avatar Purchase: ${avatar.rarity}`,
-      }
-      const { finalPayload } = await MiniKit.commandsAsync.pay(payload)
-      setBuyingAvatar(false)
-      return finalPayload.status === "success"
-    } catch (e) {
-      setBuyingAvatar(false)
-      return false
-    }
-  }
 
-  // handleBuyAvatar: Payment + DB storage
-  const handleBuyAvatar = async (avatar: AvatarOption) => {
-    const paymentSuccess = await sendPaymentForAvatar(avatar)
-    if (paymentSuccess) {
-      const supabase = getSupabaseBrowserClient()
-      if (supabase && user?.username) {
-        const { error: insertError } = await supabase.from('user_avatar_purchases').insert({
-          user_id: user.username,
-          avatar_id: avatar.id,
-          purchased_at: new Date().toISOString()
-        })
-        
-        if (insertError) {
-          console.error('Error inserting avatar unlock:', insertError)
-          toast({ title: "Database Error", description: "Failed to unlock avatar. Please try again.", variant: "destructive" })
-          return
-        }
-        // Reload avatars
-        const { data: unlocked } = await supabase.from("user_avatar_purchases").select("avatar_id").eq("user_id", user.username)
-        const unlockedIds = unlocked ? unlocked.map(a => a.avatar_id) : []
-        setAvatarOptions(prev => prev.map(a => unlockedIds.includes(a.id) ? { ...a, is_free: true } : a))
-        await loadUserAvatar()
-      }
-      setShowBuyAvatarDialog(false)
-      setSelectedAvatarToBuy(null)
-      toast({ title: "Avatar Unlocked!", description: "You can now select this avatar." })
-    } else {
-      toast({ title: "Payment Failed", description: "Please try again.", variant: "destructive" })
-    }
-  }
+
 
   const [showBuyXpPassDialog, setShowBuyXpPassDialog] = useState(false)
   const [buyingXpPass, setBuyingXpPass] = useState(false)
@@ -1381,27 +1180,6 @@ const [copied, setCopied] = useState(false)
   // Test-URL (Wikipedia)
   const wikiUrl = 'https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png';
 
-  // Avatar selection callback
-  const handleAvatarSelect = async (url: string) => {
-    const found = avatarOptions.find(a => a.url === url)
-    if (found) {
-      
-      // Check if user can use this avatar (is_free or unlocked)
-      if (found.is_free) {
-        setCurrentAvatarId(found.id)
-        setCurrentAvatarUrl(url)  // Direkt setzen
-        // Update avatar in Auth-Context (this will also update database and localStorage)
-        await updateUserAvatar(found.id)
-      } else {
-        toast({ 
-          title: "Avatar not available", 
-          description: "You need to unlock this avatar first.", 
-          variant: "destructive" 
-        })
-      }
-    }
-    setShowAvatarDialog(false)
-  }
 
   // State for purchase loading status
   const [buyingDailyDeal, setBuyingDailyDeal] = useState(false);
@@ -1509,44 +1287,24 @@ const [copied, setCopied] = useState(false)
             // Trotz Fehler fortfahren, da der Kauf bereits bezahlt wurde
           }
 
-          // 2. Karte zur Sammlung hinzufügen
-          const { data: existingCard, error: existingCardError } = await supabase
-            .from("user_cards")
-            .select("id, quantity")
-            .eq("user_id", user.username)
-            .eq("card_id", specialDeal.card_id)
-            .eq("level", specialDeal.card_level)
-            .single();
+          // 2. Karte zur Sammlung hinzufügen (using user_card_instances)
+          const { error: insertCardError } = await supabase.from("user_card_instances").insert({
+            user_id: user.username,
+            card_id: specialDeal.card_id,
+            level: specialDeal.card_level,
+            favorite: false,
+            obtained_at: new Date().toISOString(),
+          });
 
-          if (existingCardError && existingCardError.code === "PGRST116") {
-            // Karte existiert nicht, neue hinzufügen
-            const { error: insertError } = await supabase.from("user_cards").insert({
-              user_id: user.username,
-              card_id: specialDeal.card_id,
-              level: specialDeal.card_level,
-              quantity: 1,
-              obtained_at: new Date().toISOString(),
-            });
-            if (insertError) {
-              console.error("Error adding card:", insertError);
-            }
-          } else if (!existingCardError) {
-            // Karte existiert, Menge erhöhen
-            const currentQuantity = Number(existingCard.quantity) || 1;
-            const { error: updateError } = await supabase
-              .from("user_cards")
-              .update({ quantity: currentQuantity + 1 })
-              .eq("id", existingCard.id as string);
-            if (updateError) {
-              console.error("Error updating card quantity:", updateError);
-            }
+          if (insertCardError) {
+            console.error("Error adding card to collection:", insertCardError);
           }
 
           // 2. Tickets hinzufügen
           const { data: userData, error: userError } = await supabase
             .from("users")
             .select("tickets, elite_tickets, icon_tickets")
-            .eq("username", user.username)
+            .eq("wallet_address", user.wallet_address)
             .single();
 
           if (!userError && userData) {
@@ -1565,7 +1323,7 @@ const [copied, setCopied] = useState(false)
                 elite_tickets: newEliteTickets,
                 // icon_tickets: newIconTickets,
               })
-              .eq("username", user.username);
+              .eq("wallet_address", user.wallet_address);
 
             if (!updateError) {
               // Lokale Ticket-Zähler aktualisieren
@@ -1673,37 +1431,34 @@ const [copied, setCopied] = useState(false)
                 transition={{ duration: 0.4 }}
                 className="bg-gradient-to-br from-[#232526] to-[#414345] rounded-xl shadow-lg p-2 flex flex-col items-center justify-center min-h-[80px] h-full border-2 border-yellow-400 relative"
               >
-                {/* NEW BONUS Banner - REMOVED */}
-                <button
-                  onClick={() => setShowAvatarDialog(true)}
-                  className="relative w-20 h-20 rounded-full overflow-visible hover:ring-2 hover:ring-blue-300 transition-all flex-shrink-0 mb-1 -mt-3 flex items-center justify-center"
-                >
-                  {/* XP Progress Ring - positioned as outer border */}
+                {/* XP Progress Circle with Username and Level */}
+                <div className="relative w-32 h-32 flex items-center justify-center">
+                  {/* XP Progress Ring */}
                   <div className="absolute inset-0 rounded-full pointer-events-none">
-                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 80 80">
+                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 128 128">
                       {/* Background circle */}
                       <circle
-                        cx="40"
-                        cy="40"
-                        r="36"
+                        cx="64"
+                        cy="64"
+                        r="56"
                         stroke="rgb(156 163 175)"
-                        strokeWidth="3"
+                        strokeWidth="4"
                         fill="none"
                         opacity="0.8"
                       />
                       {/* Progress circle */}
                       <circle
-                        cx="40"
-                        cy="40"
-                        r="36"
+                        cx="64"
+                        cy="64"
+                        r="56"
                         stroke="url(#gradient)"
-                        strokeWidth="3"
+                        strokeWidth="4"
                         fill="none"
                         strokeLinecap="round"
-                        strokeDasharray={`${2 * Math.PI * 36}`}
-                        strokeDashoffset={`${2 * Math.PI * 36 * (1 - ((user?.experience || 0) / (user?.nextLevelExp || 500)))}`}
+                        strokeDasharray={`${2 * Math.PI * 56}`}
+                        strokeDashoffset={`${2 * Math.PI * 56 * (1 - ((user?.experience || 0) / (user?.nextLevelExp || 500)))}`}
                         className="transition-all duration-300"
-                        style={{ filter: 'drop-shadow(0 0 2px rgba(239, 68, 68, 0.5))' }}
+                        style={{ filter: 'drop-shadow(0 0 3px rgba(239, 68, 68, 0.5))' }}
                       />
                       <defs>
                         <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -1712,87 +1467,18 @@ const [copied, setCopied] = useState(false)
                         </linearGradient>
                       </defs>
                     </svg>
-    </div>
-                  {/* Avatar Image - full size in center */}
-                  <div className="w-16 h-16 rounded-full overflow-hidden relative z-10">
-                    <img
-                      src={currentAvatarUrl || currentAvatarUrl || 'https://ani-labs.xyz/gnabry.jpg'}
-                      alt="Your avatar"
-                      className="w-full h-full object-cover"
-                    />
                   </div>
-                </button>
-                {/* Username und Lvl nebeneinander */}
-                <div className="flex items-center gap-2 mt-1">
-                  <p className="text-sm font-semibold text-yellow-100">{user?.username ? (user.username.length > 7 ? user.username.slice(0, 7) + '…' : user.username) : ''}</p>
-                  <span className="bg-yellow-400 text-white text-xs px-2 py-0.5 rounded-full whitespace-nowrap font-bold">Lvl {user?.level || 1}</span>
+                  
+                  {/* Username und Level in der Mitte */}
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <p className="text-sm font-semibold text-yellow-100 leading-tight">
+                      {user?.username ? (user.username.length > 10 ? user.username.slice(0, 10) + '…' : user.username) : ''}
+                    </p>
+                    <span className="bg-yellow-400 text-white text-sm px-2 py-1 rounded-full whitespace-nowrap font-bold mt-1">
+                      Lvl {user?.level || 1}
+                    </span>
+                  </div>
                 </div>
-                {/* Avatar-Auswahl-Dialog */}
-                <Dialog open={showAvatarDialog} onOpenChange={setShowAvatarDialog}>
-                  <DialogContent>
-                    <DialogTitle>
-                      Choose Avatar & XP-Ring
-                    </DialogTitle>
-                    
-                    {/* NEW BONUS Banner - REMOVED */}
-                    <div className="grid grid-cols-3 gap-3 mt-4">
-                                             {avatarOptions.map((avatar) => {
-                         const isAdmin = user?.username === 'jiraiya' || user?.username === 'badbunny.3547' || user?.username === 'damla123' || user?.username === 'xgrokxd'
-                         // For now, we'll show all avatars to admins without the inactive badge
-                         // The inactive filtering is handled in fetchAvatars
-                         
-                         return (
-                          <button
-                            key={avatar.url}
-                            className={`rounded-full border-2 ${avatarUrl === avatar.url ? "border-violet-500" : "border-transparent"} focus:outline-none focus:ring-2 focus:ring-violet-400 flex flex-col items-center relative`}
-                            onClick={() => {
-                              if (avatar.is_free) handleAvatarSelect(avatar.url)
-                              else {
-                                setSelectedAvatarToBuy(avatar)
-                                setShowBuyAvatarDialog(true)
-                              }
-                            }}
-                          >
-                                                         <img 
-                               src={avatar.url} 
-                               alt="Avatar" 
-                               className={`w-16 h-16 object-cover rounded-full ${!avatar.is_free ? 'opacity-50 grayscale' : ''}`} 
-                             />
-                             {/* Rarity Badge */}
-                             <span className={`mt-1 text-xs font-bold px-2 py-0.5 rounded-full ${avatar.rarity === 'epic' ? 'bg-purple-100 text-purple-700' : avatar.rarity === 'god' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'}`}>
-                               {avatar.rarity}
-                             </span>
-                            {/* Lock/Price for non-free avatars */}
-                            {!avatar.is_free && (
-                              <span className="absolute top-1 right-1 bg-white/80 rounded-full p-1 border border-gray-200">
-                                <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M12 17a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm6-5V9a6 6 0 1 0-12 0v3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2ZM8 9a4 4 0 1 1 8 0v3H8V9Zm10 11H6v-6h12v6Z" fill="#888"/></svg>
-                                <span className="text-[10px] font-bold text-gray-500 ml-1">{avatar.price}★</span>
-                              </span>
-                            )}
-                          </button>
-                        )
-                      })}
-        </div>
-                    {/* XP Ring color selection */}
-                    <div className="mt-6">
-                      <div className="text-xs font-semibold mb-2">XP Ring Color:</div>
-                      <div className="flex gap-2">
-                        {Object.entries(XP_COLORS).map(([color, val]) => (
-                          <button
-                            key={color}
-                            className={`w-7 h-7 rounded-full border-2 flex items-center justify-center ${currentXpColor === color ? 'border-violet-500' : 'border-gray-200'}`}
-                            style={{ background: `linear-gradient(90deg, ${val.start}, ${val.end})` }}
-                            onClick={() => setCurrentXpColor(color)}
-                            aria-label={color}
-                          >
-                            {currentXpColor === color && <span className="block w-3 h-3 rounded-full bg-white border border-violet-500" />}
-                          </button>
-                        ))}
-    </div>
-  </div>
-                  </DialogContent>
-                </Dialog>
-               
               </motion.div>
 </div>
             {/* Game Pass / XP Pass Carousel */}
@@ -1949,41 +1635,63 @@ const [copied, setCopied] = useState(false)
                 <div className="text-sm font-bold text-yellow-100">$ANI</div>
               </div>
             </div> */}
-            <div className="col-span-3 relative">
-              {hasActiveDiscount && (
-                <div className="absolute -top-2 -right-2 bg-white text-red-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow z-10">
-                  -{discountValue}%
-                </div>
-              )}
-              <Link href="/shop" className="block w-full h-full">
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2, duration: 0.4 }}
-                  whileHover={{ scale: 1.04, boxShadow: hasActiveDiscount ? '0 0 32px 0 rgba(239, 68, 68, 0.4)' : '0 0 32px 0 rgba(255, 215, 0, 0.25)' }}
-                  className={`relative rounded-2xl p-3 shadow-2xl flex flex-col items-center justify-center min-h-[70px] h-full text-center border-2 transition overflow-hidden ${
-                    hasActiveDiscount 
-                      ? 'bg-gradient-to-br from-red-600 to-red-800 border-red-400 animate-pulse' 
-                      : 'bg-gradient-to-br from-[#232526] to-[#414345] border-yellow-400'
-                  }`}
-                >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 border ${
-                    hasActiveDiscount 
-                      ? 'bg-red-400 shadow-[0_0_8px_2px_rgba(239,68,68,0.3)] border-red-300' 
-                      : 'bg-yellow-400 shadow-[0_0_8px_2px_rgba(251,191,36,0.18)] border-yellow-300'
-                  }`}>
-                    <ShoppingCart className="h-5 w-5 text-white drop-shadow-lg" />
+            {/* Shop in der Mitte, Card Gallery daneben, Referrals rechts */}
+            <div className="col-span-6 grid grid-cols-3 gap-3">
+              {/* Card Gallery */}
+              <div className="relative">
+                <Link href="/collection" className="block w-full h-full">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, duration: 0.4 }}
+                    whileHover={{ scale: 1.04, boxShadow: '0 0 32px 0 rgba(255, 215, 0, 0.25)' }}
+                    className="bg-gradient-to-br from-[#232526] to-[#414345] rounded-xl shadow-lg p-3 h-full border-2 border-yellow-400 cursor-pointer flex flex-col items-center justify-center text-center"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center mb-1 border border-yellow-300">
+                      <BookOpen className="h-5 w-5 text-white drop-shadow-lg" />
+                    </div>
+                    <div className="text-sm font-bold text-yellow-100">Card Gallery</div>
+                    <div className="text-xs text-sky-400">Browse Cards</div>
+                  </motion.div>
+                </Link>
+              </div>
+
+              {/* Shop */}
+              <div className="relative">
+                {hasActiveDiscount && (
+                  <div className="absolute -top-2 -right-2 bg-white text-red-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow z-10">
+                    -{discountValue}%
                   </div>
-                  <div className={`text-sm font-extrabold drop-shadow-sm tracking-wide ${
-                    hasActiveDiscount ? 'text-red-100' : 'text-yellow-100'
-                  }`}>Shop</div>
-                  <div className={`text-xs font-semibold mt-0.5 ${
-                    hasActiveDiscount ? 'text-red-200' : 'text-sky-400'
-                  }`}>Exklusive Packs</div>
-                </motion.div>
-              </Link>
-            </div>
-            <div className="col-span-3 relative">
+                )}
+                <Link href="/shop" className="block w-full h-full">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2, duration: 0.4 }}
+                    whileHover={{ scale: 1.04, boxShadow: hasActiveDiscount ? '0 0 32px 0 rgba(239, 68, 68, 0.4)' : '0 0 32px 0 rgba(255, 215, 0, 0.25)' }}
+                    className={`relative rounded-2xl p-3 shadow-2xl flex flex-col items-center justify-center min-h-[70px] h-full text-center border-2 transition overflow-hidden ${
+                      hasActiveDiscount 
+                        ? 'bg-gradient-to-br from-red-600 to-red-800 border-red-400 animate-pulse' 
+                        : 'bg-gradient-to-br from-[#232526] to-[#414345] border-yellow-400'
+                    }`}
+                  >
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 border ${
+                      hasActiveDiscount 
+                        ? 'bg-red-400 shadow-[0_0_8px_2px_rgba(239,68,68,0.3)] border-red-300' 
+                        : 'bg-yellow-400 shadow-[0_0_8px_2px_rgba(251,191,36,0.18)] border-yellow-300'
+                    }`}>
+                      <ShoppingCart className="h-5 w-5 text-white drop-shadow-lg" />
+                    </div>
+                    <div className={`text-sm font-extrabold drop-shadow-sm tracking-wide ${
+                      hasActiveDiscount ? 'text-red-100' : 'text-yellow-100'
+                    }`}>Shop</div>
+                    <div className={`text-xs font-semibold mt-0.5 ${
+                      hasActiveDiscount ? 'text-red-200' : 'text-sky-400'
+                    }`}>Exklusive Packs</div>
+                  </motion.div>
+                </Link>
+              </div>
+
               {/* Referrals/SBC Slide System */}
               <div className="relative w-full h-full rounded-xl overflow-hidden">
                 <AnimatePresence mode="wait">
@@ -2404,13 +2112,13 @@ const [copied, setCopied] = useState(false)
         {/* Add bottom padding to ensure content is not hidden by MobileNav */}
         <div className="h-20"></div>
 
-       {showClaimAnimation && (
-  <motion.div
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
-    className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center"
-  >
+        {showClaimAnimation && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center"
+          >
     <div className="relative">
       {[...Array(3)].map((_, i) => (
         <motion.div
@@ -2574,85 +2282,6 @@ const [copied, setCopied] = useState(false)
 </Dialog>
 
       
-      {/* Avatar Purchase Dialog */}
-      <Dialog open={showBuyAvatarDialog} onOpenChange={setShowBuyAvatarDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogTitle className="text-lg font-bold">Purchase Avatar</DialogTitle>
-          {selectedAvatarToBuy && (
-            <>
-              <div className="flex items-center gap-4 mb-4">
-                <div className="relative w-20 h-20 overflow-hidden rounded-full">
-                  <img
-                    src={selectedAvatarToBuy.url}
-                    alt={selectedAvatarToBuy.rarity}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg">{selectedAvatarToBuy.rarity} Avatar</h3>
-                  <p className="text-sm text-gray-600">Exclusive Avatar</p>
-                  <div className="flex items-center gap-1 mt-2">
-                    <span className="text-lg font-bold text-yellow-600">{selectedAvatarToBuy.price} WLD</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-amber-50 p-3 rounded-lg text-sm mb-4">
-                <p className="text-amber-800">
-                  <span className="font-medium">Price:</span> {selectedAvatarToBuy.price} WLD
-                </p>
-                <p className="text-amber-800 mt-1">
-                  <span className="font-medium">Rarity:</span> {selectedAvatarToBuy.rarity}
-                </p>
-                {/* Avatar Bonus Information */}
-                {selectedAvatarToBuy.rarity === "epic" && (
-                  <div className="mt-2 p-2 bg-purple-100 rounded border border-purple-200">
-                    <p className="text-purple-800 text-xs font-medium">
-                      🎭 <span className="font-bold">Epic Avatar Bonus:</span>
-                    </p>
-                    <p className="text-purple-700 text-xs mt-1">
-                      +1% Ultimate-Card Drop-Rate in Classic Packs
-                    </p>
-                  </div>
-                )}
-                {selectedAvatarToBuy.rarity === "god" && (
-                  <div className="mt-2 p-2 bg-yellow-100 rounded border border-yellow-200">
-                    <p className="text-yellow-800 text-xs font-medium">
-                      👑 <span className="font-bold">God Avatar Bonus:</span>
-                    </p>
-                    <p className="text-yellow-700 text-xs mt-1">
-                      +2% Ultimate Card Drop-Rate in Icon Packs
-                    </p>
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowBuyAvatarDialog(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  onClick={() => handleBuyAvatar(selectedAvatarToBuy)}
-                  disabled={buyingAvatar}
-                  className="bg-gradient-to-r from-violet-500 to-fuchsia-500"
-                >
-                  {buyingAvatar ? (
-                    <>
-                      <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingCart className="h-4 w-4 mr-2" />
-                      Purchase
-                    </>
-                  )}
-                </Button>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
 
       <MobileNav />
     </div>

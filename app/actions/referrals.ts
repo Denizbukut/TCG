@@ -39,7 +39,7 @@ export async function debugReferralsTable() {
   }
 }
 
-export async function claimReferralRewardForUser(referrerUsername: string, referredUsername: string) {
+export async function claimReferralRewardForUser(referrerWalletAddress: string, referredWalletAddress: string) {
   try {
     const supabase = createSupabaseServer()
 
@@ -63,8 +63,8 @@ export async function claimReferralRewardForUser(referrerUsername: string, refer
     const { data: referral, error: referralError } = await supabase
       .from("referrals")
       .select("id, reward_claimed")
-      .eq("referrer_username", referrerUsername)
-      .eq("referred_username", referredUsername)
+      .eq("referrer_wallet_address", referrerWalletAddress)
+      .eq("referred_wallet_address", referredWalletAddress)
       .single()
 
     if (referralError) {
@@ -128,7 +128,7 @@ export async function claimReferralRewardForUser(referrerUsername: string, refer
   }
 }
 
-export async function getReferredUsers(referrerUsername: string) {
+export async function getReferredUsers(referrerWalletAddress: string) {
   try {
     console.log("🔍 getReferredUsers called for:", referrerUsername)
     const supabase = createSupabaseServer()
@@ -137,7 +137,7 @@ export async function getReferredUsers(referrerUsername: string) {
     const { data, error } = await supabase
       .from("referrals")
       .select("id, referred_username, reward_claimed, created_at")
-      .eq("referrer_username", referrerUsername)
+      .eq("referrer_wallet_address", referrerWalletAddress)
 
     console.log("🔍 Query for referrer_username:", referrerUsername)
     console.log("📊 Found referrals:", data?.length || 0)

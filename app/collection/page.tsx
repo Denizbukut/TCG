@@ -32,6 +32,11 @@ export default function CollectionPage() {
   const [availableEpochs, setAvailableEpochs] = useState<number[]>([])
   const [showSquad, setShowSquad] = useState(false);
 
+  // Debug: Log user info
+  console.log("=== COLLECTION PAGE DEBUG ===")
+  console.log("User from auth context:", user)
+  console.log("Username:", user?.username)
+
 
   // Check URL parameters for direct squad access
   useEffect(() => {

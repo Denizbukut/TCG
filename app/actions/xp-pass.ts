@@ -10,7 +10,7 @@ function createSupabaseServer() {
   )
 }
 
-export async function logXpPassPurchase(username: string, priceUsd: number, priceWld: string) {
+export async function logXpPassPurchase(walletAddress: string, priceUsd: number, priceWld: string) {
   try {
     const supabase = createSupabaseServer()
     
@@ -55,9 +55,9 @@ export async function createXpPassPurchasesTable() {
   }
 }
 
-export async function purchaseXpPass(username: string) {
+export async function purchaseXpPass(walletAddress: string) {
   try {
-    console.log("Server: Purchasing XP pass for user:", username)
+    console.log("Server: Purchasing XP pass for user:", walletAddress)
     const supabase = createSupabaseServer()
     
     const expiryDate = new Date()

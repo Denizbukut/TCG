@@ -77,8 +77,8 @@ export default function LoginPage() {
           // Check if user exists
           const { data: existingUser, error: fetchError } = await supabase
             .from("users")
-            .select("username")
-            .eq("username", userIdentifier)
+            .select("wallet_address, username")
+            .eq("wallet_address", address)
             .single()
 
           if (fetchError && fetchError.code !== "PGRST116") {
@@ -92,13 +92,24 @@ export default function LoginPage() {
             .from("users")
             .insert([
               {
+                wallet_address: address,
                 username: userIdentifier,
                 tickets: 5,
                 coins: 1000,
                 level: 1,
                 experience: 0,
                 world_id: address,
-                legendary_tickets: 2,
+                elite_tickets: 2,
+                icon_tickets: 0,
+                has_premium: false,
+                next_level_exp: 100,
+                score: 0,
+                tokens: 0,
+                clan_id: null,
+                has_xp_pass: false,
+                cards_sold_since_last_purchase: 0,
+                avatar_id: 1,
+                prestige_points: 100,
               },
             ])
             .select()
@@ -110,15 +121,16 @@ export default function LoginPage() {
               if (referralCode.trim().toLowerCase()) {
       const { data: referrer, error: referrerError } = await supabase
         .from("users")
-        .select("username")
+        .select("wallet_address")
         .eq("username", referralCode)
         .single()
-        await incrementLegendaryDraw(referralCode.trim().toLowerCase(), 0)
+        // Note: incrementLegendaryDraw needs to be updated to use wallet_address instead of username
+        // await incrementLegendaryDraw(referrer.wallet_address, 0)
 
       if (referrer && !referrerError) {
         await supabase.from("referrals").insert({
-          referrer_username: referralCode,
-          referred_username: userIdentifier,
+          referrer_wallet_address: referrer.wallet_address,
+          referred_wallet_address: address,
         })
       } else {
         setReferralWarning("This referral code is invalid.")
@@ -136,9 +148,8 @@ export default function LoginPage() {
             .from("users")
             .update({
               last_login: new Date().toISOString(),
-              walletaddress: address, // Update the wallet address in case it changed or wasn't set
             })
-            .eq("username", userIdentifier)
+            .eq("wallet_address", address)
 
             if (updateError) {
               console.error("Error updating last login:", updateError)
@@ -150,7 +161,7 @@ export default function LoginPage() {
         }
 
         // Login with the auth context
-        const loginResult = await login(userIdentifier)
+        const loginResult = await login(address, userIdentifier)
 
         if (loginResult.success) {
           // Navigate to home page
@@ -179,7 +190,7 @@ export default function LoginPage() {
       {/* Full screen background image using Next.js Image component for better optimization */}
       <div className="absolute inset-0 z-0">
         <img
-          src="/Futuristic 16_9 login screen background for a Crypto Trading Card Game app. _Dark cyberpunk atmosphere with glowing neon green and purple lights. _Multiple Worldcoin (WLD) coins are floating in space with glowing effects.-2.jpg"
+          src="/login.jpg"
           alt="Login background"
           className="absolute inset-0 w-full h-full object-cover"
         />

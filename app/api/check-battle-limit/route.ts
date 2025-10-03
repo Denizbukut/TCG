@@ -3,12 +3,12 @@ import { createClient } from '@/utils/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const { username } = await request.json()
+    const { walletAddress } = await request.json()
     
-    if (!username) {
+    if (!walletAddress) {
       return NextResponse.json({ 
         success: false, 
-        error: 'Username is required' 
+        error: 'Wallet address is required' 
       }, { status: 400 })
     }
 
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("id")
-      .eq("username", username)
+      .eq("wallet_address", walletAddress)
       .single()
 
     if (userError || !userData) {

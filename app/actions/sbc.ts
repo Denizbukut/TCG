@@ -56,8 +56,8 @@ export interface SBCUserSquad {
   submitted_at: string
 }
 
-export async function getSBCChallenges(userId?: string): Promise<SBCChallenge[]> {
-  console.log('🚀 getSBCChallenges called with userId:', userId)
+export async function getSBCChallenges(walletAddress?: string): Promise<SBCChallenge[]> {
+  console.log('🚀 getSBCChallenges called with walletAddress:', walletAddress)
   try {
     const cookieStore = await cookies()
     const supabase = createSupabaseServerClient(cookieStore)
@@ -65,7 +65,7 @@ export async function getSBCChallenges(userId?: string): Promise<SBCChallenge[]>
     const now = new Date().toISOString()
     
     // jiraiya, badbunny.3547, damla123, and xgrokxd can see ALL challenges (even inactive ones), others only see active ones
-    const isAdmin = userId === 'jiraiya' || userId === 'badbunny.3547' || userId === 'damla123' || userId === 'xgrokxd'
+    const isAdmin = walletAddress === 'jiraiya' || walletAddress === 'badbunny.3547' || walletAddress === 'damla123' || walletAddress === 'xgrokxd'
     console.log('DEBUG getSBCChallenges:', { userId, isAdmin })
     
     let query = supabase
@@ -90,7 +90,7 @@ export async function getSBCChallenges(userId?: string): Promise<SBCChallenge[]>
     console.log('DEBUG challenges loaded:', challenges.length, 'challenges')
 
     // Filter challenges based on user access
-    if (userId && !isAdmin) {
+    if (walletAddress && !isAdmin) {
       challenges = challenges.filter(challenge => {
         // If access_type is 'public' or not set, everyone can access
         if (!challenge.access_type || challenge.access_type === 'public') {
@@ -98,7 +98,7 @@ export async function getSBCChallenges(userId?: string): Promise<SBCChallenge[]>
         }
         // If access_type is 'private', check if user is in allowed_usernames
         if (challenge.access_type === 'private') {
-          return challenge.allowed_usernames && challenge.allowed_usernames.includes(userId)
+          return challenge.allowed_usernames && challenge.allowed_usernames.includes(walletAddress)
         }
         return true
       })
@@ -112,7 +112,7 @@ export async function getSBCChallenges(userId?: string): Promise<SBCChallenge[]>
   }
 }
 
-export async function getUserSBCProgress(userId: string): Promise<SBCUserProgress[]> {
+export async function getUserSBCProgress(walletAddress: string): Promise<SBCUserProgress[]> {
   try {
     const cookieStore = await cookies()
     const supabase = createSupabaseServerClient(cookieStore)
@@ -147,7 +147,7 @@ export async function getUserSBCProgress(userId: string): Promise<SBCUserProgres
   }
 }
 
-export async function getUserSBCSquads(userId: string): Promise<SBCUserSquad[]> {
+export async function getUserSBCSquads(walletAddress: string): Promise<SBCUserSquad[]> {
   try {
     const cookieStore = await cookies()
     const supabase = createSupabaseServerClient(cookieStore)
@@ -172,7 +172,7 @@ export async function getUserSBCSquads(userId: string): Promise<SBCUserSquad[]> 
 }
 
 export async function submitSBCSquad(
-  userId: string,
+  walletAddress: string,
   challengeId: number,
   cardIds: string[],
   squadName?: string
@@ -222,7 +222,7 @@ export async function submitSBCSquad(
     }
 
     // Admin-Check: jiraiya, badbunny.3547, damla123, und xgrokxd können auch inaktive Challenges abschließen
-    const isAdmin = userId === 'jiraiya' || userId === 'badbunny.3547' || userId === 'damla123' || userId === 'xgrokxd'
+    const isAdmin = walletAddress === 'jiraiya' || walletAddress === 'badbunny.3547' || walletAddress === 'damla123' || walletAddress === 'xgrokxd'
     console.log('DEBUG submitSBCSquad Admin Check:', { userId, isAdmin, challengeActive: challengeDetails.is_active })
     
     // Prüfe ob Challenge aktiv ist (außer für Admins)
@@ -366,7 +366,7 @@ export async function submitSBCSquad(
     const { data: userData, error: userError } = await supabase
       .from('users')
       .select('tickets, tokens, elite_tickets, icon_tickets')
-      .eq('username', userId)  // Verwende username statt UUID
+      .eq('wallet_address', walletAddress)  // Verwende wallet_address
       .single()
 
     if (userError) {
@@ -399,7 +399,7 @@ export async function submitSBCSquad(
     const { error: rewardError } = await supabase
       .from('users')
       .update(updates)
-      .eq('username', userId)  // Verwende username statt UUID
+      .eq('wallet_address', walletAddress)  // Verwende wallet_address
 
     if (rewardError) {
       console.error('FEHLER beim Geben der Rewards:', rewardError)

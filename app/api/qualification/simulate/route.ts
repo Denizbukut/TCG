@@ -39,14 +39,15 @@ export async function POST() {
           // Get card details
           const { data: cardsData } = await supabase
             .from("cards")
-            .select("overall_rating")
+            .select("id, name, rarity")
             .in("id", cardIds)
 
           if (cardsData && cardsData.length > 0) {
-            // Calculate average rating
-            const validCards = cardsData.filter(card => card.overall_rating && card.overall_rating > 0)
+            // Calculate rating based on rarity
+            const rarityScores = { legendary: 90, epic: 80, rare: 70, common: 60 }
+            const validCards = cardsData.filter(card => card.rarity && rarityScores[card.rarity as keyof typeof rarityScores])
             if (validCards.length > 0) {
-              const totalRating = validCards.reduce((sum, card) => sum + card.overall_rating, 0)
+              const totalRating = validCards.reduce((sum, card) => sum + (rarityScores[card.rarity as keyof typeof rarityScores] || 60), 0)
               const averageRating = totalRating / validCards.length
               squadRatings[username] = Math.round(averageRating * 10) / 10
             }

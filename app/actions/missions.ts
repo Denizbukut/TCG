@@ -118,7 +118,7 @@ const promises = DAILY_MISSIONS.map(async (mission) => {
   return { success: true, missions, bonusClaimed }
 }
 
-export async function incrementMission(username: string, key: string, amount = 1) {
+export async function incrementMission(walletAddress: string, key: string, amount = 1) {
   const supabase = createSupabaseServer()
   const today = new Date().toISOString().split("T")[0]
 
@@ -162,7 +162,7 @@ export async function incrementMission(username: string, key: string, amount = 1
 }
 
 
-export async function claimMissionReward(username: string, key: string) {
+export async function claimMissionReward(walletAddress: string, key: string) {
   const supabase = createSupabaseServer()
   const today = new Date().toISOString().split("T")[0]
 
@@ -204,7 +204,7 @@ export async function claimMissionReward(username: string, key: string) {
   return { success: true }
 }
 
-export async function claimBonusReward(username: string) {
+export async function claimBonusReward(walletAddress: string) {
   const supabase = createSupabaseServer()
   const today = new Date().toISOString().split("T")[0]
 
@@ -233,13 +233,13 @@ export async function claimBonusReward(username: string) {
   const { data: user } = await supabase
   .from("users")
   .select("elite_tickets")
-  .eq("username", username)
+      .eq("wallet_address", walletAddress)
   .single()
 
 await supabase
   .from("users")
   .update({ elite_tickets: (user?.elite_tickets || 0) + 1 })
-  .eq("username", username)
+      .eq("wallet_address", walletAddress)
 
   if (!bonusRow) {
     await supabase.from("daily_mission_bonus").insert({ user_id: username, bonus_claimed: true, claimed_at: new Date().toISOString() })

@@ -1,6 +1,7 @@
 // Define types for Supabase database tables
 
 export interface User {
+    wallet_address: string
     username: string
     tickets: number
     legendary_tickets: number
@@ -12,7 +13,6 @@ export interface User {
     has_premium: boolean
     ticket_last_claimed?: string
     last_login?: string
-    walletaddress?: string
     world_id?: string
   }
   
