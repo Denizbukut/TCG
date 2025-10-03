@@ -67,12 +67,12 @@ type Card = {
 
 type MarketListing = {
   id: string
-  seller_id: string
+  seller_wallet_address: string
   card_id: string
   price: number
   created_at: string
   status: "active" | "sold" | "cancelled"
-  buyer_id?: string
+  buyer_wallet_address?: string
   sold_at?: string
   user_card_id: number | string
   card_level: number
@@ -91,13 +91,15 @@ type Transaction = MarketListing & {
 // Typ für kürzlich verkaufte Karten
 type RecentSale = {
   id: string
-  seller_id: string
-  buyer_id: string
+  seller_wallet_address: string
+  buyer_wallet_address?: string
   card_id: string
   price: number
   sold_at: string
   card_level: number
   card: Card
+  seller_username?: string
+  seller_world_id?: string
 }
 
 type PaginationInfo = {
@@ -1233,7 +1235,7 @@ export default function TradePage() {
                   </div>
 
                   {/* Kaufen-Button */}
-                  {selectedListing.seller_id !== user?.username && (
+                  {selectedListing.seller_wallet_address !== user?.wallet_address && (
                     <Button
                       onClick={() => {
                         setShowCardDetailsDialog(false)
@@ -1323,7 +1325,7 @@ export default function TradePage() {
                   {(user?.coins || 0) < selectedListing.price && (
                     <p className="text-red-500 mt-1 font-medium">You don't have enough WLD for this purchase!</p>
                   )}
-                  {selectedListing.seller_id === user?.username && (
+                  {selectedListing.seller_wallet_address === user?.wallet_address && (
                     <p className="text-red-500 mt-1 font-medium">You cannot buy your own card!</p>
                   )}
                 </div>
@@ -1336,7 +1338,7 @@ export default function TradePage() {
                     disabled={
                       purchaseLoading ||
                       (user?.coins || 0) < selectedListing.price ||
-                      selectedListing.seller_id === user?.username
+                      selectedListing.seller_wallet_address === user?.wallet_address
                     }
                     className="bg-gradient-to-r from-violet-500 to-fuchsia-500"
                   >
@@ -1437,7 +1439,7 @@ function MarketplaceCard({
   onShowDetails: () => void
 }) {
   const { user } = useAuth()
-  const isOwnListing = listing.seller_id === user?.username
+  const isOwnListing = listing.seller_wallet_address === user?.wallet_address
 
   // Map rarity to color styles
   const rarityStyles = {
@@ -1925,10 +1927,10 @@ function RecentSaleCard({ sale }: { sale: RecentSale }) {
 
             <div className="flex items-center mt-1 text-xs text-yellow-200">
               <span>
-                Seller: <span className="font-medium text-yellow-400">{sale.seller_id.length > 15 ? `${sale.seller_id.substring(0, 12)}..` : sale.seller_id}</span>
+                Seller: <span className="font-medium text-yellow-400">{sale.seller_username || sale.seller_wallet_address}</span>
               </span>
               <span className="mx-1 text-yellow-300">•</span>
-              <span>Buyer: <span className="font-medium text-yellow-400">{sale.buyer_id.length > 15 ? `${sale.buyer_id.substring(0, 12)}..` : sale.buyer_id}</span></span>
+              <span>Buyer: <span className="font-medium text-yellow-400">{sale.buyer_wallet_address && sale.buyer_wallet_address.length > 15 ? `${sale.buyer_wallet_address.substring(0, 12)}..` : sale.buyer_wallet_address || 'Unknown'}</span></span>
             </div>
 
             <div className="flex justify-between items-center mt-2">

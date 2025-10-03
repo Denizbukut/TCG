@@ -128,7 +128,7 @@ export async function getMarketListings(page = 1, pageSize = DEFAULT_PAGE_SIZE, 
 
       // If it looks like a username search
       if (searchTerm.includes("@")) {
-        baseQuery = baseQuery.ilike("seller_id", `%${searchTerm}%`)
+        baseQuery = baseQuery.ilike("seller_wallet_address", `%${searchTerm}%`)
       }
       // Otherwise, filter by the matching card IDs we found
       else if (matchingCardIds.length > 0) {
@@ -187,7 +187,7 @@ export async function getMarketListings(page = 1, pageSize = DEFAULT_PAGE_SIZE, 
     if (filters.search) {
       const searchTerm = filters.search.toLowerCase()
       if (searchTerm.includes("@")) {
-        countQuery.ilike("seller_id", `%${searchTerm}%`)
+        countQuery.ilike("seller_wallet_address", `%${searchTerm}%`)
       } else if (matchingCardIds.length > 0) {
         countQuery.in("card_id", matchingCardIds)
       }
@@ -273,8 +273,8 @@ export async function getMarketListings(page = 1, pageSize = DEFAULT_PAGE_SIZE, 
     // 3. Fetch seller details in a single query
     const { data: users, error: usersError } = await supabase
       .from("users")
-      .select("username, world_id")
-      .in("username", sellerIds)
+      .select("username, world_id, wallet_address")
+      .in("wallet_address", sellerIds)
 
     if (usersError) {
       console.error("Error fetching user details:", usersError)
@@ -288,8 +288,8 @@ export async function getMarketListings(page = 1, pageSize = DEFAULT_PAGE_SIZE, 
     })
 
     const userMap = new Map()
-    users?.forEach((user: { username: string; world_id: string }) => {
-      userMap.set(user.username, user)
+    users?.forEach((user: { username: string; world_id: string; wallet_address: string }) => {
+      userMap.set(user.wallet_address, user)
     })
 
     // 5. Apply rarity filter if needed (now that we have card data)
@@ -353,7 +353,7 @@ export async function getUserListings(walletAddress: string, page = 1, pageSize 
     const { count, error: countError } = await supabase
       .from("market_listings")
       .select("*", { count: "exact", head: true })
-      .eq("seller_id", walletAddress)
+      .eq("seller_wallet_address", walletAddress)
       .eq("status", "active")
 
     if (countError) {
@@ -365,7 +365,7 @@ export async function getUserListings(walletAddress: string, page = 1, pageSize 
     const { data: listings, error } = await supabase
       .from("market_listings")
       .select("*")
-      .eq("seller_id", walletAddress)
+      .eq("seller_wallet_address", walletAddress)
       .eq("status", "active")
       .order("created_at", { ascending: false })
       .range(offset, offset + pageSize - 1)
@@ -390,7 +390,7 @@ export async function getUserListings(walletAddress: string, page = 1, pageSize 
       }
     }
 
-    // Efficiently fetch card details
+    // Efficiently fetch card details and user details
     const cardIds = [...new Set(listings.map((listing: MarketListing) => listing.card_id))]
 
     const { data: cards, error: cardsError } = await supabase
@@ -401,6 +401,18 @@ export async function getUserListings(walletAddress: string, page = 1, pageSize 
     if (cardsError) {
       console.error("Error fetching card details:", cardsError)
       return { success: false, error: "Failed to fetch card details" }
+    }
+
+    // Fetch user details
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("username, world_id")
+      .eq("wallet_address", walletAddress)
+      .single()
+
+    if (userError) {
+      console.error("Error fetching user details:", userError)
+      return { success: false, error: "Failed to fetch user details" }
     }
 
     // Create map for efficient lookups
@@ -416,7 +428,8 @@ export async function getUserListings(walletAddress: string, page = 1, pageSize 
       return {
         ...listing,
         card,
-        seller_username: walletAddress,
+        seller_username: userData?.username || walletAddress,
+        seller_world_id: userData?.world_id,
       }
     })
 
@@ -449,7 +462,7 @@ export async function checkUserListingLimit(walletAddress: string) {
     const { count, error } = await supabase
       .from("market_listings")
       .select("*", { count: "exact", head: true })
-      .eq("seller_id", walletAddress)
+      .eq("seller_wallet_address", walletAddress)
       .eq("status", "active")
 
     if (error) {
@@ -780,7 +793,7 @@ export async function purchaseCard(walletAddress: string, listingId: string) {
     }
 
     // 4. Selbstkauf verhindern
-    if (listing.seller_id === walletAddress) {
+    if (listing.seller_wallet_address === walletAddress) {
       return { success: false, error: "You cannot buy your own card" }
     }
      // Käufer cards_sold_since_last_purchase auf 0 setzen
@@ -806,7 +819,7 @@ export async function purchaseCard(walletAddress: string, listingId: string) {
     const { data: sellerData, error: sellerError } = await supabase
       .from("users")
       .select("score, cards_sold_since_last_purchase")
-      .eq("username", listing.seller_id)
+      .eq("wallet_address", listing.seller_wallet_address)
       .single()
 
     const sellerScore = sellerData?.score ?? 0
@@ -844,7 +857,7 @@ await supabase
     await supabase
       .from("users")
       .update({ score: Math.max(0, sellerScore - scoreForCard) })
-      .eq("username", listing.seller_id)
+      .eq("wallet_address", listing.seller_wallet_address)
 
     await supabase
       .from("users")
@@ -856,7 +869,7 @@ await supabase
       .from("user_card_instances")
       .select("id")
       .eq("id", listing.user_card_id)
-      .eq("user_id", listing.seller_id)
+      .eq("wallet_address", listing.seller_wallet_address)
       .eq("card_id", listing.card_id)
       .eq("level", listing.card_level)
       .single()
@@ -890,7 +903,7 @@ await supabase
 
     // 10. Trade speichern
     await supabase.from("trades").insert({
-      seller_id: listing.seller_id,
+      seller_wallet_address: listing.seller_wallet_address,
       buyer_wallet_address: walletAddress,
       user_card_id: listing.user_card_id,
       card_id: listing.card_id,
@@ -922,7 +935,7 @@ export async function cancelListing(walletAddress: string, listingId: string) {
       .from("market_listings")
       .select("*")
       .eq("id", listingId)
-      .eq("seller_id", walletAddress)
+      .eq("seller_wallet_address", walletAddress)
       .eq("status", "active")
       .single()
 
@@ -1018,7 +1031,7 @@ export async function updateListingPrice(walletAddress: string, listingId: strin
       .from("market_listings")
       .select("*")
       .eq("id", listingId)
-      .eq("seller_id", walletAddress)
+      .eq("seller_wallet_address", walletAddress)
       .eq("status", "active")
       .single()
 
@@ -1153,8 +1166,9 @@ export async function getTransactionHistory(walletAddress: string, page = 1, pag
       }
     }
 
-    // Efficiently fetch card details
+    // Efficiently fetch card details and user details
     const cardIds = [...new Set(listings.map((listing: MarketListing) => listing.card_id))]
+    const sellerIds = [...new Set(listings.map((listing: MarketListing) => listing.seller_wallet_address))]
 
     const { data: cards, error: cardsError } = await supabase
       .from("cards")
@@ -1166,15 +1180,31 @@ export async function getTransactionHistory(walletAddress: string, page = 1, pag
       return { success: false, error: "Failed to fetch card details" }
     }
 
-    // Create map for efficient lookups
+    const { data: users, error: usersError } = await supabase
+      .from("users")
+      .select("username, world_id, wallet_address")
+      .in("wallet_address", sellerIds)
+
+    if (usersError) {
+      console.error("Error fetching user details:", usersError)
+      return { success: false, error: "Failed to fetch user details" }
+    }
+
+    // Create maps for efficient lookups
     const cardMap = new Map()
     cards?.forEach((card: Card) => {
       cardMap.set(card.id, card)
     })
 
+    const userMap = new Map()
+    users?.forEach((user: { username: string; world_id: string; wallet_address: string }) => {
+      userMap.set(user.wallet_address, user)
+    })
+
     // Combine the data
     const transactionsWithDetails = listings.map((listing: MarketListing) => {
       const card = cardMap.get(listing.card_id)
+      const seller = userMap.get(listing.seller_wallet_address)
       const isSeller = listing.seller_wallet_address === walletAddress
 
       return {
@@ -1182,7 +1212,8 @@ export async function getTransactionHistory(walletAddress: string, page = 1, pag
         card,
         transaction_type: isSeller ? "sold" : "purchased",
         other_party: isSeller ? listing.buyer_wallet_address : listing.seller_wallet_address,
-        seller_username: listing.seller_wallet_address, // Add seller_username to match the Transaction type
+        seller_username: seller?.username || listing.seller_wallet_address,
+        seller_world_id: seller?.world_id,
       }
     })
 
@@ -1258,7 +1289,7 @@ export async function getRecentSales(page = 1, pageSize = DEFAULT_PAGE_SIZE, sea
       if (searchTerm.includes("@")) {
         // Benutzersuche (Verkäufer oder Käufer)
         console.log("Searching for users:", searchTerm)
-        baseQuery = baseQuery.or(`seller_id.ilike.%${searchTerm}%,buyer_id.ilike.%${searchTerm}%`)
+        baseQuery = baseQuery.or(`seller_wallet_address.ilike.%${searchTerm}%,buyer_wallet_address.ilike.%${searchTerm}%`)
       } else if (matchingCardIds.length > 0) {
         // Kartensuche
         console.log("Filtering by matching card IDs")
@@ -1282,7 +1313,7 @@ export async function getRecentSales(page = 1, pageSize = DEFAULT_PAGE_SIZE, sea
     // Wende die gleichen Suchfilter an
     if (searchTerm) {
       if (searchTerm.includes("@")) {
-        query = query.or(`seller_id.ilike.%${searchTerm}%,buyer_id.ilike.%${searchTerm}%`)
+        query = query.or(`seller_wallet_address.ilike.%${searchTerm}%,buyer_wallet_address.ilike.%${searchTerm}%`)
       } else if (matchingCardIds.length > 0) {
         query = query.in("card_id", matchingCardIds)
       }
@@ -1312,9 +1343,10 @@ export async function getRecentSales(page = 1, pageSize = DEFAULT_PAGE_SIZE, sea
       }
     }
 
-    // Hole die Kartendetails effizient
+    // Hole die Kartendetails und Verkäuferdetails effizient
     const cardIds = [...new Set(sales.map((sale: any) => sale.card_id))]
-    console.log(`Fetching details for ${cardIds.length} unique cards`)
+    const sellerIds = [...new Set(sales.map((sale: any) => sale.seller_wallet_address))]
+    console.log(`Fetching details for ${cardIds.length} unique cards and ${sellerIds.length} unique sellers`)
 
     const { data: cards, error: cardsError } = await supabase
       .from("cards")
@@ -1326,20 +1358,38 @@ export async function getRecentSales(page = 1, pageSize = DEFAULT_PAGE_SIZE, sea
       return { success: false, error: "Failed to fetch card details" }
     }
 
-    console.log(`Fetched details for ${cards?.length || 0} cards`)
+    const { data: users, error: usersError } = await supabase
+      .from("users")
+      .select("username, world_id, wallet_address")
+      .in("wallet_address", sellerIds)
 
-    // Erstelle eine Map für effiziente Lookups
+    if (usersError) {
+      console.error("Error fetching user details:", usersError)
+      return { success: false, error: "Failed to fetch user details" }
+    }
+
+    console.log(`Fetched details for ${cards?.length || 0} cards and ${users?.length || 0} users`)
+
+    // Erstelle Maps für effiziente Lookups
     const cardMap = new Map()
     cards?.forEach((card: Card) => {
       cardMap.set(card.id, card)
     })
 
+    const userMap = new Map()
+    users?.forEach((user: { username: string; world_id: string; wallet_address: string }) => {
+      userMap.set(user.wallet_address, user)
+    })
+
     // Kombiniere die Daten
     const salesWithDetails = sales.map((sale: any) => {
       const card = cardMap.get(sale.card_id)
+      const seller = userMap.get(sale.seller_wallet_address)
       return {
         ...sale,
         card,
+        seller_username: seller?.username || sale.seller_wallet_address,
+        seller_world_id: seller?.world_id,
       }
     })
 
