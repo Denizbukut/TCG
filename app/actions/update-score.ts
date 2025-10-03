@@ -46,7 +46,7 @@ export async function updateScoreForCards(walletAddress: string, cards: any[]) {
       .from("users")
       .select("score")
       .eq("wallet_address", walletAddress)
-      .single()
+      .maybeSingle()
 
     if (userError) {
       console.error("[updateScoreForCards] Error fetching user score:", userError)
@@ -54,7 +54,7 @@ export async function updateScoreForCards(walletAddress: string, cards: any[]) {
     }
 
     // Berechne den neuen Score
-    const currentScore = userData.score || 0
+    const currentScore = userData?.score || 0
     const newScore = currentScore + totalScoreToAdd
 
     console.log(
@@ -74,11 +74,11 @@ export async function updateScoreForCards(walletAddress: string, cards: any[]) {
       .from("users")
       .select("score")
       .eq("wallet_address", walletAddress)
-      .single()
+      .maybeSingle()
 
     if (verifyError) {
       console.error("[updateScoreForCards] Error verifying score update:", verifyError)
-    } else {
+    } else if (verifyData) {
       console.log(`[updateScoreForCards] SCORE VERIFICATION: Expected ${newScore}, Actual ${verifyData.score}`)
       if (verifyData.score !== newScore) {
         console.error(
@@ -105,7 +105,7 @@ export async function updateScoreForCards(walletAddress: string, cards: any[]) {
 }
 
 // Funktion für Level-Up-Punkte
-export async function updateScoreForLevelUp(username: string) {
+export async function updateScoreForLevelUp(walletAddress: string) {
   try {
     const supabase = createSupabaseServer()
     const levelUpPoints = 100
@@ -115,7 +115,7 @@ export async function updateScoreForLevelUp(username: string) {
       .from("users")
       .select("score")
       .eq("wallet_address", walletAddress)
-      .single()
+      .maybeSingle()
 
     if (userError) {
       console.error("[updateScoreForLevelUp] Error fetching user score:", userError)
@@ -123,11 +123,11 @@ export async function updateScoreForLevelUp(username: string) {
     }
 
     // Berechne den neuen Score
-    const currentScore = userData.score || 0
+    const currentScore = userData?.score || 0
     const newScore = currentScore + levelUpPoints
 
     console.log(
-      `[updateScoreForLevelUp] UPDATING SCORE FOR LEVEL UP: ${username} - Current: ${currentScore}, Adding: ${levelUpPoints}, New: ${newScore}`,
+      `[updateScoreForLevelUp] UPDATING SCORE FOR LEVEL UP: ${walletAddress} - Current: ${currentScore}, Adding: ${levelUpPoints}, New: ${newScore}`,
     )
 
     // Aktualisiere den Score in der Datenbank

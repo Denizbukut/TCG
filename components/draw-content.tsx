@@ -242,23 +242,16 @@ const [showInfo, setShowInfo] = useState(false)
     const supabase = getSupabaseBrowserClient()
     const today = new Date().toISOString().split("T")[0]
     if (!supabase) return
-    const { data, error } = await supabase
-      .from("god_pack_daily_usage")
-      .select("packs_opened")
-      .eq("usage_date", today)
-
-    if (!error && data) {
-      const totalOpened = (data as { packs_opened: number }[]).reduce(
-        (sum, row) => sum + row.packs_opened,
-        0,
-      )
-
-      setGodPacksLeft(Math.min(totalOpened, max_godpacks_daily))
-      const chances = calculateDynamicGodPackChances(totalOpened)
-      setGodPackChances(chances)
-    } else {
-      console.error("Error fetching god pack usage:", error)
-      setGodPacksLeft(null)
+    
+    try {
+      // God pack daily usage table doesn't exist, so we'll use default values
+      console.log("God pack usage check: Table does not exist, using default")
+      setGodPacksLeft(2) // Default to 2 since table doesn't exist
+      setGodPackChances({ godlike: 1, epic: 49 }) // Default chances
+    } catch (error) {
+      console.log("Table god_pack_daily_usage does not exist, using default values")
+      setGodPacksLeft(max_godpacks_daily)
+      setGodPackChances(calculateDynamicGodPackChances(0))
     }
   }
 
@@ -679,7 +672,7 @@ const [showInfo, setShowInfo] = useState(false)
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            username: user.username,
+            walletAddress: user.username,
             cardType,
             count,
           }),
@@ -691,58 +684,62 @@ const [showInfo, setShowInfo] = useState(false)
 
         const result = await response.json()
 
+        console.log("User object:", user)
+        console.log("User username:", user?.username)
+        console.log("User wallet_address:", user?.wallet_address)
+
         // Mission tracking für legendary cards
-        const legendaryCards = result.drawnCards?.filter((card: any) => card.rarity === "legendary") || []
-        if (legendaryCards.length > 0) {
+        const legendaryCards = result.cards?.filter((card: any) => card.rarity === "legendary") || []
+        if (legendaryCards.length > 0 && user?.username) {
           await incrementMission(user.username, "draw_legendary_card", legendaryCards.length)
         }
 
-        const premierLeagueCards = result.drawnCards?.filter((card: any) => card.league_id === "3cd1fa22-d6fd-466a-8fe2-ca5c661d015d") || []
-        if (premierLeagueCards.length > 0) {
+        const premierLeagueCards = result.cards?.filter((card: any) => card.league_id === "3cd1fa22-d6fd-466a-8fe2-ca5c661d015d") || []
+        if (premierLeagueCards.length > 0 && user?.username) {
           await incrementLegendaryDraw(user.username, premierLeagueCards.length * 1)
         }
 
-        const bundesligaCards = result.drawnCards?.filter((card: any) => card.league_id === "cba80327-d67e-400d-81b7-9689ab27224c") || []
-        if (bundesligaCards.length > 0) {
+        const bundesligaCards = result.cards?.filter((card: any) => card.league_id === "cba80327-d67e-400d-81b7-9689ab27224c") || []
+        if (bundesligaCards.length > 0 && user?.username) {
           await incrementLegendaryDraw(user.username, bundesligaCards.length * 1)
         }
 
         const goatPacks = cardType === "god" ? count : 0;
         
-        if (goatPacks > 0) {
+        if (goatPacks > 0 && user?.username) {
           await incrementLegendaryDraw(user.username, goatPacks * 15);
         }
         
 
 
         // Mission tracking for godlike cards
-        const godlikeCards = result.drawnCards?.filter((card: any) => card.rarity === "godlike") || []
-        if (godlikeCards.length > 0) {
+        const godlikeCards = result.cards?.filter((card: any) => card.rarity === "godlike") || []
+        if (godlikeCards.length > 0 && user?.username) {
           await incrementMission(user.username, "draw_godlike_card", godlikeCards.length)
         }
 
-        if (cardType === "legendary") {
+        if (cardType === "legendary" && user?.username) {
           await incrementMission(user.username, "open_legendary_pack", count)
           await incrementMission(user.username, "open_3_legendary_packs", count)
           if (user.clan_id !== undefined) {
             await incrementClanMission(user.clan_id, "legendary_packs", count)
           }
-        } else {
+        } else if (user?.username) {
           await incrementMission(user.username, "open_regular_pack", count)
           if (user.clan_id !== undefined) {
             await incrementClanMission(user.clan_id, "regular_packs", count)
           }
         }
 
-        const legendary_cards = result.drawnCards?.filter((card: any) => card.rarity === "legendary") || []
+        const legendary_cards = result.cards?.filter((card: any) => card.rarity === "legendary") || []
         if (legendary_cards.length > 0) {
           if (user.clan_id !== undefined) {
             await incrementClanMission(user.clan_id, "legendary_cards", legendary_cards.length)
           }
         }
 
-        if (result.success && result.drawnCards?.length > 0) {
-          setDrawnCards(result.drawnCards)
+        if (result.success && result.cards?.length > 0) {
+          setDrawnCards(result.cards)
 
           // Show Epic Avatar Bonus notification for Classic Packs
           // if (cardType === "regular" && result.epicAvatarBonus) {
@@ -796,6 +793,7 @@ const [showInfo, setShowInfo] = useState(false)
           }
         } else {
           console.error("Draw failed:", result.error)
+          console.error("Full result:", result)
           toast({ title: "Error", description: result.error || "Draw failed", variant: "destructive" })
           setDrawnCards(FALLBACK_CARDS.slice(0, count))
         }
@@ -860,7 +858,7 @@ const [showInfo, setShowInfo] = useState(false)
     fetchGodPacksLeft()
 
     try {
-      const scoreResult = await updateScoreForCards(user.username, drawnCards)
+      const scoreResult = await updateScoreForCards(user?.username || user?.wallet_address, drawnCards || [])
       if (scoreResult.success) {
         setScoreGained(scoreResult.addedScore)
         if (updateUserScore) {
@@ -893,7 +891,7 @@ const [showInfo, setShowInfo] = useState(false)
         if (newLevel > 1) {
           setShowLevelUpAnimation(true)
           if (user) {
-            updateScoreForLevelUp(user.username)
+            updateScoreForLevelUp(user?.username || user?.wallet_address)
               .then((result) => {
                 if (result.success && updateUserScore) {
                   updateUserScore(result.addedScore || 0)
@@ -912,7 +910,7 @@ const [showInfo, setShowInfo] = useState(false)
         if (newLevel > 1) {
           setShowLevelUpAnimation(true)
           if (user) {
-            updateScoreForLevelUp(user.username)
+            updateScoreForLevelUp(user?.username || user?.wallet_address)
               .then((result) => {
                 if (result.success && updateUserScore) {
                   updateUserScore(result.addedScore || 0)

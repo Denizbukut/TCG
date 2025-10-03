@@ -59,7 +59,7 @@ async function addCardInstance(
     const { data: insertedCard, error: insertCardError } = await supabase
       .from("user_card_instances")
       .insert({
-        user_id: walletAddress,
+        wallet_address: walletAddress,
         card_id: cardId,
         level: level,
         favorite: favorite,
@@ -83,8 +83,22 @@ async function addCardInstance(
 // Main function to draw cards with individual instances
 export async function drawCardsIndividual(walletAddress: string, packType: string, count = 1, hasPremiumPass = false) {
   try {
-    const supabase = getSupabaseServerClient()
-    console.log("Supabase client created successfully")
+    console.log("=== drawCardsIndividual START ===")
+    console.log("Parameters:", { walletAddress, packType, count, hasPremiumPass })
+    
+    let supabase
+    try {
+      supabase = getSupabaseServerClient()
+      console.log("Supabase client created successfully")
+    } catch (error) {
+      console.error("Failed to create Supabase client:", error)
+      return { success: false, error: "Database connection failed" }
+    }
+    
+    if (!supabase) {
+      console.error("Supabase client is null!")
+      return { success: false, error: "Database connection failed" }
+    }
 
     // Check if user is banned
     if (isUserBanned(walletAddress)) {
@@ -93,11 +107,13 @@ export async function drawCardsIndividual(walletAddress: string, packType: strin
 
     // Get user data
     console.log("Fetching user data for walletAddress:", walletAddress)
-    const { data: userData, error: userError } = await supabase
+    let { data: userData, error: userError } = await supabase
       .from("users")
       .select("tickets, elite_tickets, score, clan_id")
       .eq("wallet_address", walletAddress)
-      .single()
+      .maybeSingle()
+    
+    console.log("User query result:", { userData, userError })
     
     console.log("User data result:", { userData, userError })
 
@@ -108,8 +124,33 @@ export async function drawCardsIndividual(walletAddress: string, packType: strin
     }
     
     if (!userData) {
-      return { success: false, error: "User not found" }
+      console.log("No user data found for walletAddress:", walletAddress)
+      console.log("This might be because the user doesn't exist in the database or the wallet_address doesn't match")
+      
+      // Try to find the user by username instead
+      console.log("Trying to find user by username...")
+      const { data: userByUsername, error: usernameError } = await supabase
+        .from("users")
+        .select("tickets, elite_tickets, score, clan_id, wallet_address")
+        .eq("username", walletAddress)
+        .maybeSingle()
+      
+      console.log("Username query result:", { userByUsername, usernameError })
+      
+      if (userByUsername) {
+        console.log("Found user by username, using that data")
+        // Use the data found by username
+        userData = userByUsername
+      } else {
+        return { success: false, error: "User not found" }
+      }
     }
+
+    console.log("User data found:", userData)
+    
+    // Get the correct wallet_address from the database
+    const correctWalletAddress = userData.wallet_address || walletAddress
+    console.log("Using wallet_address:", correctWalletAddress)
 
     const isLegendary = packType === "legendary"
     const requiredTickets = isLegendary ? userData.elite_tickets : userData.tickets
@@ -135,10 +176,12 @@ export async function drawCardsIndividual(walletAddress: string, packType: strin
     }
     
     if (!availableCards || availableCards.length === 0) {
+      console.log("No cards found in database")
       return { success: false, error: "No cards available in database" }
     }
 
     console.log(`Found ${availableCards.length} cards in database`)
+    console.log("First few cards:", availableCards.slice(0, 3))
 
     // Pre-group cards by rarity for faster access
     const cardsByRarity = {
@@ -183,7 +226,7 @@ export async function drawCardsIndividual(walletAddress: string, packType: strin
 
       // Prepare card instance for batch insert
       cardInstancesToInsert.push({
-        user_id: walletAddress,
+        wallet_address: correctWalletAddress,
         card_id: selectedCard.id,
         level: 1,
         favorite: false,
@@ -233,17 +276,22 @@ export async function drawCardsIndividual(walletAddress: string, packType: strin
 
     revalidatePath("/leaderboard")
 
+    console.log("=== drawCardsIndividual SUCCESS ===")
+    console.log("Returning:", { success: true, cards: drawnCards, scoreAdded: totalScoreToAdd })
+    
     return {
       success: true,
-      drawnCards,
+      cards: drawnCards,
       addedInstances,
       newTicketCount,
       newScore,
       scoreAdded: totalScoreToAdd
     }
   } catch (error) {
+    console.error("=== drawCardsIndividual ERROR ===")
     console.error("Error drawing cards:", error)
-    return { success: false, error: "Failed to draw cards" }
+    console.error("Error stack:", error instanceof Error ? error.stack : String(error))
+    return { success: false, error: `Failed to draw cards: ${error instanceof Error ? error.message : String(error)}` }
   }
 }
 
@@ -269,7 +317,7 @@ export async function getUserCardsIndividual(walletAddress: string) {
           rarity
         )
       `)
-      .eq("user_id", walletAddress)
+      .eq("wallet_address", walletAddress)
       .order("obtained_at", { ascending: false })
 
     if (instancesError) {
@@ -333,7 +381,7 @@ export async function levelUpCardIndividual(walletAddress: string, cardId: strin
     const { data: instances, error: fetchError } = await supabase
       .from("user_card_instances")
       .select("id")
-      .eq("user_id", walletAddress)
+      .eq("wallet_address", walletAddress)
       .eq("card_id", cardId)
       .eq("level", level)
       .limit(2)
@@ -390,7 +438,7 @@ export async function testLevelUp(walletAddress: string) {
     const { data: allInstances, error: allError } = await supabase
       .from("user_card_instances")
       .select("id, card_id, level")
-      .eq("user_id", walletAddress)
+      .eq("wallet_address", walletAddress)
       .order("id", { ascending: true })
     
     console.log("All instances for user:", { allInstances, allError })

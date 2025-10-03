@@ -27,7 +27,7 @@ type MissionDefinition = {
 
 
 
-export async function getDailyMissions(username: string) {
+export async function getDailyMissions(walletAddress: string) {
   const supabase = createSupabaseServer()
   const today = new Date().toISOString().split("T")[0]
 
@@ -35,13 +35,13 @@ export async function getDailyMissions(username: string) {
     .from("daily_mission_progress")
     .delete()
     .neq("mission_date", today)
-    .eq("user_id", username)
+    .eq("user_id", walletAddress)
 
     await supabase
     .from("daily_mission_bonus")
     .delete()
     .neq("mission_date", today)
-    .eq("user_id", username)
+    .eq("user_id", walletAddress)
 
 
   const getRewardLabel = (reward: MissionReward): string => {
@@ -55,10 +55,10 @@ const promises = DAILY_MISSIONS.map(async (mission) => {
   const { data, error } = await supabase
     .from("daily_mission_progress")
     .select("*")
-    .eq("user_id", username)
+    .eq("user_id", walletAddress)
     .eq("mission_date", today)
     .eq("mission_key", mission.key)
-    .single()
+    .maybeSingle()
 
   const base = {
     key: mission.key,
@@ -72,7 +72,7 @@ const promises = DAILY_MISSIONS.map(async (mission) => {
     const { data: inserted } = await supabase
       .from("daily_mission_progress")
       .insert({
-        user_id: username,
+        user_id: walletAddress,
         mission_key: mission.key,
         goal: mission.goal,
         progress: 0,
@@ -80,7 +80,7 @@ const promises = DAILY_MISSIONS.map(async (mission) => {
         mission_date: today,
       })
       .select()
-      .single()
+      .maybeSingle()
 
     return {
       ...base,
@@ -109,9 +109,9 @@ const promises = DAILY_MISSIONS.map(async (mission) => {
   const { data: bonusRow } = await supabase
     .from("daily_mission_bonus")
     .select("*")
-    .eq("user_id", username)
+    .eq("user_id", walletAddress)
     .eq("mission_date", today)
-    .single()
+    .maybeSingle()
 
   const bonusClaimed = bonusRow?.bonus_claimed || false
 
@@ -125,10 +125,10 @@ export async function incrementMission(walletAddress: string, key: string, amoun
   const { data: existing, error } = await supabase
     .from("daily_mission_progress")
     .select("*")
-    .eq("user_id", username)
+    .eq("user_id", walletAddress)
     .eq("mission_date", today)
     .eq("mission_key", key)
-    .single()
+    .maybeSingle()
 
   if (error && error.code === "PGRST116") {
     const mission = DAILY_MISSIONS.find((m) => m.key === key)
@@ -137,7 +137,7 @@ export async function incrementMission(walletAddress: string, key: string, amoun
     const progress = Math.min(amount, mission.goal)
 
     await supabase.from("daily_mission_progress").insert({
-      user_id: username,
+      user_id: walletAddress,
       mission_key: key,
       goal: mission.goal,
       progress,
@@ -153,7 +153,7 @@ export async function incrementMission(walletAddress: string, key: string, amoun
         progress: newProgress,
         updated_at: new Date().toISOString(),
       })
-      .eq("user_id", username)
+      .eq("user_id", walletAddress)
       .eq("mission_date", today)
       .eq("mission_key", key)
   }
@@ -169,10 +169,10 @@ export async function claimMissionReward(walletAddress: string, key: string) {
   const { data: mission } = await supabase
     .from("daily_mission_progress")
     .select("*")
-    .eq("user_id", username)
+    .eq("user_id", walletAddress)
     .eq("mission_date", today)
     .eq("mission_key", key)
-    .single()
+    .maybeSingle()
 
   if (!mission || mission.reward_claimed || mission.progress < mission.goal) {
     return { success: false, error: "Not eligible" }
@@ -184,19 +184,19 @@ export async function claimMissionReward(walletAddress: string, key: string) {
 
   const updates: any = {}
   if (reward.xp) {
-    const { data: user } = await supabase.from("users").select("experience").eq("username", username).single()
+    const { data: user } = await supabase.from("users").select("experience").eq("wallet_address", walletAddress).maybeSingle()
     updates.experience = (user?.experience || 0) + reward.xp
   }
   if (reward.tickets) {
-    const { data: user } = await supabase.from("users").select("tickets").eq("username", username).single()
+    const { data: user } = await supabase.from("users").select("tickets").eq("wallet_address", walletAddress).maybeSingle()
     updates.tickets = (user?.tickets || 0) + reward.tickets
   }
 
-  await supabase.from("users").update(updates).eq("username", username)
+  await supabase.from("users").update(updates).eq("wallet_address", walletAddress)
   await supabase
     .from("daily_mission_progress")
     .update({ reward_claimed: true })
-    .eq("user_id", username)
+    .eq("user_id", walletAddress)
     .eq("mission_date", today)
     .eq("mission_key", key)
 
@@ -211,7 +211,7 @@ export async function claimBonusReward(walletAddress: string) {
   const { data: completed } = await supabase
     .from("daily_mission_progress")
     .select("reward_claimed")
-    .eq("user_id", username)
+    .eq("user_id", walletAddress)
     .eq("mission_date", today)
     .eq("reward_claimed", true)
 
@@ -222,9 +222,9 @@ export async function claimBonusReward(walletAddress: string) {
   const { data: bonusRow } = await supabase
     .from("daily_mission_bonus")
     .select("*")
-    .eq("user_id", username)
+    .eq("user_id", walletAddress)
     .eq("mission_date", today)
-    .single()
+    .maybeSingle()
 
   if (bonusRow && bonusRow.bonus_claimed) {
     return { success: false, error: "Already claimed" }
@@ -234,7 +234,7 @@ export async function claimBonusReward(walletAddress: string) {
   .from("users")
   .select("elite_tickets")
       .eq("wallet_address", walletAddress)
-  .single()
+      .maybeSingle()
 
 await supabase
   .from("users")
@@ -242,10 +242,10 @@ await supabase
       .eq("wallet_address", walletAddress)
 
   if (!bonusRow) {
-    await supabase.from("daily_mission_bonus").insert({ user_id: username, bonus_claimed: true, claimed_at: new Date().toISOString() })
+    await supabase.from("daily_mission_bonus").insert({ user_id: walletAddress, bonus_claimed: true, claimed_at: new Date().toISOString() })
   } else {
     await supabase.from("daily_mission_bonus").update({ bonus_claimed: true, claimed_at: new Date().toISOString() })
-      .eq("user_id", username).eq("mission_date", today)
+      .eq("user_id", walletAddress).eq("mission_date", today)
   }
 
   revalidatePath("/missions")
