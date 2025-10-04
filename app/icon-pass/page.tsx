@@ -66,13 +66,13 @@ export default function IconPassPage() {
         const dataPromise = supabase
           .from('icon_passes')
           .select('*')
-          .eq('user_id', user.username)
+          .eq('user_id', user.wallet_address)
           .eq('active', true)
           .single();
 
         const { data, error } = await Promise.race([dataPromise, timeoutPromise]) as any;
 
-        console.log('Icon Pass check in icon-pass page:', { data, error, username: user.username })
+        console.log('Icon Pass check in icon-pass page:', { data, error, username: user.wallet_address })
         
         if (!error && data) {
           setHasIconPass(true)
@@ -182,7 +182,7 @@ export default function IconPassPage() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ username: user.username }),
+          body: JSON.stringify({ username: user.wallet_address }),
         });
 
         const data = await response.json();
@@ -256,7 +256,7 @@ export default function IconPassPage() {
         const { data: claimedRewardsData, error: claimedRewardsError } = await supabase
           .from("claimed_rewards")
           .select("*")
-          .eq("user_id", user.username);
+          .eq("wallet_address", user.wallet_address);
 
         if (claimedRewardsError) {
           console.error("Error fetching claimed rewards:", claimedRewardsError);
@@ -369,7 +369,7 @@ export default function IconPassPage() {
     if (!supabase || !user?.username) return;
 
     try {
-      console.log('Starting icon pass purchase for user:', user.username);
+      console.log('Starting icon pass purchase for user:', user.wallet_address);
       
       // Calculate expiry date (7 days from now)
       const expiryDate = new Date();
@@ -379,7 +379,7 @@ export default function IconPassPage() {
       const { data: existingPass, error: checkError } = await supabase
         .from("icon_passes")
         .select("*")
-        .eq("user_id", user.username)
+        .eq("user_id", user.wallet_address)
         .single();
 
       console.log('Check result:', { existingPass, checkError });
@@ -407,7 +407,7 @@ export default function IconPassPage() {
             purchased_at: new Date().toISOString(),
             expires_at: expiryDate.toISOString(),
           })
-          .eq("user_id", user.username)
+          .eq("user_id", user.wallet_address)
           .select()
           .single();
 
@@ -420,7 +420,7 @@ export default function IconPassPage() {
         const { data: insertData, error: insertError } = await supabase
           .from("icon_passes")
           .insert({
-            user_id: user.username,
+            user_id: user.wallet_address,
             active: true,
             purchased_at: new Date().toISOString(),
             expires_at: expiryDate.toISOString(),
@@ -449,7 +449,7 @@ export default function IconPassPage() {
       setIsExpired(false);
       setIconPassData({
         id: result?.id || existingPass?.id || 'new',
-        user_id: user.username,
+        user_id: user.wallet_address,
         active: true,
         purchased_at: new Date().toISOString(),
         expires_at: expiryDate.toISOString(),
@@ -487,7 +487,7 @@ export default function IconPassPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username: user.username }),
+        body: JSON.stringify({ username: user.wallet_address }),
       });
 
       const data = await response.json();
@@ -574,7 +574,7 @@ export default function IconPassPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username: user.username }),
+        body: JSON.stringify({ username: user.wallet_address }),
       });
 
       const data = await response.json();

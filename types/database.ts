@@ -45,7 +45,7 @@ export interface IconPass {
   
   export interface ClaimedReward {
     id: string
-    user_id: string
+    wallet_address: string
     level: number
     standard_claimed: boolean
     premium_claimed: boolean

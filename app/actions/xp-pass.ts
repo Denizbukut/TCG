@@ -16,7 +16,7 @@ export async function logXpPassPurchase(walletAddress: string, priceUsd: number,
     
     // Log to ticket_purchases table with special type for XP pass
     const { error: purchaseLogError } = await supabase.from("ticket_purchases").insert({
-      username: username,
+      username: walletAddress,
       ticket_type: "xp_pass",
       amount: 1,
       price_usd: priceUsd,
@@ -69,7 +69,7 @@ export async function purchaseXpPass(walletAddress: string) {
     const { data: existingPass, error: checkError } = await supabase
       .from("xp_passes")
       .select("*")
-      .eq("user_id", username)
+      .eq("wallet_address", walletAddress)
       .single()
     
     console.log("Server: Check result:", { existingPass, checkError })
@@ -85,14 +85,14 @@ export async function purchaseXpPass(walletAddress: string) {
           purchased_at: new Date().toISOString(),
           expires_at: expiryDate.toISOString(),
         })
-        .eq("user_id", username)
+        .eq("wallet_address", walletAddress)
       
       error = updateError
       console.log("Server: Update result:", { error })
     } else {
       console.log("Server: Creating new XP pass")
       const { error: insertError } = await supabase.from("xp_passes").insert({
-        user_id: username,
+        wallet_address: walletAddress,
         active: true,
         purchased_at: new Date().toISOString(),
         expires_at: expiryDate.toISOString(),

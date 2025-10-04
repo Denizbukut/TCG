@@ -1101,7 +1101,7 @@ const [copied, setCopied] = useState(false)
           (typeof data.expires_at === "string" || typeof data.expires_at === "number" || data.expires_at instanceof Date) &&
           new Date() > new Date(data.expires_at)
         ) {
-          await supabase.from("xp_passes").update({ active: false }).eq("user_id", user.username).eq("id", data.id);
+          await supabase.from("xp_passes").update({ active: false }).eq("wallet_address", user.wallet_address).eq("id", data.id);
           refreshUserData?.();
         }
       });
@@ -1119,7 +1119,7 @@ const [copied, setCopied] = useState(false)
           (typeof data.expires_at === "string" || typeof data.expires_at === "number" || data.expires_at instanceof Date) &&
           new Date() > new Date(data.expires_at)
         ) {
-          await supabase.from("premium_passes").update({ active: false }).eq("user_id", user.username).eq("id", data.id);
+          await supabase.from("premium_passes").update({ active: false }).eq("wallet_address", user.wallet_address).eq("id", data.id);
           await supabase.from("users").update({ has_premium: false }).eq("username", user.username);
           refreshUserData?.();
         }

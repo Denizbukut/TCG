@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     const { data: claimedRewards, error: claimedRewardsError } = await supabase
       .from('claimed_rewards')
       .select('*')
-      .eq('user_id', username);
+      .eq('wallet_address', username);
 
     if (claimedRewardsError) {
       console.error('Error fetching claimed rewards:', claimedRewardsError);
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
         const { error: insertError } = await supabase
           .from('claimed_rewards')
           .insert({
-            user_id: username,
+            wallet_address: username, // This is now wallet_address passed as username parameter
             level: reward.level,
             icon_claimed: true,
             standard_claimed: false,

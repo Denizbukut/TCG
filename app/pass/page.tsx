@@ -139,8 +139,8 @@ useEffect(() => {
   const sendXpPayment = async () => {
     try {
       console.log("Starting XP payment process...")
-      const dollarAmount = 1.5
-      const fallbackWldAmount = 1.5
+      const dollarAmount = 0.01
+      const fallbackWldAmount = 0.01
       const wldAmount = price ? dollarAmount / price : fallbackWldAmount
       
       console.log("Payment details:", { dollarAmount, wldAmount, price })
@@ -256,7 +256,7 @@ const handlePurchaseXpPass = async () => {
 
     // Log the purchase
     try {
-      const dollarAmount = 1.5
+      const dollarAmount = 0.01
       const wldAmount = price ? dollarAmount / price : dollarAmount
       
       const { error: logError } = await supabase.from("ticket_purchases").insert({
@@ -329,7 +329,7 @@ const handlePurchaseXpPass = async () => {
         const { data: premiumData, error: premiumError } = (await supabase
           .from("premium_passes")
           .select("*")
-          .eq("user_id", user.username)
+          .eq("wallet_address", user.wallet_address)
           .eq("active", true)
           .single()) as { data: PremiumPass | null; error: any }
 
@@ -351,7 +351,7 @@ const handlePurchaseXpPass = async () => {
             const { error: updatePassError } = await supabase
               .from("premium_passes")
               .update({ active: false })
-              .eq("user_id", user.username)
+              .eq("wallet_address", user.wallet_address)
               .eq("id", premiumData.id)
 
             if (updatePassError) {
@@ -452,7 +452,7 @@ const handlePurchaseXpPass = async () => {
         const { data: claimedRewardsData, error: claimedRewardsError } = (await supabase
           .from("claimed_rewards")
           .select("*")
-          .eq("user_id", user.username)) as { data: ClaimedReward[] | null; error: any }
+          .eq("wallet_address", user.wallet_address)) as { data: ClaimedReward[] | null; error: any }
 
         if (claimedRewardsError) {
           console.error("Error fetching claimed rewards:", claimedRewardsError)
@@ -539,7 +539,7 @@ const handlePurchaseXpPass = async () => {
       const { error: updateError } = await supabase
         .from("premium_passes")
         .update({ last_elite_claim: new Date().toISOString() })
-        .eq("user_id", user.username)
+        .eq("wallet_address", user.wallet_address)
         .eq("active", true)
 
       if (updateError) {
@@ -642,7 +642,7 @@ const handlePurchaseXpPass = async () => {
             const { data: existingReward, error: existingRewardError } = (await supabase
               .from("claimed_rewards")
               .select("*")
-              .eq("user_id", user.username)
+              .eq("wallet_address", user.wallet_address)
               .eq("level", reward.level)
               .single()) as { data: ClaimedReward | null; error: any }
 
@@ -665,7 +665,7 @@ const handlePurchaseXpPass = async () => {
             } else {
               // Create new reward record
               const insertData = {
-                user_id: user.username,
+                wallet_address: user.wallet_address,
                 level: reward.level,
                 standard_claimed: true,
                 premium_claimed: hasPremium,
@@ -736,8 +736,8 @@ const handlePurchaseXpPass = async () => {
 
   // Update the sendPayment function to reflect the promotional price
   const sendPayment = async () => {
-    const dollarAmount = 1.5
-    const fallbackWldAmount = 1.5
+    const dollarAmount = 0.01
+    const fallbackWldAmount = 0.01
     const wldAmount = price ? dollarAmount / price : fallbackWldAmount
     const res = await fetch("/api/initiate-payment", {
       method: "POST",
@@ -778,7 +778,7 @@ const handlePurchaseXpPass = async () => {
       const { data: existingPass, error: checkError } = await supabase
         .from("premium_passes")
         .select("*")
-        .eq("user_id", user.username)
+        .eq("wallet_address", user.wallet_address)
         .single()
 
       if (checkError && checkError.code !== "PGRST116") {
@@ -802,13 +802,13 @@ const handlePurchaseXpPass = async () => {
             purchased_at: new Date().toISOString(),
             expires_at: expiryDate.toISOString(),
           })
-          .eq("user_id", user.username)
+          .eq("wallet_address", user.wallet_address)
 
         error = updateError
       } else {
         // Create new premium pass record
         const { error: insertError } = await supabase.from("premium_passes").insert({
-          user_id: user.username,
+          wallet_address: user.wallet_address,
           active: true,
           purchased_at: new Date().toISOString(),
           expires_at: expiryDate.toISOString(),
@@ -1068,7 +1068,7 @@ const handlePurchaseXpPass = async () => {
                     <div className="flex-1">
                       <h4 className="font-bold text-gray-900 text-sm">Support the Game</h4>
                       <p className="text-gray-700 text-sm">
-                        Get <b>Premium Pass</b> for only <b>$1.50</b> and enjoy full benefits!
+                        Get <b>Premium Pass</b> for only <b>$0.01</b> and enjoy full benefits!
                       </p>
                     </div>
                   </div>

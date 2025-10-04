@@ -77,7 +77,7 @@ export default function XpBoosterPage() {
         const { data: xpData, error: xpError } = await supabase
           .from("xp_passes")
           .select("*")
-          .eq("user_id", user.username)
+          .eq("wallet_address", user.wallet_address)
           .eq("active", true)
           .single();
 
@@ -93,7 +93,7 @@ export default function XpBoosterPage() {
             await supabase
               .from("xp_passes")
               .update({ active: false })
-              .eq("user_id", user.username)
+              .eq("wallet_address", user.wallet_address)
               .eq("id", xpData.id as string);
 
             setHasXpPass(false);
@@ -119,10 +119,10 @@ export default function XpBoosterPage() {
     };
 
     loadXpPassStatus();
-  }, [user?.username]);
+  }, [user?.wallet_address]);
 
   const handleBuy = async () => {
-    if (!user?.username) {
+    if (!user?.wallet_address) {
       toast({ title: 'Login required', description: 'Please log in to purchase XP Pass.', variant: 'destructive' });
       return;
     }
@@ -150,7 +150,7 @@ export default function XpBoosterPage() {
         
         // Import the server action to save XP pass
         const { purchaseXpPass } = await import("@/app/actions/xp-pass");
-        const purchaseResult = await purchaseXpPass(user?.username || "");
+        const purchaseResult = await purchaseXpPass(user?.wallet_address || "");
         
         if (purchaseResult.success) {
           console.log("XP pass saved successfully");
