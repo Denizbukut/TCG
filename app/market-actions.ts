@@ -65,30 +65,13 @@ export async function listCardForSale(userId: string, cardId: string, price: num
     // Preisvalidierung basierend auf Rating und Rarity (USD umgerechnet zu WLD)
     let minUsdPrice = 0.15 // Standard-Mindestpreis
     
-    // Rating-basierte Preise (höhere Priorität als Rarity)
-    if (cardDetails.overall_rating >= 91) {
-      minUsdPrice = 3.5
-    } else if (cardDetails.overall_rating >= 90) {
-      minUsdPrice = 2.5
-    } else if (cardDetails.overall_rating >= 89) {
-      minUsdPrice = 2.0
-    } else if (cardDetails.overall_rating >= 88) {
+    // Rarity-basierte Preise
+    if (cardDetails.rarity === "legendary") {
       minUsdPrice = 1.5
-    } else if (cardDetails.overall_rating >= 87) {
-      minUsdPrice = 0.75
-    } else if (cardDetails.overall_rating >= 86) {
-      minUsdPrice = 0.65
-    } else if (cardDetails.overall_rating >= 85) {
-      minUsdPrice = 0.55
-    } else {
-      // Rarity-basierte Preise (nur wenn Rating niedriger ist)
-      if (cardDetails.rarity === "legendary") {
-        minUsdPrice = 1.5
-      } else if (cardDetails.rarity === "epic") {
-        minUsdPrice = 1.0
-      } else if (cardDetails.rarity === "rare") {
-        minUsdPrice = 0.5
-      }
+    } else if (cardDetails.rarity === "epic") {
+      minUsdPrice = 1.0
+    } else if (cardDetails.rarity === "rare") {
+      minUsdPrice = 0.5
     }
 
     const minWldPrice = priceUsdPerWLD ? minUsdPrice / priceUsdPerWLD : minUsdPrice

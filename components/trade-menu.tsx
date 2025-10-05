@@ -266,44 +266,25 @@ export default function TradeMenu() {
       price: parsedPrice
     })
     
-    // Rating-basierte Preise (höhere Priorität als Rarity)
-    if (selectedCard.cards.overall_rating >= 91) {
-      minUsdPrice = 3.5
-      console.log("Rating 91+ detected, setting min price to $3.50")
-    } else if (selectedCard.cards.overall_rating >= 90) {
-      minUsdPrice = 2.5
-      console.log("Rating 90+ detected, setting min price to $2.50")
-    } else if (selectedCard.cards.overall_rating >= 89) {
-      minUsdPrice = 2.0
-      console.log("Rating 89+ detected, setting min price to $2.00")
-    } else if (selectedCard.cards.overall_rating >= 88) {
+    // Rarity-basierte Preise
+    if (selectedCard.cards.rarity === "wbc") {
+      minUsdPrice = 5.0
+      console.log("WBC rarity detected, setting min price to $5.00")
+    } else if (selectedCard.cards.rarity === "ultimate") {
       minUsdPrice = 1.5
-      console.log("Rating 88+ detected, setting min price to $1.50")
-    } else if (selectedCard.cards.overall_rating >= 87) {
-      minUsdPrice = 0.75
-      console.log("Rating 87+ detected, setting min price to $0.75")
-    } else if (selectedCard.cards.overall_rating >= 86) {
-      minUsdPrice = 0.65
-      console.log("Rating 86+ detected, setting min price to $0.65")
-    } else if (selectedCard.cards.overall_rating >= 85) {
-      minUsdPrice = 0.55
-      console.log("Rating 85+ detected, setting min price to $0.55")
-    } else {
-      // Rarity-basierte Preise (nur wenn Rating niedriger ist)
-      // if (selectedCard.cards.rarity === "wbc") {
-      //   minUsdPrice = 5.0
-      //   console.log("WBC rarity detected, setting min price to $5.00")
-      // } else 
-      if (selectedCard.cards.rarity === "legendary") {
-        minUsdPrice = 1.5
-        console.log("Legendary rarity detected, setting min price to $1.50")
-      } else if (selectedCard.cards.rarity === "epic") {
-        minUsdPrice = 1.0
-        console.log("Epic rarity detected, setting min price to $1.00")
-      } else if (selectedCard.cards.rarity === "rare") {
-        minUsdPrice = 0.5
-        console.log("Rare rarity detected, setting min price to $0.50")
-      }
+      console.log("Ultimate rarity detected, setting min price to $1.50")
+    } else if (selectedCard.cards.rarity === "legendary") {
+      minUsdPrice = 1.5
+      console.log("Legendary rarity detected, setting min price to $1.50")
+    } else if (selectedCard.cards.rarity === "epic") {
+      minUsdPrice = 1.0
+      console.log("Epic rarity detected, setting min price to $1.00")
+    } else if (selectedCard.cards.rarity === "rare") {
+      minUsdPrice = 0.5
+      console.log("Rare rarity detected, setting min price to $0.50")
+    } else if (selectedCard.cards.rarity === "elite") {
+      minUsdPrice = 0.5
+      console.log("Elite rarity detected, setting min price to $0.50")
     }
 
     const minWldPrice = priceUsdPerWLD ? minUsdPrice / priceUsdPerWLD : minUsdPrice
@@ -903,29 +884,16 @@ export default function TradeMenu() {
                     }`}
                                          onClick={() => {
                        setSelectedCard(card)
-                       // Setze Standardpreis basierend auf Rating und Rarity (USD umgerechnet zu WLD)
+                       // Setze Standardpreis basierend auf Rarity (USD umgerechnet zu WLD)
                        let minUsdPrice = 0.15
                        
-                       // Rating-basierte Preise (höhere Priorität als Rarity)
-                       if (card.cards.overall_rating >= 91) {
-                         minUsdPrice = 3.5
-                       } else if (card.cards.overall_rating >= 90) {
-                         minUsdPrice = 2.5
-                       } else if (card.cards.overall_rating >= 89) {
-                         minUsdPrice = 2.0
-                       } else if (card.cards.overall_rating >= 88) {
+                       // Rarity-basierte Preise
+                       if (card.cards.rarity === "legendary") {
                          minUsdPrice = 1.5
-                       } else if (card.cards.overall_rating >= 87) {
+                       } else if (card.cards.rarity === "epic") {
                          minUsdPrice = 1.0
-                       } else {
-                         // Rarity-basierte Preise (nur wenn Rating niedriger ist)
-                         if (card.cards.rarity === "legendary") {
-                           minUsdPrice = 1.5
-                         } else if (card.cards.rarity === "epic") {
-                           minUsdPrice = 1.0
-                         } else if (card.cards.rarity === "rare") {
-                           minUsdPrice = 0.5
-                         }
+                       } else if (card.cards.rarity === "rare") {
+                         minUsdPrice = 0.5
                        }
                        
                        const defaultPrice = priceUsdPerWLD

@@ -55,36 +55,16 @@ useEffect(() => {
   // Validiere den Preis
   const parsedPrice = Number.parseFloat(price.replace(",", "."))
   
-  // Mindestpreise in USD, umgerechnet zu WLD (basierend auf Rating und Rarity)
+  // Mindestpreise in USD, umgerechnet zu WLD (basierend auf Rarity)
   let minUsdPrice = 0.15 // Standard-Mindestpreis
   
-  // Rating-basierte Preise (höhere Priorität als Rarity)
-  if (overallRating && overallRating >= 91) {
-    minUsdPrice = 3.5
-  } else if (overallRating && overallRating >= 90) {
-    minUsdPrice = 2.5
-  } else if (overallRating && overallRating >= 89) {
-    minUsdPrice = 2.0
-  } else if (overallRating && overallRating >= 88) {
+  // Rarity-basierte Preise
+  if (cardRarity === "legendary") {
     minUsdPrice = 1.5
-  } else if (overallRating && overallRating >= 87) {
-    minUsdPrice = 0.75
-  } else if (overallRating && overallRating >= 86) {
-    minUsdPrice = 0.65
-  } else if (overallRating && overallRating >= 85) {
-    minUsdPrice = 0.55
-  } else {
-    // Rarity-basierte Preise (nur wenn Rating niedriger ist)
-    // if (cardRarity === "wbc") {
-    //   minUsdPrice = 5.0
-    // } else 
-    if (cardRarity === "legendary") {
-      minUsdPrice = 1.5
-    } else if (cardRarity === "epic") {
-      minUsdPrice = 1.0
-    } else if (cardRarity === "rare") {
-      minUsdPrice = 0.5
-    }
+  } else if (cardRarity === "epic") {
+    minUsdPrice = 1.0
+  } else if (cardRarity === "rare") {
+    minUsdPrice = 0.5
   }
   
   const minWldPrice = priceUsdPerWLD ? minUsdPrice / priceUsdPerWLD : minUsdPrice
@@ -165,21 +145,7 @@ useEffect(() => {
             </div>
             {!isValidPrice && (
               <p className="text-red-500 text-sm">
-                {overallRating && overallRating >= 91
-                  ? `Rating ${overallRating} cards must be listed for at least ${minWldPrice.toFixed(3)} WLD ($${3.50.toFixed(2)})`
-                  : overallRating && overallRating >= 90
-                  ? `Rating ${overallRating} cards must be listed for at least ${minWldPrice.toFixed(3)} WLD ($${2.50.toFixed(2)})`
-                  : overallRating && overallRating >= 89
-                  ? `Rating ${overallRating} cards must be listed for at least ${minWldPrice.toFixed(3)} WLD ($${2.00.toFixed(2)})`
-                  : overallRating && overallRating >= 88
-                  ? `Rating ${overallRating} cards must be listed for at least ${minWldPrice.toFixed(3)} WLD ($${1.50.toFixed(2)})`
-                  : overallRating && overallRating >= 87
-                  ? `Rating ${overallRating} cards must be listed for at least ${minWldPrice.toFixed(3)} WLD ($${0.75.toFixed(2)})`
-                  : overallRating && overallRating >= 86
-                  ? `Rating ${overallRating} cards must be listed for at least ${minWldPrice.toFixed(3)} WLD ($${0.65.toFixed(2)})`
-                  : overallRating && overallRating >= 85
-                  ? `Rating ${overallRating} cards must be listed for at least ${minWldPrice.toFixed(3)} WLD ($${0.55.toFixed(2)})`
-                  : cardRarity === "legendary"
+                {cardRarity === "legendary"
                   ? `Legendary cards must be listed for at least ${minWldPrice.toFixed(3)} WLD ($${1.50.toFixed(2)})`
                   : cardRarity === "epic"
                   ? `Epic cards must be listed for at least ${minWldPrice.toFixed(3)} WLD ($${1.00.toFixed(2)})`
