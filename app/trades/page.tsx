@@ -65,13 +65,13 @@ export default function TradesPage() {
         setMarketListings(result.listings || [])
       }
     } else if (activeTab === "my-listings") {
-      const result = await getUserListings(user!.id)
+      const result = await getUserListings(user!.wallet_address)
       if (result.success) {
         setUserListings(result.listings || [])
       }
     } else if (activeTab === "history") {
-      const purchasesResult = await getUserPurchaseHistory(user!.id)
-      const salesResult = await getUserSaleHistory(user!.id)
+      const purchasesResult = await getUserPurchaseHistory(user!.wallet_address)
+      const salesResult = await getUserSaleHistory(user!.wallet_address)
 
       if (purchasesResult.success) {
         setPurchaseHistory(purchasesResult.purchases || [])
@@ -91,6 +91,11 @@ export default function TradesPage() {
     setLoadingUserCards(true)
     try {
       const supabase = getSupabaseBrowserClient()
+      if (!supabase) {
+        console.error("Supabase client not available")
+        setUserCards([])
+        return
+      }
       const { data, error } = await supabase
         .from("user_cards")
         .select(`
@@ -106,7 +111,7 @@ export default function TradesPage() {
             hp
           )
         `)
-        .eq("user_id", user.id)
+        .eq("wallet_address", user.wallet_address)
         .gt("quantity", 0)
 
       if (error) {
@@ -181,7 +186,7 @@ export default function TradesPage() {
 
     setLoadingAction(true)
     try {
-      const result = await listCardForSale(user!.id, selectedCard.cards.id, Number(price))
+      const result = await listCardForSale(user!.wallet_address, selectedCard.cards.id, Number(price))
 
       if (result.success) {
         toast({
@@ -212,7 +217,7 @@ export default function TradesPage() {
   const handleCancelListing = async (listingId: string) => {
     setLoadingAction(true)
     try {
-      const result = await cancelListing(user!.id, listingId)
+      const result = await cancelListing(user!.wallet_address, listingId)
 
       if (result.success) {
         toast({
@@ -244,7 +249,7 @@ export default function TradesPage() {
 
     setLoadingAction(true)
     try {
-      const result = await buyCard(user!.id, selectedListing.id)
+      const result = await buyCard(user!.wallet_address, selectedListing.id)
 
       if (result.success) {
         toast({
@@ -381,9 +386,9 @@ export default function TradesPage() {
                             <Button
                               className="w-full bg-orange-600 hover:bg-orange-700"
                               onClick={() => handleBuyCard(listing)}
-                              disabled={listing.seller_id === user?.id}
+                              disabled={listing.seller_wallet_address === user?.wallet_address}
                             >
-                              {listing.seller_id === user?.id ? "Your Listing" : "Buy Card"}
+                              {listing.seller_wallet_address === user?.wallet_address ? "Your Listing" : "Buy Card"}
                             </Button>
                           </CardFooter>
                         </Card>

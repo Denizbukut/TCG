@@ -2246,11 +2246,11 @@ const [copied, setCopied] = useState(false)
                         setShowClaimAnimation(true)
                         if (
                           typeof res.newTicketCount === "number" ||
-                          typeof res.newLegendaryTicketCount === "number"
+                          typeof (res as any).newEliteTicketCount === "number"
                         ) {
-                          await updateUserTickets(res.newTicketCount, res.newLegendaryTicketCount)
+                          await updateUserTickets(res.newTicketCount, (res as any).newEliteTicketCount)
                           setTickets(res.newTicketCount)
-                          setEliteTickets(res.newLegendaryTicketCount)
+                          setEliteTickets((res as any).newEliteTicketCount)
                         }
                         setReferredUsers((prev) =>
                           prev.map((r) => (r.username === ref.username ? { ...r, reward_claimed: true } : r))

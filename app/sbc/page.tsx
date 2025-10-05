@@ -590,12 +590,12 @@ export default function SBCPage() {
       
       console.log('🚀 RUFE submitSBCSquad AUF...')
       console.log('Parameters:', {
-        userId: user.username,
+        userId: user.wallet_address,
         challengeId: selectedChallenge.id,
         cardIds: cardIds
       })
       
-      const result = await submitSBCSquad(user.username, selectedChallenge.id, cardIds)
+      const result = await submitSBCSquad(user.wallet_address, selectedChallenge.id, cardIds)
       
       console.log(`📋 RESULT:`, result)
       console.log(`📋 RESULT TYPE:`, typeof result)

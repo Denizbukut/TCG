@@ -47,7 +47,7 @@ export async function claimReferralRewardForUser(referrerWalletAddress: string, 
     const { data: referredUser, error: referredUserError } = await supabase
       .from("users")
       .select("level")
-      .eq("username", referredUsername)
+      .eq("wallet_address", referredWalletAddress)
       .single()
 
     if (referredUserError) {
@@ -79,8 +79,8 @@ export async function claimReferralRewardForUser(referrerWalletAddress: string, 
     // Get referrer's current tickets
     const { data: userData, error: userDataError } = await supabase
       .from("users")
-      .select("tickets, legendary_tickets")
-      .eq("username", referrerUsername)
+      .select("tickets, elite_tickets")
+      .eq("wallet_address", referrerWalletAddress)
       .single()
 
     if (userDataError) {
@@ -89,16 +89,16 @@ export async function claimReferralRewardForUser(referrerWalletAddress: string, 
     }
 
     const newTicketCount = (userData?.tickets ?? 0) + 5
-    const newLegendaryTicketCount = (userData?.legendary_tickets ?? 0) + 3
+    const newEliteTicketCount = (userData?.elite_tickets ?? 0) + 3
 
     // Update tickets
     const { error: updateError } = await supabase
       .from("users")
       .update({
         tickets: newTicketCount,
-        legendary_tickets: newLegendaryTicketCount,
+        elite_tickets: newEliteTicketCount,
       })
-      .eq("username", referrerUsername)
+      .eq("wallet_address", referrerWalletAddress)
 
     if (updateError) {
       console.error("Error updating user tickets:", updateError)
@@ -120,7 +120,7 @@ export async function claimReferralRewardForUser(referrerWalletAddress: string, 
     return {
       success: true,
       newTicketCount: newTicketCount,
-      newLegendaryTicketCount: newLegendaryTicketCount,
+      newEliteTicketCount: newEliteTicketCount,
     }
   } catch (error) {
     console.error("Unexpected error in claimReferralRewardForUser:", error)
@@ -130,16 +130,16 @@ export async function claimReferralRewardForUser(referrerWalletAddress: string, 
 
 export async function getReferredUsers(referrerWalletAddress: string) {
   try {
-    console.log("🔍 getReferredUsers called for:", referrerUsername)
+    console.log("🔍 getReferredUsers called for:", referrerWalletAddress)
     const supabase = createSupabaseServer()
     
     // Get referrals for this specific user
     const { data, error } = await supabase
       .from("referrals")
-      .select("id, referred_username, reward_claimed, created_at")
+      .select("id, referred_wallet_address, reward_claimed, created_at")
       .eq("referrer_wallet_address", referrerWalletAddress)
 
-    console.log("🔍 Query for referrer_username:", referrerUsername)
+    console.log("🔍 Query for referrer_wallet_address:", referrerWalletAddress)
     console.log("📊 Found referrals:", data?.length || 0)
     console.log("📋 Referrals data:", data)
 
@@ -149,18 +149,18 @@ export async function getReferredUsers(referrerWalletAddress: string) {
     }
 
     if (!data || data.length === 0) {
-      console.log("⚠️ No referrals found for user:", referrerUsername)
+      console.log("⚠️ No referrals found for user:", referrerWalletAddress)
       return []
     }
 
     console.log("🔄 Processing", data.length, "referrals...")
 
     // Get user levels in a single query for better performance
-    const referredUsernames = data.map(ref => ref.referred_username)
+    const referredWalletAddresses = data.map(ref => ref.referred_wallet_address)
     const { data: userLevels, error: userLevelsError } = await supabase
       .from("users")
-      .select("username, level")
-      .in("username", referredUsernames)
+      .select("wallet_address, username, level")
+      .in("wallet_address", referredWalletAddresses)
 
     if (userLevelsError) {
       console.error("❌ Error fetching user levels:", userLevelsError)
@@ -170,19 +170,23 @@ export async function getReferredUsers(referrerWalletAddress: string) {
 
     // Create a map for quick lookup
     const levelMap = new Map()
+    const usernameMap = new Map()
     if (userLevels) {
       userLevels.forEach(user => {
-        levelMap.set(user.username, user.level)
+        levelMap.set(user.wallet_address, user.level)
+        usernameMap.set(user.wallet_address, user.username)
       })
     }
 
     const detailed = data.map((ref) => {
-      const level = levelMap.get(ref.referred_username) || 1
-      console.log(`✅ User ${ref.referred_username} level:`, level)
+      const level = levelMap.get(ref.referred_wallet_address) || 1
+      const username = usernameMap.get(ref.referred_wallet_address)
+      console.log(`✅ User ${ref.referred_wallet_address} level:`, level)
       
       return {
         id: ref.id,
-        username: ref.referred_username,
+        wallet_address: ref.referred_wallet_address,
+        username: username,
         level: level,
         reward_claimed: ref.reward_claimed ?? false,
         created_at: ref.created_at

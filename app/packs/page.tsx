@@ -106,20 +106,20 @@ export default function PacksPage() {
 
     setIsDrawing(true)
     try {
-      const result = await drawCards(user.username, packType)
+      const result = await drawCards(user.wallet_address, packType)
 
       if (result.success) {
         // Update user tickets in context
-        await updateUserTickets(result.newTicketCount)
+        await updateUserTickets((result as any).newTicketCount || 0)
 
         // Show drawn cards
-        setDrawnCards(result.drawnCards || [])
+        setDrawnCards((result as any).drawnCards || [])
         setCurrentPackType(packType as "basic" | "premium" | "ultimate")
         setShowAnimation(true)
       } else {
         toast({
           title: "Error",
-          description: result.error,
+          description: (result as any).error || "Unknown error",
           variant: "destructive",
         })
       }

@@ -177,7 +177,7 @@ export async function cancelListing(userId: string, listingId: string) {
   }
 }
 
-export async function buyCard(userId: string, listingId: string) {
+export async function buyCard(walletAddress: string, listingId: string) {
   try {
     const supabase = createSupabaseServer()
 
@@ -194,12 +194,12 @@ export async function buyCard(userId: string, listingId: string) {
     }
 
     // Check if user is trying to buy their own card
-    if (listing.seller_id === userId) {
+    if (listing.seller_wallet_address === walletAddress) {
       return { success: false, error: "You cannot buy your own card" }
     }
 
     // Get buyer's coins
-    const { data: buyer, error: buyerError } = await supabase.from("users").select("coins").eq("id", userId).single()
+    const { data: buyer, error: buyerError } = await supabase.from("users").select("coins").eq("wallet_address", walletAddress).single()
 
     if (buyerError || !buyer) {
       return { success: false, error: "Buyer not found" }
@@ -216,7 +216,7 @@ export async function buyCard(userId: string, listingId: string) {
       .from("market_listings")
       .update({
         status: "sold",
-        buyer_id: userId,
+        buyer_wallet_address: walletAddress,
         sold_at: new Date().toISOString(),
       })
       .eq("id", listingId)
@@ -230,7 +230,7 @@ export async function buyCard(userId: string, listingId: string) {
     const { error: updateBuyerError } = await supabase
       .from("users")
       .update({ coins: buyer.coins - listing.price })
-      .eq("id", userId)
+      .eq("wallet_address", walletAddress)
 
     if (updateBuyerError) {
       console.error("Error updating buyer:", updateBuyerError)
@@ -240,57 +240,37 @@ export async function buyCard(userId: string, listingId: string) {
     const { data: seller, error: sellerError } = await supabase
       .from("users")
       .select("coins")
-      .eq("id", listing.seller_id)
+      .eq("wallet_address", listing.seller_wallet_address)
       .single()
 
     if (!sellerError && seller) {
       await supabase
         .from("users")
         .update({ coins: seller.coins + listing.price })
-        .eq("id", listing.seller_id)
+        .eq("wallet_address", listing.seller_wallet_address)
     }
 
-    // 3. Transfer card from seller to buyer
-    // Check if buyer already has this card
-    const { data: existingCard, error: existingCardError } = await supabase
-      .from("user_cards")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("card_id", listing.card_id)
-      .maybeSingle()
+    // 3. Add card to buyer's collection (user_card_instances)
+    await supabase.from("user_card_instances").insert({
+      wallet_address: walletAddress,
+      card_id: listing.card_id,
+      level: listing.card_level || 1,
+      favorite: false,
+      obtained_at: new Date().toISOString().split("T")[0],
+    })
 
-    if (existingCard) {
-      // Increment quantity
-      await supabase
-        .from("user_cards")
-        .update({ quantity: existingCard.quantity + 1 })
-        .eq("id", existingCard.id)
-    } else {
-      // Add new card to buyer's collection
-      await supabase.from("user_cards").insert({
-        user_id: userId,
-        card_id: listing.card_id,
-        quantity: 1,
-      })
-    }
-
-    // 4. Decrement seller's card quantity
+    // 4. Remove card from seller's collection (delete one instance)
     const { data: sellerCard, error: sellerCardError } = await supabase
-      .from("user_cards")
+      .from("user_card_instances")
       .select("*")
-      .eq("user_id", listing.seller_id)
+      .eq("wallet_address", listing.seller_wallet_address)
       .eq("card_id", listing.card_id)
+      .eq("level", listing.card_level || 1)
+      .limit(1)
       .single()
 
     if (!sellerCardError && sellerCard) {
-      if (sellerCard.quantity > 1) {
-        await supabase
-          .from("user_cards")
-          .update({ quantity: sellerCard.quantity - 1 })
-          .eq("id", sellerCard.id)
-      } else {
-        await supabase.from("user_cards").delete().eq("id", sellerCard.id)
-      }
+      await supabase.from("user_card_instances").delete().eq("id", sellerCard.id)
     }
 
     revalidatePath("/trades")
@@ -335,7 +315,7 @@ export async function getMarketListings() {
 
       if (!sellersError && sellers) {
         // Create a map of seller IDs to usernames
-        const sellerMap = sellers.reduce((map, seller) => {
+        const sellerMap = sellers.reduce((map: Record<string, string>, seller) => {
           map[seller.id] = seller.username
           return map
         }, {})

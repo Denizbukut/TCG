@@ -517,7 +517,7 @@ const WLD_TOKEN = "0x2cFc85d8E48F8EAB294be644d9E25C3030863003" // WLD (World Cha
       
         // Log the purchase
 await supabase.from("ticket_purchases").insert({
-  username: user.username,
+  wallet_address: user.wallet_address,
   ticket_type: ticketType === "regular" ? "classic" : ticketType === "legendary" ? "elite" : "icon",
   amount: ticketAmount,
   price_usd: getDiscountedPrice(packageId.startsWith("reg") ? regularPackages.find(p => p.id === packageId)?.price ?? 0 : legendaryPackages.find(p => p.id === packageId)?.price ?? 0),

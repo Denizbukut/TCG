@@ -384,7 +384,7 @@ export default function TradeMenu() {
 
     setLoadingAction(true)
     try {
-      const result = await buyCard(user!.username, selectedListing.id)
+      const result = await buyCard(user!.wallet_address, selectedListing.id)
 
       if (result.success) {
         toast({

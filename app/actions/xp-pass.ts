@@ -16,7 +16,7 @@ export async function logXpPassPurchase(walletAddress: string, priceUsd: number,
     
     // Log to ticket_purchases table with special type for XP pass
     const { error: purchaseLogError } = await supabase.from("ticket_purchases").insert({
-      username: walletAddress,
+      wallet_address: walletAddress,
       ticket_type: "xp_pass",
       amount: 1,
       price_usd: priceUsd,
