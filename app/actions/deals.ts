@@ -13,7 +13,7 @@ function createSupabaseServer() {
 }
 
 // Get the daily deal (cache removed to allow real-time updates)
-export const getDailyDeal = async (username: string) => {
+export const getDailyDeal = async (walletAddress: string) => {
   try {
     const supabase = createSupabaseServer()
     const today = new Date().toISOString().split("T")[0]
@@ -49,7 +49,7 @@ export const getDailyDeal = async (username: string) => {
     const { data: interaction, error: interactionError } = await supabase
       .from("deal_interactions")
       .select("*")
-      .eq("wallet_address", username)
+      .eq("wallet_address", walletAddress)
       .eq("deal_id", deal.id)
       .single()
 
@@ -57,7 +57,7 @@ export const getDailyDeal = async (username: string) => {
     if (interactionError && interactionError.code === "PGRST116") {
       // PGRST116 means no rows returned
       await supabase.from("deal_interactions").insert({
-        wallet_address: username,
+        wallet_address: walletAddress,
         deal_id: deal.id,
         seen: false,
         dismissed: false,
@@ -79,7 +79,7 @@ export const getDailyDeal = async (username: string) => {
 
     // Check if deal should be shown based on interaction status
     console.log("=== getDailyDeal DEBUG ===")
-    console.log("Username:", username)
+    console.log("Wallet Address:", walletAddress)
     console.log("Deal ID:", deal.id)
     console.log("Interaction:", interaction)
     
@@ -121,10 +121,10 @@ export const getDailyDeal = async (username: string) => {
 }
 
 // Mark deal as seen
-export async function markDealAsSeen(username: string, dealId: number) {
+export async function markDealAsSeen(walletAddress: string, dealId: number) {
   try {
     console.log("=== markDealAsSeen START ===")
-    console.log("Parameters:", { username, dealId })
+    console.log("Parameters:", { walletAddress, dealId })
     
     const supabase = createSupabaseServer()
 
@@ -132,7 +132,7 @@ export async function markDealAsSeen(username: string, dealId: number) {
     const { data: existingData, error: fetchError } = await supabase
       .from("deal_interactions")
       .select("*")
-      .eq("wallet_address", username)
+      .eq("wallet_address", walletAddress)
       .eq("deal_id", dealId)
       .single()
 
@@ -153,7 +153,7 @@ export async function markDealAsSeen(username: string, dealId: number) {
           dismissed: false,
           purchased: false,
         })
-        .eq("wallet_address", username)
+        .eq("wallet_address", walletAddress)
         .eq("deal_id", dealId)
         .select()
     } else {
@@ -161,7 +161,7 @@ export async function markDealAsSeen(username: string, dealId: number) {
       result = await supabase
         .from("deal_interactions")
         .insert({
-          wallet_address: username,
+          wallet_address: walletAddress,
           deal_id: dealId,
           seen: true,
           dismissed: false,
@@ -187,10 +187,10 @@ export async function markDealAsSeen(username: string, dealId: number) {
 }
 
 // Mark deal as dismissed
-export async function markDealAsDismissed(username: string, dealId: number) {
+export async function markDealAsDismissed(walletAddress: string, dealId: number) {
   try {
     console.log("=== markDealAsDismissed START ===")
-    console.log("Parameters:", { username, dealId })
+    console.log("Parameters:", { walletAddress, dealId })
     
     const supabase = createSupabaseServer()
 
@@ -198,7 +198,7 @@ export async function markDealAsDismissed(username: string, dealId: number) {
     const { data: existingData, error: fetchError } = await supabase
       .from("deal_interactions")
       .select("*")
-      .eq("wallet_address", username)
+      .eq("wallet_address", walletAddress)
       .eq("deal_id", dealId)
       .single()
 
@@ -219,7 +219,7 @@ export async function markDealAsDismissed(username: string, dealId: number) {
           dismissed: true,
           purchased: false,
         })
-        .eq("wallet_address", username)
+        .eq("wallet_address", walletAddress)
         .eq("deal_id", dealId)
         .select()
     } else {
@@ -227,7 +227,7 @@ export async function markDealAsDismissed(username: string, dealId: number) {
       result = await supabase
         .from("deal_interactions")
         .insert({
-          wallet_address: username,
+          wallet_address: walletAddress,
           deal_id: dealId,
           seen: false,
           dismissed: true,
@@ -256,11 +256,12 @@ export async function markDealAsDismissed(username: string, dealId: number) {
 export async function purchaseDeal(walletAddress: string, dealId: number) {
   try {
     const supabase = createSupabaseServer()
-    await supabase
-        .from("user_cards")
-        .delete()
-        .eq("walletaddress", walletAddress)
-        .eq("quantity", 0)
+    // Remove this section - user_card_instances doesn't have quantity column
+    // await supabase
+    //     .from("user_card_instances")
+    //     .delete()
+    //     .eq("wallet_address", walletAddress)
+    //     .eq("quantity", 0)
     // Get the deal details
     const { data: deal, error: dealError } = await supabase.from("daily_deals").select("*").eq("id", dealId).single()
 
@@ -324,7 +325,7 @@ export async function purchaseDeal(walletAddress: string, dealId: number) {
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("tickets, elite_tickets")
-      .eq("walletaddress", walletAddress)
+      .eq("wallet_address", walletAddress)
       .single()
 
     if (userError) {
@@ -341,7 +342,7 @@ export async function purchaseDeal(walletAddress: string, dealId: number) {
         tickets: newTickets,
         elite_tickets: newEliteTickets,
       })
-      .eq("walletaddress", walletAddress)
+      .eq("wallet_address", walletAddress)
 
     if (updateError) {
       console.error("Error updating user tickets:", updateError)

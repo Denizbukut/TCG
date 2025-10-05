@@ -1018,9 +1018,14 @@ const [copied, setCopied] = useState(false)
       })
     }
 
+    // Close the dialog
+    setShowDailyDealDialog(false)
+
+    // Show success toast
     toast({
-      title: "Purchase Successful!",
-      description: "You've claimed today's daily deal",
+      title: "Deal Purchased!",
+      description: `You received ${newTickets - tickets} tickets and ${newEliteTickets - eliteTickets} elite tickets!`,
+      variant: "default",
     })
     refreshUserData?.();
   }
@@ -2149,7 +2154,7 @@ const [copied, setCopied] = useState(false)
             isOpen={showDailyDealDialog}
             onClose={() => setShowDailyDealDialog(false)}
             deal={dailyDeal}
-            username={user?.username || ""}
+            username={user?.wallet_address || ""}
             onPurchaseSuccess={handleDailyDealPurchaseSuccess}
           />
         )}
