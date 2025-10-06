@@ -1034,6 +1034,7 @@ const [showInfo, setShowInfo] = useState(false)
     const stats: Record<string, number> = {
       common: 0,
       rare: 0,
+      epic: 0,
       legendary: 0,
     }
     drawnCards.forEach((card) => {
@@ -1041,7 +1042,6 @@ const [showInfo, setShowInfo] = useState(false)
       let key = card.rarity
       if (key === 'basic') key = 'common'
       if (key === 'elite') key = 'legendary'
-      if (key === 'epic') key = 'legendary'
       if (key === 'ultima') key = 'legendary'
       if (stats.hasOwnProperty(key)) {
         stats[key]++
@@ -1054,7 +1054,7 @@ const [showInfo, setShowInfo] = useState(false)
   const getDisplayRarity = (rarity: string) => {
     if (rarity === 'common' || rarity === 'basic') return 'Common';
     if (rarity === 'rare') return 'Rare';
-    if (rarity === 'epic') return 'Legendary';
+    if (rarity === 'epic') return 'Epic';
     if (rarity === 'legendary' || rarity === 'ultima') return 'Legendary';
     if (rarity === 'godlike' || rarity === 'goat') return 'GOAT';
     return rarity.charAt(0).toUpperCase() + rarity.slice(1);
@@ -1636,7 +1636,7 @@ const [showInfo, setShowInfo] = useState(false)
 
                 <div className="bg-white border-b border-gray-200 px-4 py-3">
                   <div className="grid grid-cols-4 gap-2 text-center">
-                    {['common', 'rare', 'legendary'].map((rarity) => (
+                    {['common', 'rare', 'epic', 'legendary'].map((rarity) => (
                       <div key={rarity} className={`p-2 rounded-lg ${getRarityStyles(rarity as CardRarity).bg}`}>
                         <div className={`text-xs font-medium ${getRarityStyles(rarity as CardRarity).text}`}>
                           {getDisplayRarity(rarity)}
