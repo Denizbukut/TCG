@@ -1513,10 +1513,10 @@ export default function TradePage() {
                       : selectedListing.seller_username}
                   </p>
                   <p className="text-amber-800 mt-1">
-                    <span className="font-medium">Market Fee:</span> {(selectedListing.price * 0.1).toFixed(3)} WLD (10%)
+                    <span className="font-medium">Market Fee:</span> {(selectedListing.price * 0.1).toFixed(2)} WLD (10%)
                   </p>
                   <p className="text-amber-800 mt-1">
-                    <span className="font-medium">Seller Receives:</span> {(selectedListing.price * 0.9).toFixed(3)} WLD
+                    <span className="font-medium">Seller Receives:</span> {(selectedListing.price * 0.9).toFixed(2)} WLD
                   </p>
 
                   {(user?.coins || 0) < selectedListing.price && (

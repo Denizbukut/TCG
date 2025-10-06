@@ -133,21 +133,21 @@ export default function SellCardDialog({ isOpen, onClose, card, walletAddress, o
     if (rarity === "wbc") {
       const baseWbcPrice = priceUsdPerWLD ? 5.0 / priceUsdPerWLD : 5.0
       // Preis verdoppelt sich pro Level
-      return parseFloat((baseWbcPrice * level).toFixed(3))
+      return parseFloat((baseWbcPrice * level).toFixed(2))
     }
 
     // Für Ultimate-Karten direkt 1.5 USD als Starting Price (umgerechnet zu WLD)
     if (rarity === "ultimate") {
       const baseUltimatePrice = priceUsdPerWLD ? 1.5 / priceUsdPerWLD : 1.5
       // Preis verdoppelt sich pro Level
-      return parseFloat((baseUltimatePrice * level).toFixed(3))
+      return parseFloat((baseUltimatePrice * level).toFixed(2))
     }
 
     // Für Elite-Karten direkt 0.5 USD als Starting Price (umgerechnet zu WLD)
     if (rarity === "elite") {
       const baseElitePrice = priceUsdPerWLD ? 0.5 / priceUsdPerWLD : 0.5
       // Preis verdoppelt sich pro Level
-      return parseFloat((baseElitePrice * level).toFixed(3))
+      return parseFloat((baseElitePrice * level).toFixed(2))
     }
 
     // Basis-USD-Preise für andere Raritäten
@@ -167,8 +167,8 @@ export default function SellCardDialog({ isOpen, onClose, card, walletAddress, o
     // Preis verdoppelt sich pro Level (Level 1 = basePrice, Level 2 = basePrice * 2, etc.)
     const calculatedPrice = baseWldPrice * level
 
-    // Runde auf 3 Dezimalstellen
-    return parseFloat(calculatedPrice.toFixed(3))
+    // Runde auf 2 Dezimalstellen
+    return parseFloat(calculatedPrice.toFixed(2))
   }
 
   // Debug: Log card details
@@ -220,7 +220,7 @@ export default function SellCardDialog({ isOpen, onClose, card, walletAddress, o
   // Formatiere den Preis für die Anzeige
   const formatPrice = (value: string) => {
     const num = Number.parseFloat(value.replace(",", "."))
-    return !isNaN(num) ? num.toFixed(3) : "0.000"
+    return !isNaN(num) ? num.toFixed(2) : "0.00"
   }
 
   // Karte zum Verkauf anbieten
@@ -231,7 +231,7 @@ export default function SellCardDialog({ isOpen, onClose, card, walletAddress, o
     setError(null)
 
     try {
-      const finalPrice = Number.parseFloat(parsedPrice.toFixed(3))
+      const finalPrice = Number.parseFloat(parsedPrice.toFixed(2))
       console.log("Selling card:", {
         walletAddress,
         cardId: card.id,
@@ -253,7 +253,7 @@ export default function SellCardDialog({ isOpen, onClose, card, walletAddress, o
 
       if (result.success) {
         // Speichere den tatsächlich gespeicherten Preis für die Erfolgsmeldung
-        setListedPrice(finalPrice.toFixed(3))
+        setListedPrice(finalPrice.toFixed(2))
         setShowSuccess(true)
 
         // Zeige die Erfolgsmeldung für 1.5 Sekunden an, dann schließe Dialog
@@ -419,7 +419,7 @@ export default function SellCardDialog({ isOpen, onClose, card, walletAddress, o
 
                 {!isValidPrice && (
                   <p className="text-red-500 text-sm">
-                    {card.rarity.charAt(0).toUpperCase() + card.rarity.slice(1)} Level {card.level} cards must be listed for at least {minWldPrice.toFixed(3)} WLD (${minUsdPrice.toFixed(2)})
+                    {card.rarity.charAt(0).toUpperCase() + card.rarity.slice(1)} Level {card.level} cards must be listed for at least {minWldPrice.toFixed(2)} WLD (${minUsdPrice.toFixed(2)})
                   </p>
                 )}
               </div>
@@ -482,10 +482,10 @@ export default function SellCardDialog({ isOpen, onClose, card, walletAddress, o
               {/* Market Fee Info */}
               <div className="bg-gray-50 p-3 rounded-lg text-sm">
                 <p className="text-gray-700">
-                  <span className="font-medium">Market Fee:</span> {(parsedPrice * 0.1).toFixed(3)} WLD (10%)
+                  <span className="font-medium">Market Fee:</span> {(parsedPrice * 0.1).toFixed(2)} WLD (10%)
                 </p>
                 <p className="text-gray-700 mt-1">
-                  <span className="font-medium">You'll Receive:</span> {(parsedPrice * 0.9).toFixed(3)} WLD
+                  <span className="font-medium">You'll Receive:</span> {(parsedPrice * 0.9).toFixed(2)} WLD
                 </p>
               </div>
 
