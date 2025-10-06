@@ -80,7 +80,7 @@ export default function TiltableCard({
     }
     
     // Remove leading slash and any world_soccer/world-soccer prefix
-    let cleaned = imageUrl.replace(/^\/?(world[-_]soccer\/)/i, "")
+    let cleaned = imageUrl.replace(/^\/?(world[-_]?soccer\/)/i, "")
     
     // Remove any leading slashes to avoid double slashes
     cleaned = cleaned.replace(/^\/+/, "")

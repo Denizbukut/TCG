@@ -56,7 +56,11 @@ export default function DealOfTheDayDialog({
   const hasMarkedAsSeen = useRef(false)
   const [hasOpened, setHasOpened] = useState(false)
   const [shouldMarkAsSeen, setShouldMarkAsSeen] = useState(false)
-  console.log("deal", deal)
+  
+  console.log("=== DealOfTheDayDialog ===")
+  console.log("isOpen:", isOpen)
+  console.log("deal:", deal)
+  console.log("username:", username)
 
   const [isDealValid, setIsDealValid] = useState(!!deal)
 
@@ -159,22 +163,41 @@ export default function DealOfTheDayDialog({
     const dollarAmount = deal.price
     const fallbackWldAmount = deal.price
     const wldAmount = price ? dollarAmount / price : fallbackWldAmount
-    const {commandPayload, finalPayload} = await MiniKit.commandsAsync.sendTransaction({
-      transaction: [
-        {
-          address: WLD_TOKEN,
-          abi: erc20TransferAbi,
-          functionName: "transfer",
-          args: ["0x9311788aa11127F325b76986f0031714082F016B", tokenToDecimals(parseFloat(wldAmount.toFixed(2)), Tokens.WLD).toString()],
-        },
+    
+    console.log("Deal of the Day payment:", { dollarAmount, wldAmount, price })
+    
+    try {
+      const {commandPayload, finalPayload} = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [
+          {
+            address: WLD_TOKEN,
+            abi: erc20TransferAbi,
+            functionName: "transfer",
+            args: ["0x9311788aa11127F325b76986f0031714082F016B", tokenToDecimals(parseFloat(wldAmount.toFixed(2)), Tokens.WLD).toString()],
+          },
+        ],
+      })
+     
+      console.log("MiniKit transaction result:", { commandPayload, finalPayload })
 
-      ],
-    })
-   
-
-    if (finalPayload.status == "success") {
-      console.log("success sending payment")
-      handlePurchase()
+      if (finalPayload.status == "success") {
+        console.log("success sending payment")
+        handlePurchase()
+      } else {
+        console.error("Payment failed:", finalPayload)
+        toast({
+          title: "Payment Failed",
+          description: "Transaction was not successful",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Error in sendPayment:", error)
+      toast({
+        title: "Payment Error",
+        description: "Failed to process payment",
+        variant: "destructive",
+      })
     }
   }
 

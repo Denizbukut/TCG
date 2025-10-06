@@ -226,11 +226,14 @@ export default function SellCardDialog({ isOpen, onClose, card, walletAddress, o
     setError(null)
 
     try {
+      const finalPrice = Number.parseFloat(parsedPrice.toFixed(2))
       console.log("Selling card:", {
         walletAddress,
         cardId: card.id,
         cardUuid: card.card_id,
-        price: Number.parseFloat(parsedPrice.toFixed(2)),
+        originalPrice: price,
+        parsedPrice: parsedPrice,
+        finalPrice: finalPrice,
         level: card.level,
       })
 
@@ -239,7 +242,7 @@ export default function SellCardDialog({ isOpen, onClose, card, walletAddress, o
         walletAddress,
         card.id,
         card.card_id,
-        Number.parseFloat(parsedPrice.toFixed(2)),
+        finalPrice,
         card.level,
       )
 

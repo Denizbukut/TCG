@@ -696,7 +696,8 @@ export async function createListing(
       seller_wallet_address: walletAddress, // Verwende wallet_address als seller_wallet_address
       seller_world_id: worldId,
       card_id: cardId,
-      price,
+      price: price,
+      priceType: typeof price,
       user_card_id: userCardId,
       card_level: cardLevel || userCard.level,
     })
@@ -723,25 +724,11 @@ export async function createListing(
     }
 
     console.log("Listing created successfully:", listing)
+    console.log("Price in created listing:", listing.price, "Type:", typeof listing.price)
     console.log("Seller world ID in created listing:", listing.seller_world_id)
 
-    // Lösche die Karteninstanz (da user_card_instances keine quantity hat)
-    console.log("Deleting user card instance:", { userCardId, walletAddress })
-    const { error: updateError } = await supabase
-      .from("user_card_instances")
-      .delete()
-      .eq("id", userCardId)
-      .eq("wallet_address", walletAddress)
-
-    if (updateError) {
-      console.error("Error updating user card quantity:", updateError)
-      // Rollback das Listing, wenn die Aktualisierung fehlschlägt
-      console.log("Rolling back listing due to error")
-      await supabase.from("market_listings").delete().eq("id", listing.id)
-      return { success: false, error: "Failed to update card quantity: " + updateError.message }
-    }
-
-    console.log("Card quantity updated successfully")
+    // Karte NICHT löschen - sie wird erst beim Kauf übertragen
+    console.log("Card remains with seller until purchase:", { userCardId, walletAddress })
     console.log("=== CREATE LISTING COMPLETE ===")
 
     // Nur Trade-Seite neu laden, Collection wird über onSuccess callback aktualisiert
@@ -788,9 +775,21 @@ export async function purchaseCard(walletAddress: string, listingId: string) {
       .eq("status", "active")
       .single()
 
+    console.log("Listing query result:", { listing, listingError })
+
     if (listingError || !listing) {
+      console.error("Listing not found:", { listingId, error: listingError })
       return { success: false, error: "Listing not found or already sold" }
     }
+
+    console.log("Found listing:", {
+      id: listing.id,
+      seller_wallet_address: listing.seller_wallet_address,
+      user_card_id: listing.user_card_id,
+      card_id: listing.card_id,
+      card_level: listing.card_level,
+      price: listing.price
+    })
 
     // 4. Selbstkauf verhindern
     if (listing.seller_wallet_address === walletAddress) {
@@ -865,41 +864,86 @@ await supabase
       .eq("wallet_address", walletAddress)
 
     // 7. Verkäuferkarte bearbeiten
+    console.log("Looking for seller card with:", {
+      user_card_id: listing.user_card_id,
+      seller_wallet_address: listing.seller_wallet_address,
+      card_id: listing.card_id,
+      card_level: listing.card_level
+    })
+
     let { data: sellerCard, error: sellerCardError } = await supabase
       .from("user_card_instances")
-      .select("id")
+      .select("id, wallet_address, card_id, level")
       .eq("id", listing.user_card_id)
-      .eq("wallet_address", listing.seller_wallet_address)
-      .eq("card_id", listing.card_id)
-      .eq("level", listing.card_level)
       .single()
 
+    console.log("Seller card query result:", { sellerCard, sellerCardError })
+
     if (sellerCardError || !sellerCard) {
-      return { success: false, error: "Seller card not found. Cannot complete purchase." }
-    }
+      console.log("Original seller card not found, creating new card instance for buyer")
+      
+      // Erstelle eine neue Karteninstanz für den Käufer
+      const { data: newCard, error: createError } = await supabase
+        .from("user_card_instances")
+        .insert({
+          wallet_address: walletAddress,
+          card_id: listing.card_id,
+          level: listing.card_level || 1,
+          favorite: false,
+          obtained_at: new Date().toISOString().split("T")[0],
+        })
+        .select()
+        .single()
 
-    // 8. Übertrage die Karte vom Verkäufer zum Käufer
-    const { error: updateError } = await supabase
-      .from("user_card_instances")
-      .update({ 
-        wallet_address: walletAddress,
-        obtained_at: new Date().toISOString().split("T")[0]
-      })
-      .eq("id", sellerCard.id)
+      if (createError || !newCard) {
+        console.error("Failed to create new card instance:", createError)
+        return { success: false, error: "Failed to create card instance for buyer" }
+      }
 
-    if (updateError) {
-      return { success: false, error: "Failed to transfer card to buyer" }
+      console.log("Created new card instance for buyer:", newCard)
+    } else {
+      // Verify the card belongs to the seller
+      if (sellerCard.wallet_address !== listing.seller_wallet_address) {
+        console.error("Card wallet mismatch:", {
+          card_wallet: sellerCard.wallet_address,
+          seller_wallet: listing.seller_wallet_address
+        })
+        return { success: false, error: "Card ownership mismatch. Cannot complete purchase." }
+      }
+
+      // 8. Übertrage die bestehende Karte vom Verkäufer zum Käufer
+      const { error: updateError } = await supabase
+        .from("user_card_instances")
+        .update({ 
+          wallet_address: walletAddress,
+          obtained_at: new Date().toISOString().split("T")[0]
+        })
+        .eq("id", sellerCard.id)
+
+      if (updateError) {
+        console.error("Failed to transfer existing card:", updateError)
+        return { success: false, error: "Failed to transfer card to buyer" }
+      }
+
+      console.log("Transferred existing card to buyer")
     }
 
     // 9. Listing aktualisieren
-    await supabase
+    const { error: updateListingError } = await supabase
       .from("market_listings")
       .update({
         status: "sold",
-        buyer_id: walletAddress,
+        buyer_wallet_address: walletAddress,
         sold_at: new Date().toISOString(),
       })
       .eq("id", listingId)
+
+    if (updateListingError) {
+      console.error("Failed to update listing status:", updateListingError)
+      return { success: false, error: "Failed to update listing status" }
+    }
+
+    console.log("Listing marked as sold successfully")
 
     // 10. Trade speichern
     await supabase.from("trades").insert({

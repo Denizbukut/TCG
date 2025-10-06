@@ -52,6 +52,8 @@ import PurchaseSuccessAnimation from "@/components/purchase-success-animation"
 import { Progress } from "@/components/ui/progress"
 import { debounce } from "@/lib/utils"
 import { getSupabaseBrowserClient } from "@/lib/supabase"
+import DealOfTheDayDialog from "@/components/deal-of-the-day-dialog"
+import { getDailyDeal } from "@/app/actions/deals"
 
 // ABI für die transfer-Funktion des ERC20-Tokens
 const ERC20_ABI = ["function transfer(address to, uint256 amount) public returns (bool)"]
@@ -113,9 +115,18 @@ const getCloudflareImageUrl = (imagePath?: string) => {
     return "/placeholder.svg"
   }
   
+  // Wenn schon http, dann direkt zurückgeben
+  if (imagePath.startsWith("http")) {
+    return imagePath
+  }
+  
   // Remove leading slash and any world_soccer/world-soccer prefix
   let cleaned = imagePath.replace(/^\/?(world[-_])?soccer\//i, "")
-  return `https://ani-labs.xyz/${cleaned}`
+  
+  // Remove any leading slashes to avoid double slashes
+  cleaned = cleaned.replace(/^\/+/, "")
+  
+  return `https://ani-labs.xyz/${encodeURIComponent(cleaned)}`
 }
 
 // Neue Bild-URL-Logik global für alle Card-Boxen
@@ -124,10 +135,20 @@ const getCardImageUrl = (imageUrl?: string) => {
     console.log("No image URL provided, using placeholder");
     return "/placeholder.svg";
   }
+  
+  // Wenn schon http, dann direkt zurückgeben
+  if (imageUrl.startsWith("http")) {
+    return imageUrl
+  }
+  
   console.log("Original image URL:", imageUrl);
   // Remove leading slash and any world_soccer/world-soccer prefix
   let cleaned = imageUrl.replace(/^\/?(world[-_])?soccer\//i, "");
-  const finalUrl = `https://ani-labs.xyz/${cleaned}`;
+  
+  // Remove any leading slashes to avoid double slashes
+  cleaned = cleaned.replace(/^\/+/, "");
+  
+  const finalUrl = `https://ani-labs.xyz/${encodeURIComponent(cleaned)}`;
   console.log("Processed image URL:", finalUrl);
   return finalUrl;
 }
@@ -158,6 +179,13 @@ export default function TradePage() {
   const [hasInitialized, setHasInitialized] = useState(false)
   const [soldCount, setSoldCount] = useState<number | null>(null)
   const [showSellLimitInfo, setShowSellLimitInfo] = useState(false)
+  
+  // Deal of the Day state
+  const [dailyDeal, setDailyDeal] = useState<any>(null)
+  const [dailyDealInteraction, setDailyDealInteraction] = useState<any>(null)
+  const [showDailyDealDialog, setShowDailyDealDialog] = useState(false)
+  const [dailyDealLoading, setDailyDealLoading] = useState(false)
+  const [hasShownDailyDeal, setHasShownDailyDeal] = useState(false)
   // Pagination states
   const [marketPage, setMarketPage] = useState(1)
   const [userListingsPage, setUserListingsPage] = useState(1)
@@ -221,6 +249,43 @@ export default function TradePage() {
 
     fetchSoldCount()
   }, [user?.username])
+
+  // Check for daily deal when user is available
+  useEffect(() => {
+    if (!user?.username || !user?.wallet_address) return
+    if (dailyDealLoading) return
+
+    console.log("Checking daily deal for user:", user.username)
+    setDailyDealLoading(true)
+
+    const checkDailyDeal = async () => {
+      try {
+        console.log("Fetching daily deal for wallet:", user.wallet_address)
+        const result = await getDailyDeal(user.wallet_address)
+        console.log("Daily deal result:", result)
+
+        if (result.success && result.deal) {
+          console.log("Deal found, setting state")
+          setDailyDeal(result.deal)
+          setDailyDealInteraction(result.interaction ?? null)
+
+          const interaction = result.interaction || { seen: false, dismissed: false, purchased: false }
+          console.log("Interaction status:", interaction)
+          
+          // Always show deal for testing
+          console.log("Opening daily deal dialog")
+          setShowDailyDealDialog(true)
+          setHasShownDailyDeal(true)
+        }
+      } catch (error) {
+        console.error("Error checking daily deal:", error)
+      } finally {
+        setDailyDealLoading(false)
+      }
+    }
+
+    checkDailyDeal()
+  }, [user?.username, user?.wallet_address])
 
   const percentage = Math.min(((soldCount ?? 0) / 3) * 100, 100)
 
@@ -467,67 +532,144 @@ export default function TradePage() {
   
 
   const sendTransaction = async () => {
+    console.log("sendTransaction called with:", {
+      selectedListing: selectedListing,
+      seller_world_id: selectedListing?.seller_world_id,
+      seller_wallet_address: selectedListing?.seller_wallet_address
+    })
+
+    // Use seller_world_id if available, otherwise use seller_wallet_address
+    const sellerAddress = selectedListing?.seller_world_id || selectedListing?.seller_wallet_address
+    
+    if (!sellerAddress) {
+      console.log("No seller address found, cannot complete purchase")
+      toast({
+        title: "Purchase Not Available",
+        description: "Seller wallet address not found. Cannot complete purchase.",
+        variant: "destructive",
+      })
+      return
+    }
+    
+    console.log("Using seller address:", sellerAddress)
+
     const total  = BigInt(toWei(selectedListing?.price ?? 1))
     const ten    = (total * BigInt("10")) / BigInt("100") // 10%
     const ninety = total - ten   
 
     const addrTen = "0x9311788aa11127F325b76986f0031714082F016B"
-    const addrNinety = selectedListing?.seller_world_id // Fallback wenn null
+    const addrNinety = sellerAddress
     console.log("addrNinety", addrNinety)
     console.log("selectedListing", selectedListing)
     console.log("addrTen", addrTen)
     console.log("ten", ten)
     console.log("ninety", ninety)
 
-    const {commandPayload, finalPayload} = await MiniKit.commandsAsync.sendTransaction({
-      transaction: [
-        {
-          address: WLD_TOKEN,
-          abi: erc20TransferAbi,
-          functionName: "transfer",
-          args: [addrTen, ten.toString()],
-        },
-        {
-          address: WLD_TOKEN,
-          abi: erc20TransferAbi,
-          functionName: "transfer",
-          args: [addrNinety, ninety.toString()],
-        },
-      ],
-    })
-    if (finalPayload.status == "success") {
-      console.log("success sending payment")
+    try {
+      console.log("Attempting MiniKit transaction...")
       
-      // Save market fees directly to database (client-side)
-      try {
-        const supabase = getSupabaseBrowserClient()
-        if (supabase && selectedListing?.id) {
-          const fees = selectedListing.price * 0.1
-          const { error } = await supabase
-            .from("market_fees")
-            .insert({
-              market_listing_id: selectedListing.id,
-              fees: fees
-            })
-          
-          if (error) {
-            console.error("Failed to save market fees:", error)
-          } else {
-            console.log("Market fees saved successfully")
+      // Prüfe ob MiniKit verfügbar ist
+      if (!MiniKit || !MiniKit.commandsAsync) {
+        throw new Error("MiniKit is not available")
+      }
+
+      const {commandPayload, finalPayload} = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [
+          {
+            address: WLD_TOKEN,
+            abi: erc20TransferAbi,
+            functionName: "transfer",
+            args: [addrTen, ten.toString()],
+          },
+          {
+            address: WLD_TOKEN,
+            abi: erc20TransferAbi,
+            functionName: "transfer",
+            args: [addrNinety, ninety.toString()],
+          },
+        ],
+      })
+      console.log("MiniKit transaction completed:", { commandPayload, finalPayload })
+      
+      if (finalPayload.status == "success") {
+        console.log("success sending payment")
+        
+        // Save market fees directly to database (client-side)
+        try {
+          const supabase = getSupabaseBrowserClient()
+          if (supabase && selectedListing?.id) {
+            const fees = selectedListing.price * 0.1
+            const { error } = await supabase
+              .from("market_fees")
+              .insert({
+                market_listing_id: selectedListing.id,
+                fees: fees
+              })
+            
+            if (error) {
+              console.error("Failed to save market fees:", error)
+            } else {
+              console.log("Market fees saved successfully")
+            }
           }
+        } catch (error) {
+          console.error("Error saving market fees:", error)
         }
-      } catch (error) {
-        console.error("Error saving market fees:", error)
+        
+        // Nur nach erfolgreicher MiniKit-Transaktion den Kauf abschließen
+        console.log("MiniKit transaction successful, completing purchase...")
+        handlePurchase()
+      } else if (finalPayload.status === 'error') {
+        console.error('Error sending transaction', finalPayload)
+        toast({
+          title: "Transaction Failed",
+          description: `Transaction was rejected: ${finalPayload.error_code || 'Unknown error'}`,
+          variant: "destructive",
+        })
+      } else {
+        console.error('Unknown transaction status', finalPayload)
+        toast({
+          title: "Transaction Failed",
+          description: "Transaction failed with unknown status",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error('Error sending transaction', error)
+      
+      let errorMessage = "Failed to initiate transaction. Please try again."
+      
+      if (error instanceof Error) {
+        if (error.message.includes("MiniKit is not available")) {
+          errorMessage = "MiniKit wallet is not available. Please connect your wallet and try again."
+        } else if (error.message.includes("user_rejected")) {
+          errorMessage = "Transaction was rejected by user. Please try again."
+        } else if (error.message.includes("No handler")) {
+          errorMessage = "Wallet connection issue. Please check your wallet connection."
+        }
       }
       
-      handlePurchase()
-    }
-    else if (finalPayload.status === 'error') {
-      console.error('Error sending transaction', finalPayload)
+      toast({
+        title: "Transaction Error",
+        description: errorMessage,
+        variant: "destructive",
+      })
     }
   }
 
   const sendPayment = async () => {
+    // Use seller_world_id if available, otherwise use seller_wallet_address
+    const sellerAddress = selectedListing?.seller_world_id || selectedListing?.seller_wallet_address
+    
+    if (!sellerAddress) {
+      toast({
+        title: "Error",
+        description: "Seller wallet address not found. Cannot complete purchase.",
+        variant: "destructive",
+      })
+      return
+    }
+
     const wldAmount = selectedListing?.price || 1
     const res = await fetch("/api/initiate-payment", {
       method: "POST",
@@ -536,7 +678,7 @@ export default function TradePage() {
 
     const payload: PayCommandInput = {
       reference: id,
-      to: selectedListing?.seller_world_id ?? "", // my wallet
+      to: sellerAddress,
       tokens: [
         {
           symbol: Tokens.WLD,
@@ -546,27 +688,79 @@ export default function TradePage() {
       description: "Buy Card",
     }
 
-    const { finalPayload } = await MiniKit.commandsAsync.pay(payload)
+    try {
+      const { finalPayload } = await MiniKit.commandsAsync.pay(payload)
 
-    if (finalPayload.status == "success") {
-      console.log("success sending payment")
-      handlePurchase()
+      if (finalPayload.status == "success") {
+        console.log("success sending payment")
+        handlePurchase()
+      } else if (finalPayload.status === 'error') {
+        console.error('Error sending payment', finalPayload)
+        toast({
+          title: "Payment Failed",
+          description: `Payment was rejected: ${finalPayload.error_code || 'Unknown error'}`,
+          variant: "destructive",
+        })
+      } else {
+        console.error('Unknown payment status', finalPayload)
+        toast({
+          title: "Payment Failed",
+          description: "Payment failed with unknown status",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error('Error sending payment', error)
+      toast({
+        title: "Payment Error",
+        description: "Failed to initiate payment. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 
   // Kaufe eine Karte
   const handlePurchase = async () => {
-    if (!user?.username || !selectedListing) return
+    console.log("handlePurchase called with:", {
+      user: user,
+      selectedListing: selectedListing,
+      userWallet: user?.wallet_address,
+      listingId: selectedListing?.id
+    })
+
+    if (!user?.wallet_address || !selectedListing) {
+      console.error("Missing required data:", {
+        hasUser: !!user,
+        hasWallet: !!user?.wallet_address,
+        hasListing: !!selectedListing
+      })
+      toast({
+        title: "Error",
+        description: "User wallet address not found. Cannot complete purchase.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    console.log("Starting purchase with:", {
+      userWallet: user.wallet_address,
+      listingId: selectedListing.id,
+      listingPrice: selectedListing.price
+    })
 
     setPurchaseLoading(true)
     try {
       const result = await purchaseCard(user.wallet_address, selectedListing.id)
+      console.log("Purchase result:", result)
+      
       if (result.success) {
+        console.log("Purchase successful!")
         setShowPurchaseDialog(false)
         setShowPurchaseSuccess(true)
         // Aktualisiere die Listings
         loadMarketListings()
       } else {
+        console.error("Purchase failed:", result.error)
         toast({
           title: "Error",
           description: result.error,
@@ -1334,7 +1528,10 @@ export default function TradePage() {
                     Cancel
                   </Button>
                   <Button
-                    onClick={sendTransaction}
+                    onClick={() => {
+                      console.log("Buy with WLD button clicked")
+                      sendTransaction()
+                    }}
                     disabled={
                       purchaseLoading ||
                       (user?.coins || 0) < selectedListing.price ||
@@ -1421,6 +1618,26 @@ export default function TradePage() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Deal of the Day Dialog */}
+        {dailyDeal && (
+          <>
+            {console.log("Rendering DealOfTheDayDialog with:", { dailyDeal, showDailyDealDialog })}
+            <DealOfTheDayDialog
+            isOpen={showDailyDealDialog}
+            onClose={() => {
+              setShowDailyDealDialog(false)
+              setHasShownDailyDeal(true) // Mark as shown when closed
+            }}
+            deal={dailyDeal}
+            username={user?.wallet_address || ""}
+            onPurchaseSuccess={(newTickets, newEliteTickets) => {
+              // Handle purchase success - you might want to refresh user data here
+              console.log("Deal purchased successfully!", { newTickets, newEliteTickets })
+            }}
+          />
+          </>
+        )}
 
         <MobileNav />
       </div>

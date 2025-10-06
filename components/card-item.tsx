@@ -22,7 +22,7 @@ const getCloudflareImageUrl = (imagePath?: string) => {
   }
   
   // Remove leading slash and any world_soccer/world-soccer prefix
-  let cleaned = imagePath.replace(/^\/?(world[-_]soccer\/)/i, "")
+  let cleaned = imagePath.replace(/^\/?(world[-_]?soccer\/)/i, "")
   
   // Remove any leading slashes to avoid double slashes
   cleaned = cleaned.replace(/^\/+/, "")

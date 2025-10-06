@@ -18,13 +18,35 @@ export const getDailyDeal = async (walletAddress: string) => {
     const supabase = createSupabaseServer()
     const today = new Date().toISOString().split("T")[0]
 
-    // Get today's deal
-    const { data: deal, error: dealError } = await supabase.from("daily_deals").select("*").eq("date", today).single()
+    // Get today's deal or the most recent available deal
+    let deal
+    const { data: todayDeal, error: dealError } = await supabase
+      .from("daily_deals")
+      .select("*")
+      .eq("date", today)
+      .single()
 
     if (dealError) {
-      console.error("Error fetching daily deal:", dealError)
-      return { success: false, error: "No deal available today" }
+      console.log("No deal for today, trying to get the most recent deal")
+      // If no deal for today, get the most recent available deal
+      const { data: recentDeal, error: recentError } = await supabase
+        .from("daily_deals")
+        .select("*")
+        .order("date", { ascending: false })
+        .limit(1)
+        .single()
+      
+      if (recentError || !recentDeal) {
+        console.error("Error fetching recent deal:", recentError)
+        return { success: false, error: "No deal available" }
+      }
+      
+      deal = recentDeal
+    } else {
+      deal = todayDeal
     }
+
+    console.log("Using deal:", deal)
 
     // Get card information
     const { data: card, error: cardError } = await supabase.from("cards").select("*").eq("id", deal.card_id).single()
@@ -96,16 +118,16 @@ export const getDailyDeal = async (walletAddress: string) => {
         purchased: interaction.purchased
       })
       
-      // If deal has been dismissed or purchased, don't show it
-      if (interaction.dismissed || interaction.purchased) {
-        console.log("Deal should NOT be shown - dismissed or purchased")
+      // Only hide deal if it has been purchased
+      if (interaction.purchased) {
+        console.log("Deal should NOT be shown - already purchased")
         return {
           success: true,
           deal: null, // Don't show the deal
           interaction: interaction,
         }
       } else {
-        console.log("Deal should be shown - not dismissed or purchased")
+        console.log("Deal should be shown - not purchased")
       }
     } else {
       console.log("No interaction found - deal should be shown")
