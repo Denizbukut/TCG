@@ -32,16 +32,15 @@ function determineRarity(packType: string, hasPremiumPass = false): CardRarity {
   } else {
     // Regular pack with updated odds:
     if (hasPremiumPass) {
-      // With Premium Pass: 2% legendary, 14% epic, 34% rare, 50% common
-      if (random < 2) return "legendary"
-      if (random < 16) return "epic" // 2 + 14 = 16
+      // With Premium Pass (Game Pass): 1% legendary, 15% epic, 34% rare, 50% common
+      if (random < 1) return "legendary"
+      if (random < 16) return "epic" // 1 + 15 = 16
       if (random < 50) return "rare" // 16 + 34 = 50
       return "common" // Remaining 50%
     } else {
-      // Without Premium Pass: 1% legendary, 5% epic, 34% rare, 60% common
-      if (random < 1) return "legendary"
-      if (random < 6) return "epic" // 1 + 5 = 6
-      if (random < 40) return "rare" // 6 + 34 = 40
+      // Without Premium Pass: 0% legendary, 6% epic, 34% rare, 60% common
+      if (random < 6) return "epic" // 6% epic
+      if (random < 40) return "rare" // 34% rare (6 + 34 = 40)
       return "common" // Remaining 60%
     }
   }
@@ -109,7 +108,7 @@ export async function drawCardsIndividual(walletAddress: string, packType: strin
     console.log("Fetching user data for walletAddress:", walletAddress)
     let { data: userData, error: userError } = await supabase
       .from("users")
-      .select("tickets, elite_tickets, score, clan_id")
+      .select("tickets, elite_tickets, score, clan_id, wallet_address")
       .eq("wallet_address", walletAddress)
       .maybeSingle()
     

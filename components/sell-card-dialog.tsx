@@ -41,6 +41,7 @@ export default function SellCardDialog({ isOpen, onClose, card, walletAddress, o
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [listedPrice, setListedPrice] = useState<string>("")
   const [priceUsdPerWLD, setPriceUsdPerWLD] = useState<number | null>(null)
   const router = useRouter()
   const [activeListings, setActiveListings] = useState<number | null>(null)
@@ -132,38 +133,42 @@ export default function SellCardDialog({ isOpen, onClose, card, walletAddress, o
     if (rarity === "wbc") {
       const baseWbcPrice = priceUsdPerWLD ? 5.0 / priceUsdPerWLD : 5.0
       // Preis verdoppelt sich pro Level
-      return Math.round(baseWbcPrice * level)
+      return parseFloat((baseWbcPrice * level).toFixed(3))
     }
 
     // Für Ultimate-Karten direkt 1.5 USD als Starting Price (umgerechnet zu WLD)
     if (rarity === "ultimate") {
       const baseUltimatePrice = priceUsdPerWLD ? 1.5 / priceUsdPerWLD : 1.5
       // Preis verdoppelt sich pro Level
-      return Math.round(baseUltimatePrice * level)
+      return parseFloat((baseUltimatePrice * level).toFixed(3))
     }
 
     // Für Elite-Karten direkt 0.5 USD als Starting Price (umgerechnet zu WLD)
     if (rarity === "elite") {
       const baseElitePrice = priceUsdPerWLD ? 0.5 / priceUsdPerWLD : 0.5
       // Preis verdoppelt sich pro Level
-      return Math.round(baseElitePrice * level)
+      return parseFloat((baseElitePrice * level).toFixed(3))
     }
 
-    const basePrice =
+    // Basis-USD-Preise für andere Raritäten
+    const baseUsdPrice =
       {
-        common: 50,
-        rare: 150,
-        epic: 500,
-        legendary: 2000,
-        godlike: 10000,
-        wbc: 15000,
-      }[rarity] || 50
+        common: 0.15,
+        rare: 0.5,
+        epic: 1.0,
+        legendary: 1.5,
+        godlike: 10.0,
+        wbc: 15.0,
+      }[rarity] || 0.15
+
+    // In WLD umrechnen
+    const baseWldPrice = priceUsdPerWLD ? baseUsdPrice / priceUsdPerWLD : baseUsdPrice
 
     // Preis verdoppelt sich pro Level (Level 1 = basePrice, Level 2 = basePrice * 2, etc.)
-    const calculatedPrice = Math.round(basePrice * level)
+    const calculatedPrice = baseWldPrice * level
 
-    // Stelle sicher, dass der Preis nicht über 500 liegt
-    return Math.min(calculatedPrice, 500)
+    // Runde auf 3 Dezimalstellen
+    return parseFloat(calculatedPrice.toFixed(3))
   }
 
   // Debug: Log card details
@@ -226,7 +231,7 @@ export default function SellCardDialog({ isOpen, onClose, card, walletAddress, o
     setError(null)
 
     try {
-      const finalPrice = Number.parseFloat(parsedPrice.toFixed(2))
+      const finalPrice = Number.parseFloat(parsedPrice.toFixed(3))
       console.log("Selling card:", {
         walletAddress,
         cardId: card.id,
@@ -247,6 +252,8 @@ export default function SellCardDialog({ isOpen, onClose, card, walletAddress, o
       )
 
       if (result.success) {
+        // Speichere den tatsächlich gespeicherten Preis für die Erfolgsmeldung
+        setListedPrice(finalPrice.toFixed(3))
         setShowSuccess(true)
 
         // Zeige die Erfolgsmeldung für 1.5 Sekunden an, dann schließe Dialog
@@ -352,7 +359,7 @@ export default function SellCardDialog({ isOpen, onClose, card, walletAddress, o
                 transition={{ delay: 0.4 }}
                 className="text-gray-500"
               >
-                Your card has been listed for {formatPrice(price)} WLD
+                Your card has been listed for {listedPrice} WLD
               </motion.p>
               <motion.div
                 initial={{ y: 20, opacity: 0 }}

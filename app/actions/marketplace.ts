@@ -727,12 +727,27 @@ export async function createListing(
     console.log("Price in created listing:", listing.price, "Type:", typeof listing.price)
     console.log("Seller world ID in created listing:", listing.seller_world_id)
 
-    // Karte NICHT löschen - sie wird erst beim Kauf übertragen
-    console.log("Card remains with seller until purchase:", { userCardId, walletAddress })
+    // Entferne die Karte aus der Collection (wird beim Kauf übertragen oder beim Cancel zurückgegeben)
+    console.log("Removing card from seller collection:", { userCardId, walletAddress })
+    const { error: deleteCardError } = await supabase
+      .from("user_card_instances")
+      .delete()
+      .eq("id", userCardId)
+      .eq("wallet_address", walletAddress)
+
+    if (deleteCardError) {
+      console.error("Error removing card from collection:", deleteCardError)
+      // Rollback: Lösche das gerade erstellte Listing
+      await supabase.from("market_listings").delete().eq("id", listing.id)
+      return { success: false, error: "Failed to remove card from collection" }
+    }
+
+    console.log("Card removed from collection successfully")
     console.log("=== CREATE LISTING COMPLETE ===")
 
     // Nur Trade-Seite neu laden, Collection wird über onSuccess callback aktualisiert
     revalidatePath("/trade")
+    revalidatePath("/collection")
     return { success: true, listing }
   } catch (error) {
     console.error("Unexpected error in createListing:", error)
@@ -863,70 +878,32 @@ await supabase
       .update({ score: buyerScore + scoreForCard })
       .eq("wallet_address", walletAddress)
 
-    // 7. Verkäuferkarte bearbeiten
-    console.log("Looking for seller card with:", {
-      user_card_id: listing.user_card_id,
-      seller_wallet_address: listing.seller_wallet_address,
+    // 7. Erstelle neue Karteninstanz für den Käufer
+    // (Die originale Karte wurde beim Listing gelöscht)
+    console.log("Creating new card instance for buyer:", {
       card_id: listing.card_id,
-      card_level: listing.card_level
+      card_level: listing.card_level,
+      buyer: walletAddress
     })
 
-    let { data: sellerCard, error: sellerCardError } = await supabase
+    const { data: newCard, error: createError } = await supabase
       .from("user_card_instances")
-      .select("id, wallet_address, card_id, level")
-      .eq("id", listing.user_card_id)
+      .insert({
+        wallet_address: walletAddress,
+        card_id: listing.card_id,
+        level: listing.card_level || 1,
+        favorite: false,
+        obtained_at: new Date().toISOString().split("T")[0],
+      })
+      .select()
       .single()
 
-    console.log("Seller card query result:", { sellerCard, sellerCardError })
-
-    if (sellerCardError || !sellerCard) {
-      console.log("Original seller card not found, creating new card instance for buyer")
-      
-      // Erstelle eine neue Karteninstanz für den Käufer
-      const { data: newCard, error: createError } = await supabase
-        .from("user_card_instances")
-        .insert({
-          wallet_address: walletAddress,
-          card_id: listing.card_id,
-          level: listing.card_level || 1,
-          favorite: false,
-          obtained_at: new Date().toISOString().split("T")[0],
-        })
-        .select()
-        .single()
-
-      if (createError || !newCard) {
-        console.error("Failed to create new card instance:", createError)
-        return { success: false, error: "Failed to create card instance for buyer" }
-      }
-
-      console.log("Created new card instance for buyer:", newCard)
-    } else {
-      // Verify the card belongs to the seller
-      if (sellerCard.wallet_address !== listing.seller_wallet_address) {
-        console.error("Card wallet mismatch:", {
-          card_wallet: sellerCard.wallet_address,
-          seller_wallet: listing.seller_wallet_address
-        })
-        return { success: false, error: "Card ownership mismatch. Cannot complete purchase." }
-      }
-
-      // 8. Übertrage die bestehende Karte vom Verkäufer zum Käufer
-      const { error: updateError } = await supabase
-        .from("user_card_instances")
-        .update({ 
-          wallet_address: walletAddress,
-          obtained_at: new Date().toISOString().split("T")[0]
-        })
-        .eq("id", sellerCard.id)
-
-      if (updateError) {
-        console.error("Failed to transfer existing card:", updateError)
-        return { success: false, error: "Failed to transfer card to buyer" }
-      }
-
-      console.log("Transferred existing card to buyer")
+    if (createError || !newCard) {
+      console.error("Failed to create new card instance:", createError)
+      return { success: false, error: "Failed to create card instance for buyer" }
     }
+
+    console.log("Created new card instance for buyer:", newCard)
 
     // 9. Listing aktualisieren
     const { error: updateListingError } = await supabase
@@ -1032,20 +1009,30 @@ export async function cancelListing(walletAddress: string, listingId: string) {
       }
     }
 
-    // Gib die Karte zurück (neue Instanz hinzufügen)
-    const { error: insertCardError } = await supabase.from("user_card_instances").insert({
-      wallet_address: walletAddress,
-      card_id: listing.card_id,
-      level: listing.card_level || 1,
-      favorite: false,
-      obtained_at: new Date().toISOString().split("T")[0], // Format as YYYY-MM-DD
+    // Gib die Karte zurück an die Collection
+    console.log("Returning card to seller collection:", { 
+      card_id: listing.card_id, 
+      card_level: listing.card_level,
+      walletAddress 
     })
+    
+    const { error: insertCardError } = await supabase
+      .from("user_card_instances")
+      .insert({
+        wallet_address: walletAddress,
+        card_id: listing.card_id,
+        level: listing.card_level || 1,
+        favorite: false,
+        obtained_at: new Date().toISOString().split("T")[0],
+      })
 
-      if (insertCardError) {
-        console.error("Error adding card to collection:", insertCardError)
-        return { success: false, error: "Failed to return card to your collection" }
-      }
+    if (insertCardError) {
+      console.error("Error returning card to collection:", insertCardError)
+      return { success: false, error: "Failed to return card to your collection" }
+    }
 
+    console.log("Card returned to collection successfully")
+    
     // Lösche das Listing komplett aus der Datenbank
     const { error: deleteError } = await supabase.from("market_listings").delete().eq("id", listingId)
 
@@ -1387,10 +1374,14 @@ export async function getRecentSales(page = 1, pageSize = DEFAULT_PAGE_SIZE, sea
       }
     }
 
-    // Hole die Kartendetails und Verkäuferdetails effizient
+    // Hole die Kartendetails und Benutzerdetails (Seller + Buyer) effizient
     const cardIds = [...new Set(sales.map((sale: any) => sale.card_id))]
     const sellerIds = [...new Set(sales.map((sale: any) => sale.seller_wallet_address))]
-    console.log(`Fetching details for ${cardIds.length} unique cards and ${sellerIds.length} unique sellers`)
+    const buyerIds = [...new Set(sales.map((sale: any) => sale.buyer_wallet_address).filter(Boolean))]
+    
+    // Kombiniere alle Benutzer-IDs (Seller + Buyer)
+    const allUserIds = [...new Set([...sellerIds, ...buyerIds])]
+    console.log(`Fetching details for ${cardIds.length} unique cards and ${allUserIds.length} unique users (sellers + buyers)`)
 
     const { data: cards, error: cardsError } = await supabase
       .from("cards")
@@ -1405,7 +1396,7 @@ export async function getRecentSales(page = 1, pageSize = DEFAULT_PAGE_SIZE, sea
     const { data: users, error: usersError } = await supabase
       .from("users")
       .select("username, world_id, wallet_address")
-      .in("wallet_address", sellerIds)
+      .in("wallet_address", allUserIds)
 
     if (usersError) {
       console.error("Error fetching user details:", usersError)
@@ -1429,11 +1420,14 @@ export async function getRecentSales(page = 1, pageSize = DEFAULT_PAGE_SIZE, sea
     const salesWithDetails = sales.map((sale: any) => {
       const card = cardMap.get(sale.card_id)
       const seller = userMap.get(sale.seller_wallet_address)
+      const buyer = userMap.get(sale.buyer_wallet_address)
       return {
         ...sale,
         card,
         seller_username: seller?.username || sale.seller_wallet_address,
         seller_world_id: seller?.world_id,
+        buyer_username: buyer?.username || sale.buyer_wallet_address,
+        buyer_world_id: buyer?.world_id,
       }
     })
 

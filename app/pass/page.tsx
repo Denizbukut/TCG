@@ -885,16 +885,16 @@ const handlePurchaseXpPass = async () => {
     const regularRates = [
       { rarity: "Common", rate: 60, color: "bg-gray-400" },
       { rarity: "Rare", rate: 34, color: "bg-blue-500" },
-      { rarity: "Epic", rate: 5, color: "bg-purple-500" },
-      { rarity: "Legendary", rate: 1, color: "bg-blue-500" },
+      { rarity: "Epic", rate: 6, color: "bg-purple-500" },
+      { rarity: "Legendary", rate: 0, color: "bg-blue-500" },
     ]
 
     // Regular pack rates (with Premium Pass)
     const improvedRegularRates = [
       { rarity: "Common", rate: 50, color: "bg-gray-400" },
       { rarity: "Rare", rate: 34, color: "bg-blue-500" },
-      { rarity: "Epic", rate: 14, color: "bg-purple-500" },
-      { rarity: "Legendary", rate: 2, color: "bg-blue-500" },
+      { rarity: "Epic", rate: 15, color: "bg-purple-500" },
+      { rarity: "Legendary", rate: 1, color: "bg-blue-500" },
     ]
 
     return (

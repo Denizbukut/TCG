@@ -52,8 +52,9 @@ import PurchaseSuccessAnimation from "@/components/purchase-success-animation"
 import { Progress } from "@/components/ui/progress"
 import { debounce } from "@/lib/utils"
 import { getSupabaseBrowserClient } from "@/lib/supabase"
-import DealOfTheDayDialog from "@/components/deal-of-the-day-dialog"
-import { getDailyDeal } from "@/app/actions/deals"
+// Deal of the Day removed from Trade page
+// import DealOfTheDayDialog from "@/components/deal-of-the-day-dialog"
+// import { getDailyDeal } from "@/app/actions/deals"
 
 // ABI für die transfer-Funktion des ERC20-Tokens
 const ERC20_ABI = ["function transfer(address to, uint256 amount) public returns (bool)"]
@@ -102,6 +103,8 @@ type RecentSale = {
   card: Card
   seller_username?: string
   seller_world_id?: string
+  buyer_username?: string
+  buyer_world_id?: string
 }
 
 type PaginationInfo = {
@@ -180,12 +183,12 @@ export default function TradePage() {
   const [soldCount, setSoldCount] = useState<number | null>(null)
   const [showSellLimitInfo, setShowSellLimitInfo] = useState(false)
   
-  // Deal of the Day state
-  const [dailyDeal, setDailyDeal] = useState<any>(null)
-  const [dailyDealInteraction, setDailyDealInteraction] = useState<any>(null)
-  const [showDailyDealDialog, setShowDailyDealDialog] = useState(false)
-  const [dailyDealLoading, setDailyDealLoading] = useState(false)
-  const [hasShownDailyDeal, setHasShownDailyDeal] = useState(false)
+  // Deal of the Day state - DISABLED on Trade page
+  // const [dailyDeal, setDailyDeal] = useState<any>(null)
+  // const [dailyDealInteraction, setDailyDealInteraction] = useState<any>(null)
+  // const [showDailyDealDialog, setShowDailyDealDialog] = useState(false)
+  // const [dailyDealLoading, setDailyDealLoading] = useState(false)
+  // const [hasShownDailyDeal, setHasShownDailyDeal] = useState(false)
   // Pagination states
   const [marketPage, setMarketPage] = useState(1)
   const [userListingsPage, setUserListingsPage] = useState(1)
@@ -250,42 +253,42 @@ export default function TradePage() {
     fetchSoldCount()
   }, [user?.username])
 
-  // Check for daily deal when user is available
-  useEffect(() => {
-    if (!user?.username || !user?.wallet_address) return
-    if (dailyDealLoading) return
+  // Check for daily deal when user is available - DISABLED on Trade page
+  // useEffect(() => {
+  //   if (!user?.username || !user?.wallet_address) return
+  //   if (dailyDealLoading) return
 
-    console.log("Checking daily deal for user:", user.username)
-    setDailyDealLoading(true)
+  //   console.log("Checking daily deal for user:", user.username)
+  //   setDailyDealLoading(true)
 
-    const checkDailyDeal = async () => {
-      try {
-        console.log("Fetching daily deal for wallet:", user.wallet_address)
-        const result = await getDailyDeal(user.wallet_address)
-        console.log("Daily deal result:", result)
+  //   const checkDailyDeal = async () => {
+  //     try {
+  //       console.log("Fetching daily deal for wallet:", user.wallet_address)
+  //       const result = await getDailyDeal(user.wallet_address)
+  //       console.log("Daily deal result:", result)
 
-        if (result.success && result.deal) {
-          console.log("Deal found, setting state")
-          setDailyDeal(result.deal)
-          setDailyDealInteraction(result.interaction ?? null)
+  //       if (result.success && result.deal) {
+  //         console.log("Deal found, setting state")
+  //         setDailyDeal(result.deal)
+  //         setDailyDealInteraction(result.interaction ?? null)
 
-          const interaction = result.interaction || { seen: false, dismissed: false, purchased: false }
-          console.log("Interaction status:", interaction)
+  //         const interaction = result.interaction || { seen: false, dismissed: false, purchased: false }
+  //         console.log("Interaction status:", interaction)
           
-          // Always show deal for testing
-          console.log("Opening daily deal dialog")
-          setShowDailyDealDialog(true)
-          setHasShownDailyDeal(true)
-        }
-      } catch (error) {
-        console.error("Error checking daily deal:", error)
-      } finally {
-        setDailyDealLoading(false)
-      }
-    }
+  //         // Always show deal for testing
+  //         console.log("Opening daily deal dialog")
+  //         setShowDailyDealDialog(true)
+  //         setHasShownDailyDeal(true)
+  //       }
+  //     } catch (error) {
+  //       console.error("Error checking daily deal:", error)
+  //     } finally {
+  //       setDailyDealLoading(false)
+  //     }
+  //   }
 
-    checkDailyDeal()
-  }, [user?.username, user?.wallet_address])
+  //   checkDailyDeal()
+  // }, [user?.username, user?.wallet_address])
 
   const percentage = Math.min(((soldCount ?? 0) / 3) * 100, 100)
 
@@ -1619,8 +1622,8 @@ export default function TradePage() {
           </DialogContent>
         </Dialog>
 
-        {/* Deal of the Day Dialog */}
-        {dailyDeal && (
+        {/* Deal of the Day Dialog - DISABLED on Trade page */}
+        {/* {dailyDeal && (
           <>
             {console.log("Rendering DealOfTheDayDialog with:", { dailyDeal, showDailyDealDialog })}
             <DealOfTheDayDialog
@@ -1637,7 +1640,7 @@ export default function TradePage() {
             }}
           />
           </>
-        )}
+        )} */}
 
         <MobileNav />
       </div>
@@ -2147,7 +2150,7 @@ function RecentSaleCard({ sale }: { sale: RecentSale }) {
                 Seller: <span className="font-medium text-yellow-400">{sale.seller_username || sale.seller_wallet_address}</span>
               </span>
               <span className="mx-1 text-yellow-300">•</span>
-              <span>Buyer: <span className="font-medium text-yellow-400">{sale.buyer_wallet_address && sale.buyer_wallet_address.length > 15 ? `${sale.buyer_wallet_address.substring(0, 12)}..` : sale.buyer_wallet_address || 'Unknown'}</span></span>
+              <span>Buyer: <span className="font-medium text-yellow-400">{sale.buyer_username || (sale.buyer_wallet_address && sale.buyer_wallet_address.length > 15 ? `${sale.buyer_wallet_address.substring(0, 12)}..` : sale.buyer_wallet_address) || 'Unknown'}</span></span>
             </div>
 
             <div className="flex justify-between items-center mt-2">

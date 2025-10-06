@@ -880,7 +880,7 @@ function determineRarity(packType: string, hasPremiumPass = false): CardRarity {
   } else {
     // Regular pack with updated odds (no legendary cards):
     if (hasPremiumPass) {
-      // With Premium Pass: 1% legendary, 15% epic, 34% rare, 50% common
+      // With Premium Pass (Game Pass): 1% legendary, 15% epic, 34% rare, 50% common
       if (random < 1) return "legendary"
       if (random < 16) return "epic" // 1 + 15 = 16
       if (random < 50) return "rare" // 16 + 34 = 50
