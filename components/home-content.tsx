@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { useAuth } from "@/contexts/auth-context"
 import { claimDailyBonus } from "@/app/actions"
@@ -308,6 +308,7 @@ export default function Home() {
   const [dailyDealInteraction, setDailyDealInteraction] = useState<DealInteraction | null>(null) // Renamed for clarity
   const [showDailyDealDialog, setShowDailyDealDialog] = useState(false) // Renamed for clarity
   const [dailyDealLoading, setDailyDealLoading] = useState(false) // Renamed for clarity
+  const [hasShownDailyDeal, setHasShownDailyDeal] = useState(false) // Track if deal has been shown
 
   // Special Deal state - NEW
   const [specialDeal, setSpecialDeal] = useState<SpecialDeal | null>(null)
@@ -323,7 +324,8 @@ export default function Home() {
   const [chatExpanded, setChatExpanded] = useState(false)
 
   // Refs to track if effects have run
-  const hasCheckedDailyDeal = useRef(false) // Renamed for clarity
+  const hasCheckedDailyDeal = useRef<Set<string>>(new Set()) // Track which users we checked
+  const currentUserRef = useRef<string | null>(null) // Track current user
   const hasCheckedClaims = useRef(false)
   const hasCheckedRewards = useRef(false)
   const hasCheckedTokens = useRef(false)
@@ -635,13 +637,47 @@ const [copied, setCopied] = useState(false)
     }
   }, [user?.username])
 
-  // Check for daily deal - only once when user data is available
+  // Check for daily deal when user is available
   useEffect(() => {
-    if (user?.username && !hasCheckedDailyDeal.current) {
-      hasCheckedDailyDeal.current = true
-      checkDailyDeal()
+    if (!user?.username || !user?.wallet_address) return
+    if (currentUserRef.current === user.username) return // Same user, no need to check again
+    if (dailyDealLoading) return
+
+    console.log("Checking daily deal for user:", user.username)
+    currentUserRef.current = user.username
+    setHasShownDailyDeal(false)
+    setDailyDealLoading(true)
+
+    const checkDailyDeal = async () => {
+      try {
+        const result = await getDailyDeal(user.wallet_address)
+
+        if (result.success && result.deal) {
+          setDailyDeal(result.deal)
+          setDailyDealInteraction(result.interaction ?? null)
+
+          if (!result.interaction.seen && !result.interaction.dismissed && !result.interaction.purchased) {
+            console.log("Opening daily deal dialog")
+            setShowDailyDealDialog(true)
+            setHasShownDailyDeal(true)
+          } else {
+            console.log("Not opening daily deal dialog:", {
+              seen: result.interaction.seen,
+              dismissed: result.interaction.dismissed,
+              purchased: result.interaction.purchased
+            })
+          }
+        }
+      } catch (error) {
+        console.error("Error checking daily deal:", error)
+      } finally {
+        setDailyDealLoading(false)
+      }
     }
-  }, [user?.username])
+
+    checkDailyDeal()
+  }, [user?.username]) // Nur username als dependency
+
 
   // Check discount status on page load
   useEffect(() => {
@@ -649,28 +685,6 @@ const [copied, setCopied] = useState(false)
   }, [])
 
 
-  // Check for daily deal
-  const checkDailyDeal = async () => {
-    if (!user?.username) return
-
-    setDailyDealLoading(true)
-    try {
-      const result = await getDailyDeal(user.wallet_address)
-
-      if (result.success && result.deal) {
-        setDailyDeal(result.deal)
-        setDailyDealInteraction(result.interaction ?? null)
-
-        // Show the deal dialog automatically if it hasn't been seen or dismissed
-        if (!result.interaction.seen && !result.interaction.dismissed && !result.interaction.purchased) {
-          setShowDailyDealDialog(true)
-        }
-      }
-    } catch (error) {
-    } finally {
-      setDailyDealLoading(false)
-    }
-  }
 
   // Check discount status
   const checkDiscountStatus = async () => {
@@ -1640,11 +1654,63 @@ const [copied, setCopied] = useState(false)
                 <div className="text-sm font-bold text-yellow-100">$ANI</div>
               </div>
             </div> */}
+            {/* Ticket Claim - zwischen Profil/Pässe und Card Gallery/Shop/Referrals */}
+            <div className="col-span-6 mb-4">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25, duration: 0.4 }}
+                className="bg-gradient-to-br from-[#232526] to-[#414345] rounded-xl shadow-md border-2 border-yellow-400 overflow-hidden"
+              >
+                <div className="relative">
+                  <div className="relative p-3">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center border border-yellow-300">
+                          <Gift className="h-4 w-4 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-sm text-yellow-100">Ticket Claim</h3>
+                          <p className="text-xs text-yellow-200">
+                            Get {ticketClaimAmount} ticket every 24 hours
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={handleClaimBonus}
+                        disabled={claimLoading || alreadyClaimed}
+                        size="sm"
+                        className={`rounded-full px-4 ${
+                          alreadyClaimed
+                            ? "bg-gray-600 text-gray-300 hover:bg-gray-600"
+                            : "bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white"
+                        }`}
+                      >
+                        {claimLoading ? (
+                          <div className="flex items-center">
+                            <div className="h-3 w-3 border-2 border-t-transparent border-current rounded-full animate-spin mr-2"></div>
+                            <span className="text-xs">Claiming...</span>
+                          </div>
+                        ) : alreadyClaimed ? (
+                          <div className="flex items-center">
+                            <Clock className="h-3 w-3 mr-1" />
+                            <span className="text-xs">{ticketTimerDisplay}</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs">Claim Now</span>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+
             {/* Shop in der Mitte, Card Gallery daneben, Referrals rechts */}
             <div className="col-span-6 grid grid-cols-3 gap-3">
               {/* Card Gallery */}
               <div className="relative">
-                <Link href="/collection" className="block w-full h-full">
+                <Link href="/catalog" className="block w-full h-full">
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -2043,55 +2109,6 @@ const [copied, setCopied] = useState(false)
               </Dialog>
             </div>
           </div>
-          {/* Daily bonus (keep below the grid) */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.4 }}
-            className="bg-gradient-to-br from-[#232526] to-[#414345] rounded-xl shadow-md border-2 border-yellow-400 overflow-hidden mt-6"
-          >
-            <div className="relative">
-              <div className="relative p-3">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center border border-yellow-300">
-                      <Gift className="h-4 w-4 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-sm text-yellow-100">Ticket Claim</h3>
-                      <p className="text-xs text-yellow-200">
-  Get {ticketClaimAmount} ticket every 24 hours
-</p>
-                    </div>
-                  </div>
-                  <Button
-                    onClick={handleClaimBonus}
-                    disabled={claimLoading || alreadyClaimed}
-                    size="sm"
-                    className={`rounded-full px-4 ${
-                      alreadyClaimed
-                        ? "bg-gray-600 text-gray-300 hover:bg-gray-600"
-                        : "bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white"
-                    }`}
-                  >
-                    {claimLoading ? (
-                      <div className="flex items-center">
-                        <div className="h-3 w-3 border-2 border-t-transparent border-current rounded-full animate-spin mr-2"></div>
-                        <span className="text-xs">Claiming...</span>
-                      </div>
-                    ) : alreadyClaimed ? (
-                      <div className="flex items-center">
-                        <Clock className="h-3 w-3 mr-1" />
-                        <span className="text-xs">{ticketTimerDisplay}</span>
-                      </div>
-                    ) : (
-                      <span className="text-xs">Claim Now</span>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </motion.div>
 
           {/* Quick Actions: Friends & Missions - COMMENTED OUT */}
           {/* <div className="mt-4 mb-20 grid grid-cols-2 gap-3">
@@ -2152,7 +2169,10 @@ const [copied, setCopied] = useState(false)
         {dailyDeal && dailyDeal.card_name && (
           <DealOfTheDayDialog
             isOpen={showDailyDealDialog}
-            onClose={() => setShowDailyDealDialog(false)}
+            onClose={() => {
+              setShowDailyDealDialog(false)
+              setHasShownDailyDeal(true) // Mark as shown when closed
+            }}
             deal={dailyDeal}
             username={user?.wallet_address || ""}
             onPurchaseSuccess={handleDailyDealPurchaseSuccess}

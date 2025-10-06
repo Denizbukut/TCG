@@ -211,14 +211,24 @@ const [showInfo, setShowInfo] = useState(false)
       
       try {
         const supabase = getSupabaseBrowserClient()
-        if (!supabase) return
+        if (!supabase) {
+          console.log('❌ Supabase client not available')
+          return
+        }
 
-        const { data, error } = await supabase
+        // Add timeout to prevent hanging requests
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Database request timeout')), 5000)
+        })
+
+        const dataPromise = supabase
           .from('icon_passes')
           .select('*')
-          .eq('wallet_address', user.wallet_address)
+          .eq('user_id', user.wallet_address)
           .eq('active', true)
           .single()
+
+        const { data, error } = await Promise.race([dataPromise, timeoutPromise]) as any
 
         console.log('Icon Pass check in draw-content:', { data, error, username: user.username })
         
@@ -227,7 +237,11 @@ const [showInfo, setShowInfo] = useState(false)
           console.log('✅ Icon Pass is active in draw-content!')
         } else {
           setHasIconPass(false)
-          console.log('❌ No active Icon Pass found in draw-content')
+          if (error?.code === 'PGRST116') {
+            console.log('ℹ️ No Icon Pass record found (user never purchased)')
+          } else {
+            console.log('❌ No active Icon Pass found in draw-content:', error?.message || 'Unknown error')
+          }
         }
       } catch (error) {
         console.error('❌ Error checking Icon Pass in draw-content:', error)
@@ -235,8 +249,10 @@ const [showInfo, setShowInfo] = useState(false)
       }
     }
 
-    checkIconPass()
-  }, [user?.username])
+    if (user?.wallet_address) {
+      checkIconPass()
+    }
+  }, [user?.wallet_address])
 
   const fetchGodPacksLeft = async () => {
     const supabase = getSupabaseBrowserClient()
@@ -1340,13 +1356,13 @@ const [showInfo, setShowInfo] = useState(false)
                               <div className="flex justify-between items-center text-sm">
                                 <span className="text-purple-500">Epic</span>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-purple-500">{hasPremiumPass ? "14%" : "5%"}</span>
+                                  <span className="text-purple-500">{hasPremiumPass ? "15%" : "6%"}</span>
                                 </div>
                               </div>
                               <div className="flex justify-between items-center text-sm">
                                 <span className="text-amber-500">Legendary</span>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-amber-500">{hasPremiumPass ? "2%" : "1%"}</span>
+                                  <span className="text-amber-500">{hasPremiumPass ? "1%" : "0%"}</span>
                                 </div>
                               </div>
                             </div>
@@ -1356,7 +1372,7 @@ const [showInfo, setShowInfo] = useState(false)
                             <div className="space-y-2">
                               <div className="flex justify-between items-center text-sm">
                                 <span className="text-gray-500">Common</span>
-                                <span className="text-gray-500">15%</span>
+                                <span className="text-gray-500">17%</span>
                               </div>
                               <div className="flex justify-between items-center text-sm">
                                 <span className="text-blue-500">Rare</span>
@@ -1368,7 +1384,7 @@ const [showInfo, setShowInfo] = useState(false)
                               </div>
                               <div className="flex justify-between items-center text-sm">
                                 <span className="text-amber-500">Legendary</span>
-                                <span className="text-amber-500">5%</span>
+                                <span className="text-amber-500">3%</span>
                               </div>
                             </div>
                           </div>

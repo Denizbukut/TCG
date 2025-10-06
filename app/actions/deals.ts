@@ -56,13 +56,18 @@ export const getDailyDeal = async (walletAddress: string) => {
     // If no interaction record exists, create one with seen=false and dismissed=false
     if (interactionError && interactionError.code === "PGRST116") {
       // PGRST116 means no rows returned
-      await supabase.from("deal_interactions").insert({
+      const { error: insertError } = await supabase.from("deal_interactions").insert({
         wallet_address: walletAddress,
         deal_id: deal.id,
         seen: false,
         dismissed: false,
         purchased: false,
       })
+
+      if (insertError) {
+        console.error("Error creating deal interaction:", insertError)
+        return { success: false, error: "Failed to create deal interaction" }
+      }
 
       return {
         success: true,
@@ -75,6 +80,7 @@ export const getDailyDeal = async (walletAddress: string) => {
       }
     } else if (interactionError) {
       console.error("Error fetching deal interaction:", interactionError)
+      return { success: false, error: "Failed to fetch deal interaction" }
     }
 
     // Check if deal should be shown based on interaction status
