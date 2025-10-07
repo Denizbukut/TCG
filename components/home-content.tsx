@@ -637,14 +637,22 @@ const [copied, setCopied] = useState(false)
     }
   }, [user?.username])
 
-  // Check for daily deal when user is available
+  // Check for daily deal when user is available - only once per user session
   useEffect(() => {
     if (!user?.username || !user?.wallet_address) return
-    if (currentUserRef.current === user.username) return // Same user, no need to check again
     if (dailyDealLoading) return
 
+    // Create a unique key for this user session
+    const userSessionKey = `${user.username}_${user.wallet_address}`
+    
+    // Check if we've already checked the daily deal for this user session
+    if (currentUserRef.current === userSessionKey) {
+      console.log("Daily deal already checked for this user session:", user.username)
+      return
+    }
+
     console.log("Checking daily deal for user:", user.username)
-    currentUserRef.current = user.username
+    currentUserRef.current = userSessionKey
     setHasShownDailyDeal(false)
     setDailyDealLoading(true)
 
@@ -676,7 +684,7 @@ const [copied, setCopied] = useState(false)
     }
 
     checkDailyDeal()
-  }, [user?.username]) // Nur username als dependency
+  }, [user?.username, user?.wallet_address]) // Dependencies bleiben, aber mit verbessertem Ref-Check
 
 
   // Check discount status on page load

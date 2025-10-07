@@ -57,10 +57,15 @@ export default function DealOfTheDayDialog({
   const [hasOpened, setHasOpened] = useState(false)
   const [shouldMarkAsSeen, setShouldMarkAsSeen] = useState(false)
   
-  console.log("=== DealOfTheDayDialog ===")
-  console.log("isOpen:", isOpen)
-  console.log("deal:", deal)
-  console.log("username:", username)
+  // Log when dialog opens (only once per open)
+  useEffect(() => {
+    if (isOpen) {
+      console.log("=== DealOfTheDayDialog OPENED ===")
+      console.log("isOpen:", isOpen)
+      console.log("deal:", deal)
+      console.log("username:", username)
+    }
+  }, [isOpen, deal, username])
 
   const [isDealValid, setIsDealValid] = useState(!!deal)
 
@@ -88,7 +93,6 @@ export default function DealOfTheDayDialog({
     
     // Pub-URL verwenden, KEIN world-soccer/ mehr anhängen!
     const finalUrl = `https://ani-labs.xyz/${encodeURIComponent(cleaned)}`
-    console.log("finalURL", finalUrl)
     
     return finalUrl
   }
@@ -129,20 +133,10 @@ export default function DealOfTheDayDialog({
 
   const handleDismiss = async () => {
     try {
-      console.log("=== FRONTEND: Dismissing deal ===")
-      console.log("Username:", username)
-      console.log("Deal ID:", deal.id)
-      
       const result = await markDealAsDismissed(username, deal.id)
-      console.log("=== FRONTEND: markDealAsDismissed result ===")
-      console.log(result)
-      
       onClose()
     } catch (error) {
-      console.error("=== FRONTEND: Error dismissing deal ===")
-      console.error("Error details:", error)
-      console.error("Error message:", (error as Error)?.message)
-      console.error("Error stack:", (error as Error)?.stack)
+      console.error("Error dismissing deal:", error)
     }
   }
   const erc20TransferAbi = [{
@@ -164,8 +158,6 @@ export default function DealOfTheDayDialog({
     const fallbackWldAmount = deal.price
     const wldAmount = price ? dollarAmount / price : fallbackWldAmount
     
-    console.log("Deal of the Day payment:", { dollarAmount, wldAmount, price })
-    
     try {
       const {commandPayload, finalPayload} = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
@@ -178,10 +170,7 @@ export default function DealOfTheDayDialog({
         ],
       })
      
-      console.log("MiniKit transaction result:", { commandPayload, finalPayload })
-
       if (finalPayload.status == "success") {
-        console.log("success sending payment")
         handlePurchase()
       } else {
         console.error("Payment failed:", finalPayload)
@@ -245,20 +234,9 @@ export default function DealOfTheDayDialog({
   // Mark deal as seen when dialog opens
   useEffect(() => {
     if (isOpen && deal && !hasMarkedAsSeen.current) {
-      console.log("=== FRONTEND: Marking deal as seen ===")
-      console.log("Username:", username)
-      console.log("Deal ID:", deal.id)
-      
       markDealAsSeen(username, deal.id)
-        .then(result => {
-          console.log("=== FRONTEND: markDealAsSeen result ===")
-          console.log(result)
-        })
         .catch(error => {
-          console.error("=== FRONTEND: markDealAsSeen error ===")
-          console.error("Error details:", error)
-          console.error("Error message:", (error as Error)?.message)
-          console.error("Error stack:", (error as Error)?.stack)
+          console.error("Error marking deal as seen:", error)
         })
       
       hasMarkedAsSeen.current = true

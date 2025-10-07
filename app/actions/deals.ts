@@ -18,32 +18,16 @@ export const getDailyDeal = async (walletAddress: string) => {
     const supabase = createSupabaseServer()
     const today = new Date().toISOString().split("T")[0]
 
-    // Get today's deal or the most recent available deal
-    let deal
-    const { data: todayDeal, error: dealError } = await supabase
+    // Get today's deal only (no fallback to old deals)
+    const { data: deal, error: dealError } = await supabase
       .from("daily_deals")
       .select("*")
       .eq("date", today)
       .single()
 
-    if (dealError) {
-      console.log("No deal for today, trying to get the most recent deal")
-      // If no deal for today, get the most recent available deal
-      const { data: recentDeal, error: recentError } = await supabase
-        .from("daily_deals")
-        .select("*")
-        .order("date", { ascending: false })
-        .limit(1)
-        .single()
-      
-      if (recentError || !recentDeal) {
-        console.error("Error fetching recent deal:", recentError)
-        return { success: false, error: "No deal available" }
-      }
-      
-      deal = recentDeal
-    } else {
-      deal = todayDeal
+    if (dealError || !deal) {
+      console.log("No deal available for today:", dealError)
+      return { success: false, error: "No deal available" }
     }
 
     console.log("Using deal:", deal)
