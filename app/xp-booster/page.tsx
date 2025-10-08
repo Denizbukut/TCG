@@ -129,7 +129,7 @@ export default function XpBoosterPage() {
 
     setBuying(true);
     try {
-      const recipient = "0x9311788aa11127F325b76986f0031714082F016B";
+      const recipient = "0xDb4D9195EAcE195440fbBf6f80cA954bf782468E";
       const reference = `xp_pass_${Date.now()}`.slice(0, 36);
       const payload = {
         reference,

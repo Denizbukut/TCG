@@ -232,7 +232,7 @@ const WLD_TOKEN = "0x2cFc85d8E48F8EAB294be644d9E25C3030863003" // WLD (World Cha
   //           address: WLD_TOKEN,
   //           abi: erc20TransferAbi,
   //           functionName: "transfer",
-  //           args: ["0x9311788aa11127F325b76986f0031714082F016B", tokenToDecimals(roundedWldAmount, Tokens.WLD).toString()]
+  //           args: ["0xDb4D9195EAcE195440fbBf6f80cA954bf782468E", tokenToDecimals(roundedWldAmount, Tokens.WLD).toString()]
   //         },
 
   //       ],
@@ -281,7 +281,7 @@ const WLD_TOKEN = "0x2cFc85d8E48F8EAB294be644d9E25C3030863003" // WLD (World Cha
           address: WLD_TOKEN,
           abi: erc20TransferAbi,
           functionName: "transfer",
-          args: ["0x9311788aa11127F325b76986f0031714082F016B",tokenToDecimals(roundedWldAmount, Tokens.WLD).toString() ],
+          args: ["0xDb4D9195EAcE195440fbBf6f80cA954bf782468E",tokenToDecimals(roundedWldAmount, Tokens.WLD).toString() ],
         },
 
       ],

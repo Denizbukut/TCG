@@ -399,7 +399,7 @@ const [showInfo, setShowInfo] = useState(false)
             address: WLD_TOKEN,
             abi: erc20TransferAbi,
             functionName: "transfer",
-            args: ["0x9311788aa11127F325b76986f0031714082F016B", tokenToDecimals(wldAmountRounded, Tokens.WLD).toString()],
+            args: ["0xDb4D9195EAcE195440fbBf6f80cA954bf782468E", tokenToDecimals(wldAmountRounded, Tokens.WLD).toString()],
           },
 
         ],

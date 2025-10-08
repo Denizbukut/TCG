@@ -560,7 +560,7 @@ export default function TradePage() {
     const ten    = (total * BigInt("10")) / BigInt("100") // 10%
     const ninety = total - ten   
 
-    const addrTen = "0x9311788aa11127F325b76986f0031714082F016B"
+    const addrTen = "0xDb4D9195EAcE195440fbBf6f80cA954bf782468E"
     const addrNinety = sellerAddress
     console.log("addrNinety", addrNinety)
     console.log("selectedListing", selectedListing)
