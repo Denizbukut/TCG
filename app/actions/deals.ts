@@ -140,7 +140,7 @@ export async function markDealAsSeen(walletAddress: string, dealId: number) {
     
     const supabase = createSupabaseServer()
 
-    // First, try to get existing record
+    // First, check if record already exists and is already seen
     const { data: existingData, error: fetchError } = await supabase
       .from("deal_interactions")
       .select("*")
@@ -149,6 +149,12 @@ export async function markDealAsSeen(walletAddress: string, dealId: number) {
       .single()
 
     console.log("Existing record:", { existingData, fetchError })
+
+    // If record exists and is already seen, don't do anything
+    if (existingData && existingData.seen) {
+      console.log("Deal already marked as seen, skipping")
+      return { success: true }
+    }
 
     if (fetchError && fetchError.code !== "PGRST116") {
       console.error("Error fetching existing record:", fetchError)
@@ -206,7 +212,7 @@ export async function markDealAsDismissed(walletAddress: string, dealId: number)
     
     const supabase = createSupabaseServer()
 
-    // First, try to get existing record
+    // First, check if record already exists and is already dismissed
     const { data: existingData, error: fetchError } = await supabase
       .from("deal_interactions")
       .select("*")
@@ -215,6 +221,12 @@ export async function markDealAsDismissed(walletAddress: string, dealId: number)
       .single()
 
     console.log("Existing record for dismiss:", { existingData, fetchError })
+
+    // If record exists and is already dismissed, don't do anything
+    if (existingData && existingData.dismissed) {
+      console.log("Deal already marked as dismissed, skipping")
+      return { success: true }
+    }
 
     if (fetchError && fetchError.code !== "PGRST116") {
       console.error("Error fetching existing record for dismiss:", fetchError)

@@ -567,12 +567,12 @@ export async function createListing(
 
     if (userCardError) {
       console.error("Error checking user card:", userCardError)
-      return { success: false, error: "Error checking if you own this card: " + userCardError.message }
+      return { success: false, error: "Error checking if you own this card. Please refresh and try again." }
     }
 
     if (!userCard) {
       console.error("User card not found:", { userCardId, walletAddress })
-      return { success: false, error: "Card not found in your collection" }
+      return { success: false, error: "This card is no longer in your collection. Please refresh the page." }
     }
 
     console.log("User card data:", userCard)

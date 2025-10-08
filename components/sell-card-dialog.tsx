@@ -258,25 +258,29 @@ export default function SellCardDialog({ isOpen, onClose, card, walletAddress, o
 
         // Zeige die Erfolgsmeldung für 1.5 Sekunden an, dann schließe Dialog
         setTimeout(() => {
-          onSuccess?.()
+          if (onSuccess) {
+            onSuccess()
+          }
           onClose()
           // Keine Weiterleitung - Collection wird über onSuccess aktualisiert
         }, 1500)
       } else {
         console.error("Error from createListing:", result.error)
-        setError(result.error || "Failed to list your card")
+        const errorMessage = result.error || "Failed to list your card"
+        setError(errorMessage)
         toast({
           title: "Error",
-          description: result.error || "Failed to list your card",
+          description: errorMessage,
           variant: "destructive",
         })
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Exception in handleSell:", error)
-      setError("An unexpected error occurred")
+      const errorMessage = error?.message || "An unexpected error occurred. Please try again."
+      setError(errorMessage)
       toast({
         title: "Error",
-        description: "An unexpected error occurred",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {

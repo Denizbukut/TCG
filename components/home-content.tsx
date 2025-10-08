@@ -653,7 +653,6 @@ const [copied, setCopied] = useState(false)
 
     console.log("Checking daily deal for user:", user.username)
     currentUserRef.current = userSessionKey
-    setHasShownDailyDeal(false)
     setDailyDealLoading(true)
 
     const checkDailyDeal = async () => {
@@ -674,6 +673,7 @@ const [copied, setCopied] = useState(false)
               dismissed: result.interaction.dismissed,
               purchased: result.interaction.purchased
             })
+            setHasShownDailyDeal(true) // Mark as shown even if not opening
           }
         }
       } catch (error) {
@@ -1040,8 +1040,9 @@ const [copied, setCopied] = useState(false)
       })
     }
 
-    // Close the dialog
+    // Close the dialog and mark as shown
     setShowDailyDealDialog(false)
+    setHasShownDailyDeal(true)
 
     // Show success toast
     toast({
@@ -1316,15 +1317,22 @@ const [copied, setCopied] = useState(false)
 
           // 2. Karte zur Sammlung hinzufügen (using user_card_instances)
           const { error: insertCardError } = await supabase.from("user_card_instances").insert({
-            user_id: user.username,
+            wallet_address: user.wallet_address, // ✅ FIXED: Use wallet_address instead of user_id
             card_id: specialDeal.card_id,
-            level: specialDeal.card_level,
+            level: specialDeal.card_level || 1,
             favorite: false,
-            obtained_at: new Date().toISOString(),
+            obtained_at: new Date().toISOString().split('T')[0], // Use date only format YYYY-MM-DD
           });
 
           if (insertCardError) {
             console.error("Error adding card to collection:", insertCardError);
+            toast({ 
+              title: 'Error', 
+              description: 'Failed to add card to your collection: ' + insertCardError.message, 
+              variant: 'destructive' 
+            });
+            setBuyingSpecialDeal(false);
+            return;
           }
 
           // 2. Tickets hinzufügen

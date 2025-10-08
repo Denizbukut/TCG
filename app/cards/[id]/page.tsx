@@ -598,7 +598,11 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
     if (user && card) {
       try {
         const supabase = getSupabaseBrowserClient();
-        if (!supabase) return;
+        if (!supabase) {
+          // Redirect to collection instead of reloading
+          router.push("/collection");
+          return;
+        }
 
         const { data: updatedUserCardsData, error: userCardsError } = await supabase
           .from("user_card_instances")
@@ -606,7 +610,7 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
           .eq("wallet_address", user.wallet_address)
           .eq("card_id", card.id);
 
-        if (!userCardsError && updatedUserCardsData) {
+        if (!userCardsError && updatedUserCardsData && updatedUserCardsData.length > 0) {
           const validUserCards = toUserCards(updatedUserCardsData);
           setAllUserCards(validUserCards);
 
@@ -614,11 +618,21 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
           const highestLevelCard = validUserCards.reduce((a, b) => (a.level! > b.level! ? a : b));
           setUserCard(highestLevelCard);
           setFavorite(Boolean(highestLevelCard.favorite));
+        } else {
+          // If no cards remaining, redirect to collection
+          console.log("No more cards of this type, redirecting to collection");
+          router.push("/collection");
         }
       } catch (refreshError) {
         console.error("Error refreshing card data after sell:", refreshError);
-        // Fallback to page reload if refresh fails
-        window.location.reload();
+        // Instead of reloading, redirect to collection page
+        toast({
+          title: "Card Listed Successfully",
+          description: "Redirecting to your collection...",
+        })
+        setTimeout(() => {
+          router.push("/collection");
+        }, 500);
       }
     }
   }
