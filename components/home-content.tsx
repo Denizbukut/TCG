@@ -28,7 +28,6 @@ import {
   ChevronRight,
   Crown,
   ShoppingCart,
-  Send,
   Trophy,
   Shield,
   Users,
@@ -1427,18 +1426,8 @@ const [copied, setCopied] = useState(false)
                     <path d="M17.53 3H21.5L14.36 10.66L22.75 21H16.28L11.22 14.73L5.52 21H1.54L9.04 12.76L1 3H7.6L12.18 8.67L17.53 3ZM16.4 19.13H18.18L7.45 4.76H5.54L16.4 19.13Z" fill="currentColor"/>
                   </svg>
                 </a>
-                <a
-                  href="https://t.me/c/2551554609/13381"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center transition-transform hover:scale-105 shadow border-2 border-white"
-                  aria-label="Telegram"
-                >
-                  <span className="sr-only">Telegram</span>
-                  <Send className="w-4 h-4 text-white" />
-      </a>
       
-      {/* Tickets neben dem Telegram Icon */}
+      {/* Tickets Display */}
       <div className="flex items-center gap-2 ml-2">
         <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#232526] to-[#414345] px-2 py-1 rounded-full shadow-sm border-2 border-blue-400 min-w-[54px]">
           <Ticket className="h-4 w-4 text-blue-400 mx-auto" />

@@ -38,7 +38,7 @@ export function LevelSystemInfoDialog() {
               {/* First Card */}
               <div className="w-16 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg shadow-md border border-indigo-200 flex flex-col items-center justify-center">
                 <div className="w-12 h-12 bg-white rounded-md mb-1 flex items-center justify-center overflow-hidden">
-                  <img src="/anime-images/pikachu.JPG" alt="Card character" className="w-full h-full object-cover" />
+                  <img src="/ANI.webp" alt="ANI Character" className="w-full h-full object-cover" />
                 </div>
                 <div className="flex">
                   <Star className="h-2.5 w-2.5 fill-red-500 text-red-500" />
@@ -49,7 +49,7 @@ export function LevelSystemInfoDialog() {
               {/* Second Card */}
               <div className="w-16 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg shadow-md border border-indigo-200 flex flex-col items-center justify-center">
                 <div className="w-12 h-12 bg-white rounded-md mb-1 flex items-center justify-center overflow-hidden">
-                  <img src="/anime-images/pikachu.JPG" alt="Card character" className="w-full h-full object-cover" />
+                  <img src="/ANI.webp" alt="ANI Character" className="w-full h-full object-cover" />
                 </div>
                 <div className="flex">
                   <Star className="h-2.5 w-2.5 fill-red-500 text-red-500" />
@@ -69,7 +69,7 @@ export function LevelSystemInfoDialog() {
                 +
               </div>
               <div className="w-16 h-16 bg-white rounded-md mb-1 flex items-center justify-center overflow-hidden">
-                <img src="/anime-images/pikachu.JPG" alt="Card character" className="w-full h-full object-cover" />
+                <img src="/ANI.webp" alt="ANI Character" className="w-full h-full object-cover" />
               </div>
               <div className="flex">
                 <Star className="h-3 w-3 fill-red-500 text-red-500" />
