@@ -611,7 +611,26 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
           .eq("card_id", card.id);
 
         if (!userCardsError && updatedUserCardsData && updatedUserCardsData.length > 0) {
-          const validUserCards = toUserCards(updatedUserCardsData);
+          // Zähle die Anzahl der Instanzen pro Level (wie beim initialen Laden)
+          const levelCounts: Record<number, number> = {}
+          updatedUserCardsData.forEach((item: any) => {
+            const level = item.level || 1
+            levelCounts[level] = (levelCounts[level] || 0) + 1
+          })
+          
+          console.log("Updated level counts after sell:", levelCounts)
+          
+          // Erstelle UserCard-Objekte mit der korrekten Anzahl
+          const validUserCards = Object.entries(levelCounts).map(([level, count]) => ({
+            id: `virtual-${level}`,
+            user_id: user.wallet_address,
+            card_id: card.id,
+            quantity: count,
+            level: parseInt(level),
+            favorite: false,
+            obtained_at: undefined
+          }));
+
           setAllUserCards(validUserCards);
 
           // Find the highest level card to display
