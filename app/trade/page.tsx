@@ -88,6 +88,7 @@ type MarketListing = {
 type Transaction = MarketListing & {
   transaction_type: "sold" | "purchased"
   other_party: string
+  other_party_username?: string // Username of the other party
   seller_username?: string // Make this optional
 }
 
@@ -1567,7 +1568,7 @@ export default function TradePage() {
             onClose={() => setShowUpdatePriceDialog(false)}
             listingId={selectedListing.id}
             currentPrice={selectedListing.price}
-            username={user?.username || ""}
+            username={user?.wallet_address || ""}
             onSuccess={handlePriceUpdateSuccess}
             cardRarity={selectedListing.card.rarity}
             overallRating={selectedListing.card.overall_rating}
@@ -2010,7 +2011,9 @@ function TransactionCard({ transaction }: { transaction: Transaction }) {
             <div className="flex items-center mt-1 text-xs text-yellow-200">
               <span>
                 {transaction.transaction_type === "purchased" ? "From: " : "To: "}
-                <span className="font-medium text-yellow-400">{transaction.other_party}</span>
+                <span className="font-medium text-yellow-400">
+                  {transaction.other_party_username || transaction.other_party}
+                </span>
               </span>
             </div>
 

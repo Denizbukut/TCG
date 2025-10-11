@@ -15,7 +15,7 @@ interface UpdatePriceDialogProps {
   onClose: () => void
   listingId: string
   currentPrice: number
-  username: string
+  username: string // Actually wallet_address, keeping name for compatibility
   onSuccess?: () => void
   cardRarity: string
   overallRating?: number
@@ -26,7 +26,7 @@ export default function UpdatePriceDialog({
   onClose,
   listingId,
   currentPrice,
-  username,
+  username, // Actually wallet_address
   onSuccess,
   cardRarity,
   overallRating,

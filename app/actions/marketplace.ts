@@ -1057,18 +1057,28 @@ export async function updateListingPrice(walletAddress: string, listingId: strin
   try {
     const supabase = createSupabaseServer()
 
-    // Hole das Listing
+    // Hole das Listing (ohne seller_wallet_address Filter, um bessere Fehlermeldungen zu ermöglichen)
     const { data: listing, error: listingError } = await supabase
       .from("market_listings")
       .select("*")
       .eq("id", listingId)
-      .eq("seller_wallet_address", walletAddress)
-      .eq("status", "active")
       .single()
 
     if (listingError || !listing) {
       console.error("Error fetching listing:", listingError)
-      return { success: false, error: "Listing not found or already sold" }
+      return { success: false, error: "Listing not found" }
+    }
+
+    // Überprüfe, ob das Listing dem Benutzer gehört
+    if (listing.seller_wallet_address !== walletAddress) {
+      console.error("User does not own this listing")
+      return { success: false, error: "You do not have permission to update this listing" }
+    }
+
+    // Überprüfe, ob das Listing aktiv ist
+    if (listing.status !== "active") {
+      console.error("Listing is not active, status:", listing.status)
+      return { success: false, error: "Listing is not active or already sold" }
     }
 
     // Hole die Karten-Details für die Preisvalidierung
@@ -1200,6 +1210,10 @@ export async function getTransactionHistory(walletAddress: string, page = 1, pag
     // Efficiently fetch card details and user details
     const cardIds = [...new Set(listings.map((listing: MarketListing) => listing.card_id))]
     const sellerIds = [...new Set(listings.map((listing: MarketListing) => listing.seller_wallet_address))]
+    const buyerIds = [...new Set(listings.map((listing: MarketListing) => listing.buyer_wallet_address).filter(Boolean))]
+    
+    // Alle eindeutigen Wallet-Adressen sammeln (Verkäufer und Käufer)
+    const allWalletAddresses = [...new Set([...sellerIds, ...buyerIds])]
 
     const { data: cards, error: cardsError } = await supabase
       .from("cards")
@@ -1214,7 +1228,7 @@ export async function getTransactionHistory(walletAddress: string, page = 1, pag
     const { data: users, error: usersError } = await supabase
       .from("users")
       .select("username, world_id, wallet_address")
-      .in("wallet_address", sellerIds)
+      .in("wallet_address", allWalletAddresses)
 
     if (usersError) {
       console.error("Error fetching user details:", usersError)
@@ -1236,6 +1250,7 @@ export async function getTransactionHistory(walletAddress: string, page = 1, pag
     const transactionsWithDetails = listings.map((listing: MarketListing) => {
       const card = cardMap.get(listing.card_id)
       const seller = userMap.get(listing.seller_wallet_address)
+      const buyer = userMap.get(listing.buyer_wallet_address)
       const isSeller = listing.seller_wallet_address === walletAddress
 
       return {
@@ -1243,6 +1258,9 @@ export async function getTransactionHistory(walletAddress: string, page = 1, pag
         card,
         transaction_type: isSeller ? "sold" : "purchased",
         other_party: isSeller ? listing.buyer_wallet_address : listing.seller_wallet_address,
+        other_party_username: isSeller 
+          ? (buyer?.username || listing.buyer_wallet_address) 
+          : (seller?.username || listing.seller_wallet_address),
         seller_username: seller?.username || listing.seller_wallet_address,
         seller_world_id: seller?.world_id,
       }

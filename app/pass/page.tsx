@@ -139,8 +139,8 @@ useEffect(() => {
   const sendXpPayment = async () => {
     try {
       console.log("Starting XP payment process...")
-      const dollarAmount = 0.01
-      const fallbackWldAmount = 0.01
+      const dollarAmount = 1.75
+      const fallbackWldAmount = 1.75
       const wldAmount = price ? dollarAmount / price : fallbackWldAmount
       
       console.log("Payment details:", { dollarAmount, wldAmount, price })
@@ -256,7 +256,7 @@ const handlePurchaseXpPass = async () => {
 
     // Log the purchase
     try {
-      const dollarAmount = 0.01
+      const dollarAmount = 1.75
       const wldAmount = price ? dollarAmount / price : dollarAmount
       
       const { error: logError } = await supabase.from("ticket_purchases").insert({
@@ -736,8 +736,8 @@ const handlePurchaseXpPass = async () => {
 
   // Update the sendPayment function to reflect the promotional price
   const sendPayment = async () => {
-    const dollarAmount = 0.01
-    const fallbackWldAmount = 0.01
+    const dollarAmount = 1.75
+    const fallbackWldAmount = 1.75
     const wldAmount = price ? dollarAmount / price : fallbackWldAmount
     const res = await fetch("/api/initiate-payment", {
       method: "POST",
@@ -931,7 +931,7 @@ const handlePurchaseXpPass = async () => {
         ))}
 
         <p className="text-xs text-gray-500 mt-3 italic text-center">
-          Premium Pass significantly increases your chances of getting rare, epic, and elite cards in regular packs!
+          Premium Pass significantly increases your chances of getting rare, epic, and legendary cards in regular packs!
         </p>
       </div>
     )
@@ -1068,7 +1068,7 @@ const handlePurchaseXpPass = async () => {
                     <div className="flex-1">
                       <h4 className="font-bold text-gray-900 text-sm">Support the Game</h4>
                       <p className="text-gray-700 text-sm">
-                        Get <b>Premium Pass</b> for only <b>$0.01</b> and enjoy full benefits!
+                        Get <b>Premium Pass</b> for only <b>$1.75</b> and enjoy full benefits!
                       </p>
                     </div>
                   </div>

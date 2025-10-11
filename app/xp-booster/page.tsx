@@ -54,8 +54,8 @@ export default function XpBoosterPage() {
   const [xpPassExpiryDate, setXpPassExpiryDate] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Calculate WLD amount based on fixed $1.50 USD price
-  const fixedUsdPrice = 1.50;
+  // Calculate WLD amount based on fixed $1.75 USD price
+  const fixedUsdPrice = 1.75;
   const wldAmount = price ? fixedUsdPrice / price : 1; // Fallback to 1 WLD if price not available
 
   // Load XP pass status on component mount
