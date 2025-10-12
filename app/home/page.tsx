@@ -109,7 +109,7 @@ export default function HomePage() {
 
         toast({
           title: "Success!",
-          description: "You've claimed 1 ticket as your daily bonus!",
+          description: "You've claimed 3 tickets as your daily bonus!",
         })
       } else if (result.alreadyClaimed) {
         toast({

@@ -19,12 +19,13 @@ type MarketListing = {
   card_id: string
   price: number
   created_at: string
-  status: "active" | "sold" | "cancelled"
+  status: "active" | "sold" | "cancelled" | "blocked"
   buyer_wallet_address?: string
   sold_at?: string
   user_card_id: number | string
   card_level: number
   seller_world_id?: string
+  blocked_at?: string
 }
 
 type Card = {
@@ -75,6 +76,9 @@ function getScoreForRarity(rarity: CardRarity): number {
 export async function getMarketListings(page = 1, pageSize = DEFAULT_PAGE_SIZE, filters: any = {}) {
   try {
     const supabase = createSupabaseServer()
+    
+    // Entferne abgelaufene Blocks vor dem Laden der Listings
+    await unblockExpiredListings()
 
     // First, we need to get all card IDs that match the search term if search is provided
     let matchingCardIds: string[] = []
@@ -110,8 +114,8 @@ export async function getMarketListings(page = 1, pageSize = DEFAULT_PAGE_SIZE, 
       }
     }
 
-    // Build the base query for fetching
-    let baseQuery = supabase.from("market_listings").select("*, seller_world_id").eq("status", "active")
+    // Build the base query for fetching (include blocked for display)
+    let baseQuery = supabase.from("market_listings").select("*, seller_world_id").in("status", ["active", "blocked"])
 
     // Apply filters to the base query
     if (filters.minPrice !== undefined) {
@@ -169,11 +173,11 @@ export async function getMarketListings(page = 1, pageSize = DEFAULT_PAGE_SIZE, 
       }
     }
 
-    // Get total count with a separate query
+    // Get total count with a separate query (include blocked for display)
     const countQuery = supabase
       .from("market_listings")
       .select("*", { count: "exact", head: true })
-      .eq("status", "active")
+      .in("status", ["active", "blocked"])
 
     // Apply the same filters to the count query
     if (filters.minPrice !== undefined) {
@@ -644,9 +648,15 @@ export async function createListing(
       minUsdPrice = 0.15
     }
 
-    const minWldPrice = priceUsdPerWLD ? minUsdPrice / priceUsdPerWLD : minUsdPrice
+    // Mindestpreis wird mit dem Level multipliziert
+    minUsdPrice = minUsdPrice * cardLevel
 
-    if (price < minWldPrice) {
+    const minWldPrice = priceUsdPerWLD ? minUsdPrice / priceUsdPerWLD : minUsdPrice
+    // Round down to 2 decimal places to match what users see in the UI
+    const minWldPriceRounded = Math.floor(minWldPrice * 100) / 100
+
+    // Compare with rounded minimum price
+    if (price < minWldPriceRounded) {
       let cardType = "cards"
       cardType = cardDetails.rarity === "legendary" ? "Legendary" : 
                 cardDetails.rarity === "epic" ? "Epic" : 
@@ -655,7 +665,7 @@ export async function createListing(
       
       return {
         success: false,
-        error: `${cardType} must be listed for at least $${minUsdPrice.toFixed(2)} (~${minWldPrice.toFixed(3)} WLD)`
+        error: `${cardType} Level ${cardLevel} cards must be listed for at least $${minUsdPrice.toFixed(2)} (~${minWldPriceRounded.toFixed(2)} WLD)`
       }
     }
 
@@ -761,6 +771,139 @@ export async function createListing(
 /**
  * Kauft eine Karte vom Marketplace
  */
+/**
+ * Entfernt abgelaufene Blocks (älter als 1 Minute) automatisch
+ */
+export async function unblockExpiredListings() {
+  try {
+    const supabase = createSupabaseServer()
+    const oneMinuteAgo = new Date(Date.now() - 60000).toISOString()
+
+    const { error } = await supabase
+      .from("market_listings")
+      .update({ 
+        status: "active", 
+        blocked_at: null 
+      })
+      .eq("status", "blocked")
+      .lt("blocked_at", oneMinuteAgo)
+
+    if (error) {
+      console.error("Error unblocking expired listings:", error)
+    } else {
+      console.log("Checked for expired blocks")
+    }
+  } catch (error) {
+    console.error("Error in unblockExpiredListings:", error)
+  }
+}
+
+/**
+ * Blockiert eine Karte für 1 Minute um gleichzeitige Käufe zu verhindern
+ */
+export async function blockListingForPurchase(listingId: string) {
+  try {
+    console.log("blockListingForPurchase called with listingId:", listingId)
+    const supabase = createSupabaseServer()
+
+    // Prüfe ob die Karte noch verfügbar ist
+    const { data: listing, error: listingError } = await supabase
+      .from("market_listings")
+      .select("*")
+      .eq("id", listingId)
+      .single()
+
+    console.log("Listing query result (all statuses):", { listing, listingError })
+
+    if (listingError || !listing) {
+      console.error("Listing not found:", { listingId, error: listingError })
+      return { success: false, error: "Listing not found" }
+    }
+
+    console.log("Listing status:", listing.status)
+
+    if (listing.status !== "active") {
+      console.error("Listing not active:", { listingId, status: listing.status })
+      return { success: false, error: `Card is not available (status: ${listing.status})` }
+    }
+
+    // Prüfe ob die Karte bereits blockiert ist
+    const { data: blockedListing, error: blockedError } = await supabase
+      .from("market_listings")
+      .select("*")
+      .eq("id", listingId)
+      .eq("status", "blocked")
+      .single()
+
+    if (blockedListing && !blockedError) {
+      // Prüfe ob der Block älter als 1 Minute ist
+      const blockedAt = new Date(blockedListing.blocked_at)
+      const now = new Date()
+      const timeDiff = now.getTime() - blockedAt.getTime()
+      
+      if (timeDiff < 60000) { // 1 Minute = 60000ms
+        const remainingTime = Math.ceil((60000 - timeDiff) / 1000)
+        return { 
+          success: false, 
+          error: `Card is currently being purchased by another user. Please wait ${remainingTime} seconds.` 
+        }
+      }
+    }
+
+    // Blockiere die Karte
+    console.log("Attempting to block listing with status 'blocked'")
+    
+    // Blockiere die Karte mit blocked_at timestamp
+    console.log("Attempting to block listing with timestamp:", {
+      listingId,
+      currentStatus: listing.status,
+      updateData: {
+        status: "blocked",
+        blocked_at: new Date().toISOString()
+      }
+    })
+    
+    const { data: updateResult, error: blockError } = await supabase
+      .from("market_listings")
+      .update({
+        status: "blocked",
+        blocked_at: new Date().toISOString()
+      })
+      .eq("id", listingId)
+      .eq("status", "active")
+      .select()
+
+    console.log("Block update result:", { 
+      updateResult, 
+      blockError,
+      errorMessage: blockError?.message,
+      errorCode: blockError?.code,
+      errorDetails: blockError?.details
+    })
+
+    if (blockError) {
+      console.error("Failed to block listing - detailed error:", {
+        message: blockError.message,
+        code: blockError.code,
+        details: blockError.details,
+        hint: blockError.hint
+      })
+      return { success: false, error: `Failed to reserve card: ${blockError.message}` }
+    }
+
+    if (!updateResult || updateResult.length === 0) {
+      console.error("No rows updated - listing might have changed status")
+      return { success: false, error: "Card status changed, please try again" }
+    }
+
+    console.log("Successfully blocked listing:", listingId)
+    return { success: true, message: "Card reserved for purchase" }
+  } catch (error) {
+    console.error("Error blocking listing:", error)
+    return { success: false, error: "An unexpected error occurred while reserving the card" }
+  }
+}
+
 export async function purchaseCard(walletAddress: string, listingId: string) {
   try {
     const supabase = createSupabaseServer()
@@ -782,12 +925,12 @@ export async function purchaseCard(walletAddress: string, listingId: string) {
       return { success: false, error: "Buyer not found" }
     }
 
-    // 3. Listing holen
+    // 3. Listing holen - jetzt auch blocked status berücksichtigen
     const { data: listing, error: listingError } = await supabase
       .from("market_listings")
       .select("*")
       .eq("id", listingId)
-      .eq("status", "active")
+      .in("status", ["active", "blocked"])
       .single()
 
     console.log("Listing query result:", { listing, listingError })
@@ -795,6 +938,27 @@ export async function purchaseCard(walletAddress: string, listingId: string) {
     if (listingError || !listing) {
       console.error("Listing not found:", { listingId, error: listingError })
       return { success: false, error: "Listing not found or already sold" }
+    }
+
+    // 4. Prüfe ob die Karte blockiert ist (nur wenn nicht vom aktuellen User)
+    if (listing.status === "blocked") {
+      const blockedAt = new Date(listing.blocked_at)
+      const now = new Date()
+      const timeDiff = now.getTime() - blockedAt.getTime()
+      
+      if (timeDiff < 60000) { // 1 Minute = 60000ms
+        const remainingTime = Math.ceil((60000 - timeDiff) / 1000)
+        return { 
+          success: false, 
+          error: `Card is currently being purchased by another user. Please wait ${remainingTime} seconds.` 
+        }
+      } else {
+        // Block ist abgelaufen, setze zurück auf active
+        await supabase
+          .from("market_listings")
+          .update({ status: "active", blocked_at: null })
+          .eq("id", listingId)
+      }
     }
 
     console.log("Found listing:", {
@@ -1121,9 +1285,15 @@ export async function updateListingPrice(walletAddress: string, listingId: strin
       minUsdPrice = 0.15
     }
 
-    const minWldPrice = priceUsdPerWLD ? minUsdPrice / priceUsdPerWLD : minUsdPrice
+    // Mindestpreis wird mit dem Level multipliziert
+    minUsdPrice = minUsdPrice * listing.card_level
 
-    if (newPrice < minWldPrice) {
+    const minWldPrice = priceUsdPerWLD ? minUsdPrice / priceUsdPerWLD : minUsdPrice
+    // Round down to 2 decimal places to match what users see in the UI
+    const minWldPriceRounded = Math.floor(minWldPrice * 100) / 100
+
+    // Compare with rounded minimum price
+    if (newPrice < minWldPriceRounded) {
       let cardType = "cards"
       cardType = cardDetails.rarity === "legendary" ? "Legendary" : 
                 cardDetails.rarity === "epic" ? "Epic" : 
@@ -1132,7 +1302,7 @@ export async function updateListingPrice(walletAddress: string, listingId: strin
       
       return {
         success: false,
-        error: `${cardType} must be listed for at least $${minUsdPrice.toFixed(2)} (~${minWldPrice.toFixed(3)} WLD)`
+        error: `${cardType} Level ${listing.card_level} cards must be listed for at least $${minUsdPrice.toFixed(2)} (~${minWldPriceRounded.toFixed(2)} WLD)`
       }
     }
 

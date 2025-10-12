@@ -19,6 +19,7 @@ interface UpdatePriceDialogProps {
   onSuccess?: () => void
   cardRarity: string
   overallRating?: number
+  cardLevel: number
 }
 
 export default function UpdatePriceDialog({
@@ -30,6 +31,7 @@ export default function UpdatePriceDialog({
   onSuccess,
   cardRarity,
   overallRating,
+  cardLevel,
 }: UpdatePriceDialogProps) {
   const [price, setPrice] = useState<string>(currentPrice.toString())
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -65,14 +67,20 @@ useEffect(() => {
     minUsdPrice = 1.0
   } else if (cardRarity === "rare") {
     minUsdPrice = 0.5
+  } else if (cardRarity === "common") {
+    minUsdPrice = 0.15
   }
   
+  // Mindestpreis wird mit dem Level multipliziert
+  minUsdPrice = minUsdPrice * cardLevel
+  
   const minWldPrice = priceUsdPerWLD ? minUsdPrice / priceUsdPerWLD : minUsdPrice
-
+  // Round down to 2 decimal places to match what users see
+  const minWldPriceRounded = Math.floor(minWldPrice * 100) / 100
 
   const isValidPrice =
   !isNaN(parsedPrice) &&
-  parsedPrice >= minWldPrice 
+  parsedPrice >= minWldPriceRounded 
 
 
   // Aktualisiere den Preis
@@ -145,14 +153,7 @@ useEffect(() => {
             </div>
             {!isValidPrice && (
               <p className="text-red-500 text-sm">
-                {cardRarity === "legendary"
-                  ? `Legendary cards must be listed for at least ${minWldPrice.toFixed(3)} WLD ($${1.50.toFixed(2)})`
-                  : cardRarity === "epic"
-                  ? `Epic cards must be listed for at least ${minWldPrice.toFixed(3)} WLD ($${1.00.toFixed(2)})`
-                  : cardRarity === "rare"
-                  ? `Rare cards must be listed for at least ${minWldPrice.toFixed(3)} WLD ($${0.50.toFixed(2)})`
-                  : `Starting price is ${minWldPrice.toFixed(3)} WLD ($${(minWldPrice * (priceUsdPerWLD || 1)).toFixed(2)})`
-                }
+                {cardRarity.charAt(0).toUpperCase() + cardRarity.slice(1)} Level {cardLevel} cards must be listed for at least {minWldPriceRounded.toFixed(2)} WLD (${minUsdPrice.toFixed(2)})
               </p>
             )}
           </div>

@@ -80,7 +80,7 @@ export async function claimDailyBonus(walletAddress: string) {
         return { success: false, error: "Failed to create user" }
       }
 
-      return { success: true, newTicketCount: 11 } // 10 initial + 1 bonus
+      return { success: true, newTicketCount: 13 } // 10 initial + 3 bonus
     }
 
     // Check if user has already claimed within the last 24 hours
@@ -101,8 +101,8 @@ export async function claimDailyBonus(walletAddress: string) {
       }
     }
 
-    // Base tickets (1 ticket per claim)
-    let ticketsToAward = 1
+    // Base tickets (3 tickets per claim)
+    let ticketsToAward = 3
 
     // Check if user is in a clan and if clan is level 2+
     if (userData.clan_id) {

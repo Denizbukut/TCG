@@ -38,6 +38,7 @@ import {
   purchaseCard,
   cancelListing,
   getRecentSales,
+  blockListingForPurchase,
 } from "@/app/actions/marketplace"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -74,7 +75,7 @@ type MarketListing = {
   card_id: string
   price: number
   created_at: string
-  status: "active" | "sold" | "cancelled"
+  status: "active" | "sold" | "cancelled" | "blocked"
   buyer_wallet_address?: string
   sold_at?: string
   user_card_id: number | string
@@ -82,6 +83,7 @@ type MarketListing = {
   card: Card
   seller_username: string
   seller_world_id?: string
+  blocked_at?: string
 }
 
 // Update the Transaction type to make seller_username optional
@@ -723,6 +725,61 @@ export default function TradePage() {
     }
   }
 
+  // Blockiere eine Karte für den Kauf
+  const handleBlockForPurchase = async (listing?: MarketListing) => {
+    console.log("🔥 handleBlockForPurchase called!")
+    const listingToBlock = listing || selectedListing
+    console.log("handleBlockForPurchase called with:", { listing, listingToBlock, selectedListing })
+    
+    if (!listingToBlock) {
+      console.error("No listing to block")
+      toast({
+        title: "Error",
+        description: "No card selected for purchase.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Show immediate feedback
+    toast({
+      title: "Processing...",
+      description: "Attempting to reserve card for purchase",
+    })
+
+    try {
+      console.log("Attempting to block listing:", listingToBlock.id)
+      const result = await blockListingForPurchase(listingToBlock.id)
+      console.log("Block result:", result)
+      
+      if (result.success) {
+        // Karte erfolgreich blockiert, zeige Purchase Dialog
+        console.log("Successfully blocked listing, showing purchase dialog")
+        setSelectedListing(listingToBlock)
+        setShowPurchaseDialog(true)
+        toast({
+          title: "Success",
+          description: "Card reserved for purchase!",
+        })
+      } else {
+        // Karte bereits blockiert oder nicht verfügbar
+        console.error("Failed to block listing:", result.error)
+        toast({
+          title: "Card Not Available",
+          description: result.error,
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Error blocking listing:", error)
+      toast({
+        title: "Error",
+        description: "Failed to reserve card. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
   // Kaufe eine Karte
   const handlePurchase = async () => {
     console.log("handlePurchase called with:", {
@@ -964,7 +1021,7 @@ export default function TradePage() {
         )}
 
         <main className="p-4 max-w-lg mx-auto">
-          <Tabs defaultValue="marketplace" className="w-full" onValueChange={setActiveTab}>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3 bg-black/80 border border-yellow-400 rounded-lg h-12 p-1 mb-4">
               <TabsTrigger value="marketplace" className="h-10 text-yellow-400 font-bold">
                 <div className="flex items-center justify-center gap-2">
@@ -1060,10 +1117,7 @@ export default function TradePage() {
                         <MarketplaceCard
                           key={listing.id}
                           listing={listing}
-                          onPurchase={() => {
-                            setSelectedListing(listing)
-                            setShowPurchaseDialog(true)
-                          }}
+                          onPurchase={() => handleBlockForPurchase(listing)}
                           onShowDetails={() => handleShowCardDetails(listing)}
                         />
                       ))}
@@ -1277,12 +1331,15 @@ export default function TradePage() {
                           </div>
                           <h3 className="text-lg font-medium mb-1 text-yellow-200">No Transaction History</h3>
                           <p className="text-yellow-300 text-sm mb-4">You haven't bought or sold any cards yet</p>
-                          <Link href="/collection">
-                            <Button variant="outline" size="sm" className="rounded-full border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black">
-                              <Tag className="h-4 w-4 mr-1" />
-                              Browse Marketplace
-                            </Button>
-                          </Link>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="rounded-full border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black"
+                            onClick={() => setActiveTab("marketplace")}
+                          >
+                            <Tag className="h-4 w-4 mr-1" />
+                            Browse Marketplace
+                          </Button>
                         </div>
                       </div>
                     )}
@@ -1377,12 +1434,15 @@ export default function TradePage() {
                               ? "No sales match your search criteria. Try a different search term."
                               : "There haven't been any card sales recently"}
                           </p>
-                          <Link href="/marketplace">
-                            <Button variant="outline" size="sm" className="rounded-full border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black">
-                              <Tag className="h-4 w-4 mr-1" />
-                              Browse Marketplace
-                            </Button>
-                          </Link>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="rounded-full border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black"
+                            onClick={() => setActiveTab("marketplace")}
+                          >
+                            <Tag className="h-4 w-4 mr-1" />
+                            Browse Marketplace
+                          </Button>
                         </div>
                       </div>
                     )}
@@ -1395,7 +1455,7 @@ export default function TradePage() {
 
         {/* Card Details Dialog */}
         <Dialog open={showCardDetailsDialog} onOpenChange={setShowCardDetailsDialog}>
-          <DialogContent className="sm:max-w-md bg-black/80 border-none">
+          <DialogContent className="sm:max-w-md bg-black/80 border-none [&>button]:text-white [&>button]:hover:text-yellow-400">
             <DialogHeader>
               <DialogTitle className="text-white">Card Details</DialogTitle>
             </DialogHeader>
@@ -1437,7 +1497,7 @@ export default function TradePage() {
                     <Button
                       onClick={() => {
                         setShowCardDetailsDialog(false)
-                        setShowPurchaseDialog(true)
+                        handleBlockForPurchase()
                       }}
                       className="w-full mt-4 bg-gradient-to-r from-violet-500 to-fuchsia-500"
                     >
@@ -1572,6 +1632,7 @@ export default function TradePage() {
             onSuccess={handlePriceUpdateSuccess}
             cardRarity={selectedListing.card.rarity}
             overallRating={selectedListing.card.overall_rating}
+            cardLevel={selectedListing.card_level}
           />
         )}
 
@@ -1711,8 +1772,12 @@ function MarketplaceCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      onClick={() => onShowDetails()}
-      className="bg-gradient-to-br from-black/80 to-black/60 rounded-2xl shadow-lg p-4 flex items-center gap-4 mb-4 border border-yellow-400 cursor-pointer hover:scale-[1.02] transition-transform"
+      onClick={() => listing.status !== "blocked" && onShowDetails()}
+      className={`bg-gradient-to-br from-black/80 to-black/60 rounded-2xl shadow-lg p-4 flex items-center gap-4 mb-4 border border-yellow-400 transition-transform ${
+        listing.status === "blocked" 
+          ? "cursor-not-allowed opacity-75" 
+          : "cursor-pointer hover:scale-[1.02]"
+      }`}
     >
       <div className="w-16 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-gray-900 flex items-center justify-center">
         <img
@@ -1752,8 +1817,14 @@ function MarketplaceCard({
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xl font-bold text-yellow-400">{listing.price} WLD</span>
+          {listing.status === "blocked" && (
+            <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-orange-500 text-white">
+              Being Purchased
+            </span>
+          )}
           <span className="text-xs text-gray-300 ml-auto">{formatDate(listing.created_at)}</span>
         </div>
+        
       </div>
     </motion.div>
   )

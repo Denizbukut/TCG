@@ -352,7 +352,7 @@ const [copied, setCopied] = useState(false)
   const [isChatOpen, setIsChatOpen] = useState(false)
   const { price } = useWldPrice()
 
-  const ticketClaimAmount = 1
+  const ticketClaimAmount = 3
 
   // Add the router constant inside the component:
   const router = useRouter()
@@ -974,7 +974,7 @@ const [copied, setCopied] = useState(false)
 
           toast({
             title: "Success!",
-            description: "You've claimed 1 ticket as your daily bonus!",
+            description: "You've claimed 3 tickets as your daily bonus!",
           })
 
           setAlreadyClaimed(true)
@@ -1677,7 +1677,7 @@ const [copied, setCopied] = useState(false)
                         <div>
                           <h3 className="font-medium text-sm text-yellow-100">Ticket Claim</h3>
                           <p className="text-xs text-yellow-200">
-                            Get {ticketClaimAmount} ticket every 24 hours
+                            Get {ticketClaimAmount} tickets every 24 hours
                           </p>
                         </div>
                       </div>

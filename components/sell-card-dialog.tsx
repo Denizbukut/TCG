@@ -123,9 +123,11 @@ export default function SellCardDialog({ isOpen, onClose, card, walletAddress, o
   useEffect(() => {
     if (isOpen && card) {
       const defaultPrice = getDefaultPrice(card.rarity, card.level, card.overall_rating)
-      setPrice(defaultPrice.toString())
+      // Round down to match the minimum price validation
+      const roundedPrice = Math.floor(defaultPrice * 100) / 100
+      setPrice(roundedPrice.toFixed(2))
     }
-  }, [isOpen, card])
+  }, [isOpen, card, priceUsdPerWLD])
   // Standardpreise basierend auf Seltenheit und Level
   function getDefaultPrice(rarity: string, level: number, overallRating?: number): number {
 
@@ -211,11 +213,12 @@ export default function SellCardDialog({ isOpen, onClose, card, walletAddress, o
   console.log("Min price adjusted for level:", { level: card.level, minUsdPrice })
   
   const minWldPrice = priceUsdPerWLD ? minUsdPrice / priceUsdPerWLD : minUsdPrice
-  console.log("Final min price:", { minUsdPrice, minWldPrice, priceUsdPerWLD })
+  // Round to 2 decimal places to match the displayed price
+  const minWldPriceRounded = Math.floor(minWldPrice * 100) / 100
+  console.log("Final min price:", { minUsdPrice, minWldPrice, minWldPriceRounded, priceUsdPerWLD })
 
-
-
-  const isValidPrice = !isNaN(parsedPrice) && parsedPrice >= minWldPrice
+  // Use rounded minimum price for validation
+  const isValidPrice = !isNaN(parsedPrice) && parsedPrice >= minWldPriceRounded
 
   // Formatiere den Preis für die Anzeige
   const formatPrice = (value: string) => {
@@ -423,7 +426,7 @@ export default function SellCardDialog({ isOpen, onClose, card, walletAddress, o
 
                 {!isValidPrice && (
                   <p className="text-red-500 text-sm">
-                    {card.rarity.charAt(0).toUpperCase() + card.rarity.slice(1)} Level {card.level} cards must be listed for at least {minWldPrice.toFixed(2)} WLD (${minUsdPrice.toFixed(2)})
+                    {card.rarity.charAt(0).toUpperCase() + card.rarity.slice(1)} Level {card.level} cards must be listed for at least {minWldPriceRounded.toFixed(2)} WLD (${minUsdPrice.toFixed(2)})
                   </p>
                 )}
               </div>
