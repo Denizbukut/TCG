@@ -623,8 +623,10 @@ export default function TradePage() {
         }
         
         // Nur nach erfolgreicher MiniKit-Transaktion den Kauf abschließen
-        console.log("MiniKit transaction successful, completing purchase...")
-        handlePurchase()
+        console.log("🔥 MiniKit transaction successful, completing purchase...")
+        console.log("🔥 About to call handlePurchase...")
+        await handlePurchase()
+        console.log("🔥 handlePurchase completed")
       } else if (finalPayload.status === 'error') {
         console.error('Error sending transaction', finalPayload)
         toast({
@@ -696,10 +698,13 @@ export default function TradePage() {
 
     try {
       const { finalPayload } = await MiniKit.commandsAsync.pay(payload)
+      console.log("🔥 MiniKit payment result:", finalPayload)
 
       if (finalPayload.status == "success") {
-        console.log("success sending payment")
-        handlePurchase()
+        console.log("🔥 success sending payment")
+        console.log("🔥 About to call handlePurchase...")
+        await handlePurchase()
+        console.log("🔥 handlePurchase completed")
       } else if (finalPayload.status === 'error') {
         console.error('Error sending payment', finalPayload)
         toast({
@@ -782,7 +787,7 @@ export default function TradePage() {
 
   // Kaufe eine Karte
   const handlePurchase = async () => {
-    console.log("handlePurchase called with:", {
+    console.log("🔥 handlePurchase called with:", {
       user: user,
       selectedListing: selectedListing,
       userWallet: user?.wallet_address,
@@ -803,7 +808,7 @@ export default function TradePage() {
       return
     }
 
-    console.log("Starting purchase with:", {
+    console.log("🔥 Starting purchase with:", {
       userWallet: user.wallet_address,
       listingId: selectedListing.id,
       listingPrice: selectedListing.price
@@ -811,17 +816,22 @@ export default function TradePage() {
 
     setPurchaseLoading(true)
     try {
+      console.log("🔥 Calling purchaseCard function...")
       const result = await purchaseCard(user.wallet_address, selectedListing.id)
-      console.log("Purchase result:", result)
+      console.log("🔥 Purchase result:", result)
       
       if (result.success) {
-        console.log("Purchase successful!")
+        console.log("🔥 Purchase successful!")
         setShowPurchaseDialog(false)
         setShowPurchaseSuccess(true)
         // Aktualisiere die Listings
         loadMarketListings()
+        toast({
+          title: "Success!",
+          description: "Card purchased successfully!",
+        })
       } else {
-        console.error("Purchase failed:", result.error)
+        console.error("🔥 Purchase failed:", result.error)
         toast({
           title: "Error",
           description: result.error,
@@ -829,7 +839,7 @@ export default function TradePage() {
         })
       }
     } catch (error) {
-      console.error("Error purchasing card:", error)
+      console.error("🔥 Error purchasing card:", error)
       toast({
         title: "Error",
         description: "Failed to purchase card",

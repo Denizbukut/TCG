@@ -777,7 +777,7 @@ export async function createListing(
 export async function unblockExpiredListings() {
   try {
     const supabase = createSupabaseServer()
-    const oneMinuteAgo = new Date(Date.now() - 60000).toISOString()
+    const thirtySecondsAgo = new Date(Date.now() - 30000).toISOString()
 
     const { error } = await supabase
       .from("market_listings")
@@ -786,7 +786,7 @@ export async function unblockExpiredListings() {
         blocked_at: null 
       })
       .eq("status", "blocked")
-      .lt("blocked_at", oneMinuteAgo)
+      .lt("blocked_at", thirtySecondsAgo)
 
     if (error) {
       console.error("Error unblocking expired listings:", error)
@@ -841,8 +841,8 @@ export async function blockListingForPurchase(listingId: string) {
       const now = new Date()
       const timeDiff = now.getTime() - blockedAt.getTime()
       
-      if (timeDiff < 60000) { // 1 Minute = 60000ms
-        const remainingTime = Math.ceil((60000 - timeDiff) / 1000)
+      if (timeDiff < 30000) { // 30 Sekunden = 30000ms
+        const remainingTime = Math.ceil((30000 - timeDiff) / 1000)
         return { 
           success: false, 
           error: `Card is currently being purchased by another user. Please wait ${remainingTime} seconds.` 
@@ -941,25 +941,14 @@ export async function purchaseCard(walletAddress: string, listingId: string) {
     }
 
     // 4. Prüfe ob die Karte blockiert ist (nur wenn nicht vom aktuellen User)
-    if (listing.status === "blocked") {
-      const blockedAt = new Date(listing.blocked_at)
-      const now = new Date()
-      const timeDiff = now.getTime() - blockedAt.getTime()
-      
-      if (timeDiff < 60000) { // 1 Minute = 60000ms
-        const remainingTime = Math.ceil((60000 - timeDiff) / 1000)
-        return { 
-          success: false, 
-          error: `Card is currently being purchased by another user. Please wait ${remainingTime} seconds.` 
-        }
-      } else {
-        // Block ist abgelaufen, setze zurück auf active
-        await supabase
-          .from("market_listings")
-          .update({ status: "active", blocked_at: null })
-          .eq("id", listingId)
-      }
-    }
+    console.log("🔥 purchaseCard - checking block status:", {
+      listingId,
+      currentStatus: listing.status,
+      blockedAt: listing.blocked_at
+    })
+    
+    // Temporarily disable blocking check - let the purchase proceed and handle race conditions in the update
+    console.log("🔥 Skipping block check - proceeding with purchase")
 
     console.log("Found listing:", {
       id: listing.id,
@@ -1069,8 +1058,8 @@ await supabase
 
     console.log("Created new card instance for buyer:", newCard)
 
-    // 9. Listing aktualisieren
-    const { error: updateListingError } = await supabase
+    // 9. Listing aktualisieren - nur wenn noch active (Race-Condition-Schutz)
+    const { data: updateResult, error: updateListingError } = await supabase
       .from("market_listings")
       .update({
         status: "sold",
@@ -1078,10 +1067,19 @@ await supabase
         sold_at: new Date().toISOString(),
       })
       .eq("id", listingId)
+      .in("status", ["active", "blocked"])
+      .select()
+
+    console.log("🔥 Update listing result:", { updateResult, updateListingError })
 
     if (updateListingError) {
       console.error("Failed to update listing status:", updateListingError)
       return { success: false, error: "Failed to update listing status" }
+    }
+
+    if (!updateResult || updateResult.length === 0) {
+      console.error("No rows updated - card was already sold by another user")
+      return { success: false, error: "Card was already purchased by another user" }
     }
 
     console.log("Listing marked as sold successfully")
