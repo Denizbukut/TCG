@@ -1834,11 +1834,11 @@ const [copied, setCopied] = useState(false)
                 <div className="relative z-10 w-full h-full flex flex-col items-center">
                 {dailyDeal ? (
                   <>
-                    <div className="w-full aspect-[3/4] max-h-[160px] rounded-xl flex items-center justify-center mb-1 relative">
+                    <div className="w-3/5 aspect-[3/4] max-h-[140px] rounded-xl flex items-center justify-center mb-1 relative border-2 border-purple-500 bg-black/20 mx-auto overflow-hidden">
                       <img
                         src={getCloudflareImageUrl(dailyDeal.card_image_url)}
                         alt={dailyDeal.card_name}
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-cover rounded-xl"
                       />
                       <div className="absolute top-1 left-1 bg-black/80 text-[10px] px-1.5 py-0.5 rounded-full font-bold flex items-center gap-1">
                         <span>⭐</span>x{dailyDeal.card_level}
@@ -1886,11 +1886,11 @@ const [copied, setCopied] = useState(false)
                 <div className="relative z-10 w-full h-full flex flex-col items-center">
                 {specialDeal ? (
                   <>
-                    <div className="w-full aspect-[3/4] max-h-[160px] rounded-xl flex items-center justify-center mb-1 relative">
+                    <div className="w-3/5 aspect-[3/4] max-h-[140px] rounded-xl flex items-center justify-center mb-1 relative border-2 border-cyan-400 bg-black/20 mx-auto overflow-hidden">
                       <img
                         src={getCloudflareImageUrl(specialDeal.card_image_url)}
                         alt={specialDeal.card_name}
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-cover rounded-xl"
                       />
                       <div className="absolute top-1 left-1 bg-black/80 text-[10px] px-1.5 py-0.5 rounded-full font-bold flex items-center gap-1">
                         <span>⭐</span>x{specialDeal.card_level}
