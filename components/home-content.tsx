@@ -2208,7 +2208,7 @@ const [copied, setCopied] = useState(false)
           size="sm"
           className="bg-yellow-400 hover:bg-yellow-500 text-white font-bold border-2 border-yellow-300 shadow-lg"
           onClick={() => {
-            const link = `https://worldcoin.org/mini-app?app_id=app_b4a7aaa5da2b8df0fa0e5b0f48b27cea&ref=${user?.username}`
+            const link = `https://world.org/mini-app?app_id=app_b4a7aaa5da2b8df0fa0e5b0f48b27cea&path=${user?.username}`
             navigator.clipboard.writeText(link)
             setCopied(true)
             setTimeout(() => setCopied(false), 2000)
