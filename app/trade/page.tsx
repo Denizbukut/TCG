@@ -2226,10 +2226,10 @@ function RecentSaleCard({ sale }: { sale: RecentSale }) {
 
             <div className="flex items-center mt-1 text-xs text-yellow-200">
               <span>
-                Seller: <span className="font-medium text-yellow-400">{sale.seller_username || (sale.seller_wallet_address ? sale.seller_wallet_address.substring(0, 4) : 'Unknown')}</span>
+                Seller: <span className="font-medium text-yellow-400">{(sale.seller_username && sale.seller_username.length > 9 ? `${sale.seller_username.substring(0, 9)}...` : sale.seller_username) || (sale.seller_wallet_address ? sale.seller_wallet_address.substring(0, 4) : 'Unknown')}</span>
               </span>
               <span className="mx-1 text-yellow-300">•</span>
-              <span>Buyer: <span className="font-medium text-yellow-400">{sale.buyer_username || (sale.buyer_wallet_address ? sale.buyer_wallet_address.substring(0, 4) : 'Unknown')}</span></span>
+              <span>Buyer: <span className="font-medium text-yellow-400">{(sale.buyer_username && sale.buyer_username.length > 9 ? `${sale.buyer_username.substring(0, 9)}...` : sale.buyer_username) || (sale.buyer_wallet_address ? sale.buyer_wallet_address.substring(0, 4) : 'Unknown')}</span></span>
             </div>
 
             <div className="flex justify-between items-center mt-2">
