@@ -40,6 +40,7 @@ import {
   ShoppingBag,
   Target,
   Star,
+  Info,
 } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 import Link from "next/link"
@@ -1212,6 +1213,7 @@ const [copied, setCopied] = useState(false)
   const [buyingDailyDeal, setBuyingDailyDeal] = useState(false);
   const [buyingSpecialDeal, setBuyingSpecialDeal] = useState(false)
   const [showSpecialDealSuccess, setShowSpecialDealSuccess] = useState(false);
+  const [showInfoDialog, setShowInfoDialog] = useState(false);
 
   // Direct purchase handler for Daily Deal
   const handleBuyDailyDeal = async () => {
@@ -1426,6 +1428,15 @@ const [copied, setCopied] = useState(false)
                     <path d="M17.53 3H21.5L14.36 10.66L22.75 21H16.28L11.22 14.73L5.52 21H1.54L9.04 12.76L1 3H7.6L12.18 8.67L17.53 3ZM16.4 19.13H18.18L7.45 4.76H5.54L16.4 19.13Z" fill="currentColor"/>
                   </svg>
                 </a>
+            
+            {/* Info Icon */}
+            <button
+              onClick={() => setShowInfoDialog(true)}
+              className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center transition-transform hover:scale-105 shadow border-2 border-yellow-300"
+              aria-label="Info"
+            >
+              <Info className="h-4 w-4 text-black" />
+            </button>
       
       {/* Tickets Display */}
       <div className="flex items-center gap-2 ml-2">
@@ -1834,14 +1845,22 @@ const [copied, setCopied] = useState(false)
                 <div className="relative z-10 w-full h-full flex flex-col items-center">
                 {dailyDeal ? (
                   <>
-                    <div className="w-3/5 aspect-[3/4] max-h-[140px] rounded-xl flex items-center justify-center mb-1 relative border-2 border-purple-500 bg-black/20 mx-auto overflow-hidden">
+                    <div className={`w-3/5 aspect-[3/4] max-h-[140px] rounded-3xl flex items-center justify-center mb-1 relative border-2 bg-black/20 mx-auto overflow-hidden ${
+                      dailyDeal.card_rarity === 'common' ? 'border-gray-400' :
+                      dailyDeal.card_rarity === 'uncommon' ? 'border-green-400' :
+                      dailyDeal.card_rarity === 'rare' ? 'border-blue-400' :
+                      dailyDeal.card_rarity === 'epic' ? 'border-purple-400' :
+                      dailyDeal.card_rarity === 'legendary' ? 'border-yellow-400' :
+                      dailyDeal.card_rarity === 'mythic' ? 'border-red-400' :
+                      'border-gray-400'
+                    }`}>
                       <img
                         src={getCloudflareImageUrl(dailyDeal.card_image_url)}
                         alt={dailyDeal.card_name}
-                        className="w-full h-full object-cover rounded-xl"
+                        className="w-full h-full object-cover rounded-3xl scale-105"
                       />
-                      <div className="absolute top-1 left-1 bg-black/80 text-[10px] px-1.5 py-0.5 rounded-full font-bold flex items-center gap-1">
-                        <span>⭐</span>x{dailyDeal.card_level}
+                      <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 text-[10px] px-1.5 py-0.5 rounded-full font-bold flex items-center gap-1">
+                        {renderStars(dailyDeal.card_level, "xs")}
                       </div>
                     </div>
                     <div className="text-lg font-bold text-center mb-0.5">Deal of the Day</div>
@@ -1886,14 +1905,22 @@ const [copied, setCopied] = useState(false)
                 <div className="relative z-10 w-full h-full flex flex-col items-center">
                 {specialDeal ? (
                   <>
-                    <div className="w-3/5 aspect-[3/4] max-h-[140px] rounded-xl flex items-center justify-center mb-1 relative border-2 border-cyan-400 bg-black/20 mx-auto overflow-hidden">
+                    <div className={`w-3/5 aspect-[3/4] max-h-[140px] rounded-3xl flex items-center justify-center mb-1 relative border-2 bg-black/20 mx-auto overflow-hidden ${
+                      specialDeal.card_rarity === 'common' ? 'border-gray-400' :
+                      specialDeal.card_rarity === 'uncommon' ? 'border-green-400' :
+                      specialDeal.card_rarity === 'rare' ? 'border-blue-400' :
+                      specialDeal.card_rarity === 'epic' ? 'border-purple-400' :
+                      specialDeal.card_rarity === 'legendary' ? 'border-yellow-400' :
+                      specialDeal.card_rarity === 'mythic' ? 'border-red-400' :
+                      'border-gray-400'
+                    }`}>
                       <img
                         src={getCloudflareImageUrl(specialDeal.card_image_url)}
                         alt={specialDeal.card_name}
-                        className="w-full h-full object-cover rounded-xl"
+                        className="w-full h-full object-cover rounded-3xl scale-105"
                       />
-                      <div className="absolute top-1 left-1 bg-black/80 text-[10px] px-1.5 py-0.5 rounded-full font-bold flex items-center gap-1">
-                        <span>⭐</span>x{specialDeal.card_level}
+                      <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 text-[10px] px-1.5 py-0.5 rounded-full font-bold flex items-center gap-1">
+                        {renderStars(specialDeal.card_level, "xs")}
                       </div>
                     </div>
                     <div className="text-lg font-bold text-center mb-0.5">Special Deal!</div>
@@ -2314,6 +2341,61 @@ const [copied, setCopied] = useState(false)
       
 
       <MobileNav />
+      
+      {/* Info Dialog */}
+      <Dialog open={showInfoDialog} onOpenChange={setShowInfoDialog}>
+        <DialogContent className="bg-gradient-to-br from-[#1a1a1a] via-[#2d2d2d] to-[#1a1a1a] border-2 border-yellow-400 text-white max-w-sm mx-auto max-h-[90vh] overflow-y-auto shadow-2xl backdrop-blur-sm">
+          <DialogTitle className="text-lg font-bold text-white mb-1 text-center bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">
+            Card Bonus
+          </DialogTitle>
+
+          {/* Description Box */}
+          <div className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] p-2 rounded-xl mb-2 border border-gray-700 shadow-lg">
+            <p className="text-sm font-semibold text-white mb-2 leading-relaxed text-center">Use your Cards to get bonus Tokens when buying on Ani Wallet</p>
+            <Button 
+              className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-bold py-1.5 px-2 rounded-lg text-xs shadow-lg transition-all duration-200 hover:shadow-xl transform hover:scale-105"
+              onClick={() => {
+                window.open('https://world.org/mini-app?app_id=app_4593f73390a9843503ec096086b43612&path=', '_blank')
+              }}
+            >
+              Open ANI Wallet
+            </Button>
+          </div>
+
+          <h3 className="text-base font-bold text-white mb-1 text-center">All Levels</h3>
+
+          {/* Levels Grid */}
+          <div className="grid grid-cols-3 gap-1 mb-2">
+            {[
+              { level: 1, bonus: "0.05%" },
+              { level: 2, bonus: "0.1%" },
+              { level: 3, bonus: "0.15%" },
+              { level: 4, bonus: "0.2%" },
+              { level: 5, bonus: "0.25%" },
+              { level: 6, bonus: "0.3%" },
+              { level: 7, bonus: "0.35%" },
+              { level: 8, bonus: "0.4%" },
+              { level: 9, bonus: "0.5%" },
+              { level: 10, bonus: "0.55%" },
+              { level: 11, bonus: "0.6%" },
+              { level: 12, bonus: "0.7%" },
+              { level: 13, bonus: "0.8%" },
+              { level: 14, bonus: "0.9%" },
+              { level: 15, bonus: "1%" },
+            ].map((item) => (
+              <div key={item.level} className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] p-1 rounded-lg text-center border border-gray-700 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105">
+                <p className="text-xs font-semibold text-white">Level {item.level}</p>
+                <p className="text-xs text-green-400 font-bold">+{item.bonus}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Bottom Highlight */}
+          <div className="bg-gradient-to-r from-green-600 to-green-500 p-1.5 rounded-xl text-center font-bold text-white text-xs shadow-lg border border-green-500">
+            Level 15 = +1.0% bonus
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
     </ProtectedRoute>
   )

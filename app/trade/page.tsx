@@ -941,12 +941,12 @@ export default function TradePage() {
           size="sm"
           onClick={() => onPageChange(page - 1)}
           disabled={page === 1 || loading}
-          className="h-8 w-8 p-0"
+          className="h-8 w-8 p-0 border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black"
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
 
-        <div className="text-sm">
+        <div className="text-sm text-yellow-400">
           Page {page} of {totalPages}
         </div>
 
@@ -955,7 +955,7 @@ export default function TradePage() {
           size="sm"
           onClick={() => onPageChange(page + 1)}
           disabled={page === totalPages || loading}
-          className="h-8 w-8 p-0"
+          className="h-8 w-8 p-0 border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black"
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
@@ -1568,7 +1568,6 @@ export default function TradePage() {
                       </Badge>
                       <div className="ml-2 flex items-center">
                         <span className="text-xs mr-1">Level {selectedListing.card_level}</span>
-                        {renderStars(selectedListing.card_level, "xs")}
                       </div>
                     </div>
                     <div className="flex items-center mt-2">
@@ -1789,7 +1788,7 @@ function MarketplaceCard({
           : "cursor-pointer hover:scale-[1.02]"
       }`}
     >
-      <div className="w-16 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-gray-900 flex items-center justify-center">
+      <div className="w-16 h-24 flex-shrink-0 rounded-xl overflow-hidden bg-gray-900 flex items-center justify-center relative">
         <img
           src={getCardImageUrl(listing.card.image_url)}
           alt="Card"
@@ -1805,17 +1804,15 @@ function MarketplaceCard({
             }
           }}
         />
+        <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 text-[10px] px-1.5 py-0.5 rounded-full font-bold flex items-center gap-1">
+          {renderStars(listing.card_level, "xs")}
+        </div>
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-lg font-bold text-white truncate">{listing.card.name}</span>
           <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-gray-800 text-yellow-400 uppercase">{listing.card.rarity}</span>
           <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-yellow-500 text-black">Level {listing.card_level}</span>
-        </div>
-        <div className="flex items-center gap-2 mb-1">
-          <div className="flex items-center">
-            {renderStars(listing.card_level, "xs")}
-          </div>
         </div>
         <div className="flex items-center gap-2 mb-1">
           <span className="text-sm text-yellow-200 truncate">Seller: <span className="font-bold text-yellow-400">
@@ -1926,8 +1923,9 @@ function MyListingCard({
                 }
               }}
             />)}
-            
-
+            <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 text-[10px] px-1.5 py-0.5 rounded-full font-bold flex items-center gap-1">
+              {renderStars(listing.card_level, "xs")}
+            </div>
           </div>
 
           {/* Card Details */}
@@ -1936,9 +1934,6 @@ function MyListingCard({
               <div>
                 <h3 className="font-medium text-sm text-white">{listing.card.name}</h3>
                 <p className="text-xs text-yellow-200">{listing.card.character}</p>
-                <div className="flex items-center mt-1">
-                  {renderStars(listing.card_level, "xs")}
-                </div>
               </div>
               <div className="flex flex-col items-end">
                 <Badge className={rarityStyle.badge}>{listing.card.rarity}</Badge>
@@ -2231,10 +2226,10 @@ function RecentSaleCard({ sale }: { sale: RecentSale }) {
 
             <div className="flex items-center mt-1 text-xs text-yellow-200">
               <span>
-                Seller: <span className="font-medium text-yellow-400">{sale.seller_username || sale.seller_wallet_address}</span>
+                Seller: <span className="font-medium text-yellow-400">{sale.seller_username || (sale.seller_wallet_address ? sale.seller_wallet_address.substring(0, 4) : 'Unknown')}</span>
               </span>
               <span className="mx-1 text-yellow-300">•</span>
-              <span>Buyer: <span className="font-medium text-yellow-400">{sale.buyer_username || (sale.buyer_wallet_address && sale.buyer_wallet_address.length > 15 ? `${sale.buyer_wallet_address.substring(0, 12)}..` : sale.buyer_wallet_address) || 'Unknown'}</span></span>
+              <span>Buyer: <span className="font-medium text-yellow-400">{sale.buyer_username || (sale.buyer_wallet_address ? sale.buyer_wallet_address.substring(0, 4) : 'Unknown')}</span></span>
             </div>
 
             <div className="flex justify-between items-center mt-2">

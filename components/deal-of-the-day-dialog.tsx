@@ -326,7 +326,7 @@ export default function DealOfTheDayDialog({
                         className="absolute inset-0 w-full h-full object-cover"
                       />
                     </div>
-                    <div className="absolute -bottom-1 left-0 right-0 flex justify-center">
+                    <div className="absolute bottom-2 left-0 right-0 flex justify-center">
                       {renderStars(deal.card_level || 1, "sm")}
                     </div>
                   </div>
