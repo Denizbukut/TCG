@@ -240,7 +240,7 @@ export default function TradePage() {
     const fetchSoldCount = async () => {
       const supabase = getSupabaseBrowserClient()
       if (!supabase) {
-        throw new Error("Could not connect to database")
+        throw new Error(t('trade.databaseError'))
       }
       const { data, error } = await supabase
         .from("users")
@@ -382,7 +382,7 @@ export default function TradePage() {
       console.error("Error loading market listings:", error)
       toast({
         title: "Error",
-        description: "Failed to load marketplace data",
+        description: t('trade.failedToLoadMarketplace'),
         variant: "destructive",
       })
     } finally {
@@ -416,7 +416,7 @@ export default function TradePage() {
       console.error("Error loading user listings:", error)
       toast({
         title: "Error",
-        description: "Failed to load your listings",
+        description: t('trade.failedToLoadListings'),
         variant: "destructive",
       })
     } finally {
@@ -450,7 +450,7 @@ export default function TradePage() {
       console.error("Error loading transaction history:", error)
       toast({
         title: "Error",
-        description: "Failed to load transaction history",
+        description: t('trade.failedToLoadHistory'),
         variant: "destructive",
       })
     } finally {
@@ -483,7 +483,7 @@ export default function TradePage() {
       console.error("Error loading recent sales:", error)
       toast({
         title: "Error",
-        description: "Failed to load recent sales",
+        description: t('trade.failedToLoadSales'),
         variant: "destructive",
       })
     } finally {
@@ -785,7 +785,7 @@ export default function TradePage() {
     }
   }
 
-  // Kaufe eine Karte
+  // Kaufe eine Karte - JETZT MIT SOFORTIGER BLOCKIERUNG
   const handlePurchase = async () => {
     console.log("🔥 handlePurchase called with:", {
       user: user,
@@ -815,7 +815,31 @@ export default function TradePage() {
     })
 
     setPurchaseLoading(true)
+    
+    // SOFORTIGE BLOCKIERUNG: Verhindere weitere Käufe während der Verarbeitung
+    toast({
+      title: "🔒 Securing Purchase...",
+      description: "Reserving this card exclusively for you!",
+      duration: 2000,
+    })
+    
     try {
+      // SCHRITT 1: Sofort blockieren um Race Conditions zu verhindern
+      console.log("🔒 Blocking listing to prevent race conditions...")
+      const blockResult = await blockListingForPurchase(selectedListing.id)
+      
+      if (!blockResult.success) {
+        console.error("🔒 Failed to block listing:", blockResult.error)
+        toast({
+          title: "Card Not Available",
+          description: "This card was just purchased by someone else!",
+          variant: "destructive",
+        })
+        setPurchaseLoading(false)
+        return
+      }
+
+      // SCHRITT 2: Jetzt den Kauf durchführen
       console.log("🔥 Calling purchaseCard function...")
       const result = await purchaseCard(user.wallet_address, selectedListing.id)
       console.log("🔥 Purchase result:", result)
@@ -1129,6 +1153,7 @@ export default function TradePage() {
                           listing={listing}
                           onPurchase={() => handleBlockForPurchase(listing)}
                           onShowDetails={() => handleShowCardDetails(listing)}
+                          purchaseLoading={purchaseLoading}
                         />
                       ))}
                     </div>
@@ -1509,10 +1534,20 @@ export default function TradePage() {
                         setShowCardDetailsDialog(false)
                         handleBlockForPurchase()
                       }}
+                      disabled={purchaseLoading}
                       className="w-full mt-4 bg-gradient-to-r from-violet-500 to-fuchsia-500"
                     >
-                      <ShoppingCart className="h-4 w-4 mr-2" />
-                      Buy Now
+                      {purchaseLoading ? (
+                        <>
+                          <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingCart className="h-4 w-4 mr-2" />
+                          Buy Now
+                        </>
+                      )}
                     </Button>
                   )}
                 </div>
@@ -1724,10 +1759,12 @@ function MarketplaceCard({
   listing,
   onPurchase,
   onShowDetails,
+  purchaseLoading = false,
 }: {
   listing: MarketListing
   onPurchase: () => void
   onShowDetails: () => void
+  purchaseLoading?: boolean
 }) {
   const { user } = useAuth()
   const isOwnListing = listing.seller_wallet_address === user?.wallet_address
@@ -1781,9 +1818,9 @@ function MarketplaceCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      onClick={() => listing.status !== "blocked" && onShowDetails()}
+      onClick={() => listing.status !== "blocked" && !purchaseLoading && onShowDetails()}
       className={`bg-gradient-to-br from-black/80 to-black/60 rounded-2xl shadow-lg p-4 flex items-center gap-4 mb-4 border border-yellow-400 transition-transform ${
-        listing.status === "blocked" 
+        listing.status === "blocked" || purchaseLoading
           ? "cursor-not-allowed opacity-75" 
           : "cursor-pointer hover:scale-[1.02]"
       }`}
@@ -1827,6 +1864,12 @@ function MarketplaceCard({
           {listing.status === "blocked" && (
             <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-orange-500 text-white">
               Being Purchased
+            </span>
+          )}
+          {purchaseLoading && (
+            <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-blue-500 text-white flex items-center gap-1">
+              <div className="h-2 w-2 border border-t-transparent border-white rounded-full animate-spin"></div>
+              Processing...
             </span>
           )}
           <span className="text-xs text-gray-300 ml-auto">{formatDate(listing.created_at)}</span>

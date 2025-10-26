@@ -908,68 +908,42 @@ export async function purchaseCard(walletAddress: string, listingId: string) {
   try {
     const supabase = createSupabaseServer()
 
-    // 1. Käuferdaten aufräumen - user_card_instances hat keine quantity Spalte
-    // await supabase
-    //   .from("user_card_instances")
-    //   .delete()
-    //   .eq("user_id", username)
+    // Vereinfachte parallele Abfragen
+    const [buyerResult, listingResult] = await Promise.all([
+      // Käuferdaten
+      supabase
+        .from("users")
+        .select("coins, score")
+        .eq("wallet_address", walletAddress)
+        .single(),
+      
+      // Listing
+      supabase
+        .from("market_listings")
+        .select("*")
+        .eq("id", listingId)
+        .in("status", ["active", "blocked"])
+        .single()
+    ])
 
-    // 2. Käuferdaten holen
-    const { data: buyerData, error: buyerError } = await supabase
-      .from("users")
-      .select("coins, score")
-      .eq("wallet_address", walletAddress)
-      .single()
+    const { data: buyerData, error: buyerError } = buyerResult
+    const { data: listing, error: listingError } = listingResult
 
     if (buyerError || !buyerData) {
       return { success: false, error: "Buyer not found" }
     }
-
-    // 3. Listing holen - jetzt auch blocked status berücksichtigen
-    const { data: listing, error: listingError } = await supabase
-      .from("market_listings")
-      .select("*")
-      .eq("id", listingId)
-      .in("status", ["active", "blocked"])
-      .single()
-
-    console.log("Listing query result:", { listing, listingError })
 
     if (listingError || !listing) {
       console.error("Listing not found:", { listingId, error: listingError })
       return { success: false, error: "Listing not found or already sold" }
     }
 
-    // 4. Prüfe ob die Karte blockiert ist (nur wenn nicht vom aktuellen User)
-    console.log("🔥 purchaseCard - checking block status:", {
-      listingId,
-      currentStatus: listing.status,
-      blockedAt: listing.blocked_at
-    })
-    
-    // Temporarily disable blocking check - let the purchase proceed and handle race conditions in the update
-    console.log("🔥 Skipping block check - proceeding with purchase")
-
-    console.log("Found listing:", {
-      id: listing.id,
-      seller_wallet_address: listing.seller_wallet_address,
-      user_card_id: listing.user_card_id,
-      card_id: listing.card_id,
-      card_level: listing.card_level,
-      price: listing.price
-    })
-
-    // 4. Selbstkauf verhindern
+    // Selbstkauf verhindern
     if (listing.seller_wallet_address === walletAddress) {
       return { success: false, error: "You cannot buy your own card" }
     }
-     // Käufer cards_sold_since_last_purchase auf 0 setzen
-    await supabase
-      .from("users")
-      .update({ cards_sold_since_last_purchase: 0 })
-      .eq("wallet_address", walletAddress)
 
-    // 5. Score vorbereiten
+    // Card-Details mit korrekter card_id holen
     const { data: cardDetails, error: cardError } = await supabase
       .from("cards")
       .select("rarity")
@@ -982,63 +956,50 @@ export async function purchaseCard(walletAddress: string, listingId: string) {
 
     const scoreForCard = getScoreForRarity(cardDetails.rarity)
 
-    // 6. Verkäuferdaten
+    // Verkäuferdaten parallel holen
     const { data: sellerData, error: sellerError } = await supabase
       .from("users")
       .select("score, cards_sold_since_last_purchase")
       .eq("wallet_address", listing.seller_wallet_address)
       .single()
 
-    const sellerScore = sellerData?.score ?? 0
-    const buyerScore = buyerData?.score ?? 0
     if (sellerError || !sellerData) {
       return { success: false, error: "Failed to fetch seller data" }
     }
+
+    const sellerScore = sellerData?.score ?? 0
+    const buyerScore = buyerData?.score ?? 0
     const currentSoldCount = sellerData.cards_sold_since_last_purchase ?? 0
-const newSoldCount = currentSoldCount + 1
+    const newSoldCount = currentSoldCount + 1
 
-// Zuerst prüfen:
-if (newSoldCount === 3) {
-  const { data: activeListings, error: listingsError } = await supabase
-    .from("market_listings")
-    .select("id")
-    .eq("seller_id", listing.seller_id)
-    .eq("status", "active")
-
-  if (!listingsError && activeListings?.length > 0) {
-    for (const l of activeListings) {
-      if (l.id !== listingId) {
-        await cancelListing(listing.seller_id, l.id)
-      }
-    }
-  }
-}
-
-// Dann den Zähler hochzählen
-await supabase
-  .from("users")
-  .update({ cards_sold_since_last_purchase: newSoldCount })
-  .eq("username", listing.seller_id)
-
-
+    // Vereinfachte sequenzielle Updates für Stabilität
+    const currentTime = new Date().toISOString()
+    
+    // 1. Käufer cards_sold_since_last_purchase auf 0 setzen
+    await supabase
+      .from("users")
+      .update({ cards_sold_since_last_purchase: 0 })
+      .eq("wallet_address", walletAddress)
+    
+    // 2. Verkäufer Score reduzieren
     await supabase
       .from("users")
       .update({ score: Math.max(0, sellerScore - scoreForCard) })
       .eq("wallet_address", listing.seller_wallet_address)
-
+    
+    // 3. Käufer Score erhöhen
     await supabase
       .from("users")
       .update({ score: buyerScore + scoreForCard })
       .eq("wallet_address", walletAddress)
-
-    // 7. Erstelle neue Karteninstanz für den Käufer
-    // (Die originale Karte wurde beim Listing gelöscht)
-    console.log("Creating new card instance for buyer:", {
-      card_id: listing.card_id,
-      card_level: listing.card_level,
-      buyer: walletAddress
-    })
-
+    
+    // 4. Verkäufer Zähler hochzählen
+    await supabase
+      .from("users")
+      .update({ cards_sold_since_last_purchase: newSoldCount })
+      .eq("username", listing.seller_id)
+    
+    // 5. Neue Karteninstanz für den Käufer erstellen
     const { data: newCard, error: createError } = await supabase
       .from("user_card_instances")
       .insert({
@@ -1046,7 +1007,7 @@ await supabase
         card_id: listing.card_id,
         level: listing.card_level || 1,
         favorite: false,
-        obtained_at: new Date().toISOString().split("T")[0],
+        obtained_at: currentTime.split("T")[0],
       })
       .select()
       .single()
@@ -1055,22 +1016,18 @@ await supabase
       console.error("Failed to create new card instance:", createError)
       return { success: false, error: "Failed to create card instance for buyer" }
     }
-
-    console.log("Created new card instance for buyer:", newCard)
-
-    // 9. Listing aktualisieren - nur wenn noch active (Race-Condition-Schutz)
+    
+    // 6. Listing als verkauft markieren
     const { data: updateResult, error: updateListingError } = await supabase
       .from("market_listings")
       .update({
         status: "sold",
         buyer_wallet_address: walletAddress,
-        sold_at: new Date().toISOString(),
+        sold_at: currentTime,
       })
       .eq("id", listingId)
       .in("status", ["active", "blocked"])
       .select()
-
-    console.log("🔥 Update listing result:", { updateResult, updateListingError })
 
     if (updateListingError) {
       console.error("Failed to update listing status:", updateListingError)
@@ -1081,21 +1038,39 @@ await supabase
       console.error("No rows updated - card was already sold by another user")
       return { success: false, error: "Card was already purchased by another user" }
     }
-
-    console.log("Listing marked as sold successfully")
-
-    // 10. Trade speichern
+    
+    // 7. Trade in der Datenbank speichern
     await supabase.from("trades").insert({
       seller_wallet_address: listing.seller_wallet_address,
       buyer_wallet_address: walletAddress,
       user_card_id: listing.user_card_id,
       card_id: listing.card_id,
       price: listing.price,
-      created_at: new Date().toISOString(),
+      created_at: currentTime,
     })
 
-    revalidatePath("/trade")
-    revalidatePath("/collection")
+    // Verkäufer Zähler hochzählen (falls nötig) - NACH dem Hauptkauf
+    if (newSoldCount === 3) {
+      const { data: activeListings, error: listingsError } = await supabase
+        .from("market_listings")
+        .select("id")
+        .eq("seller_id", listing.seller_id)
+        .eq("status", "active")
+
+      if (!listingsError && activeListings?.length > 0) {
+        // Parallel alle anderen Listings stornieren
+        const cancelPromises = activeListings
+          .filter(l => l.id !== listingId)
+          .map(l => cancelListing(listing.seller_id, l.id))
+        await Promise.all(cancelPromises)
+      }
+    }
+
+    // Revalidate paths asynchron (nicht blockierend)
+    Promise.all([
+      revalidatePath("/trade"),
+      revalidatePath("/collection")
+    ]).catch(console.error)
 
     return { success: true, message: "Card purchased successfully" }
   } catch (error) {
