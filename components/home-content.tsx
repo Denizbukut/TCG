@@ -1830,7 +1830,7 @@ const [copied, setCopied] = useState(false)
             <div className="col-span-6 flex gap-0 w-full">
               {/* Deal of the Day */}
               <div
-                className="w-1/2 flex flex-col items-center rounded-xl p-3 h-full text-white cursor-pointer relative overflow-hidden"
+                className="w-1/2 flex flex-col items-center rounded-md p-3 h-full text-white cursor-pointer relative overflow-hidden"
                 style={{
                   backgroundImage: 'url("/dealday.jpg")',
                   backgroundSize: 'cover',
@@ -1840,12 +1840,12 @@ const [copied, setCopied] = useState(false)
                 onClick={() => setShowDailyDealDialog(true)}
               >
                 {/* Overlay für bessere Lesbarkeit */}
-                <div className="absolute inset-0 bg-black/30 rounded-xl"></div>
+                <div className="absolute inset-0 bg-black/30 rounded-md"></div>
                 {/* Content über dem Overlay */}
                 <div className="relative z-10 w-full h-full flex flex-col items-center">
                 {dailyDeal ? (
                   <>
-                    <div className={`w-3/5 aspect-[3/4] max-h-[140px] rounded-3xl flex items-center justify-center mb-1 relative border-2 bg-black/20 mx-auto overflow-hidden ${
+                    <div className={`w-3/5 aspect-[3/4] max-h-[140px] rounded-md flex items-center justify-center mb-1 relative border-2 bg-black/20 mx-auto overflow-hidden ${
                       dailyDeal.card_rarity === 'common' ? 'border-gray-400' :
                       dailyDeal.card_rarity === 'uncommon' ? 'border-green-400' :
                       dailyDeal.card_rarity === 'rare' ? 'border-blue-400' :
@@ -1857,7 +1857,7 @@ const [copied, setCopied] = useState(false)
                       <img
                         src={getCloudflareImageUrl(dailyDeal.card_image_url)}
                         alt={dailyDeal.card_name}
-                        className="w-full h-full object-cover rounded-3xl scale-105"
+                        className="w-full h-full object-cover rounded-md scale-105"
                       />
                       <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 text-[10px] px-1.5 py-0.5 rounded-full font-bold flex items-center gap-1">
                         {renderStars(dailyDeal.card_level, "xs")}
@@ -1890,7 +1890,7 @@ const [copied, setCopied] = useState(false)
               
               {/* Special Deal */}
               <div
-                className="w-1/2 flex flex-col items-center rounded-xl p-3 h-full text-white cursor-pointer relative overflow-hidden"
+                className="w-1/2 flex flex-col items-center rounded-md p-3 h-full text-white cursor-pointer relative overflow-hidden"
                 style={{
                   backgroundImage: 'url("/specialdeal.jpg")',
                   backgroundSize: 'cover',
@@ -1900,12 +1900,12 @@ const [copied, setCopied] = useState(false)
                 onClick={() => setShowSpecialDealDialog(true)}
               >
                 {/* Overlay für bessere Lesbarkeit */}
-                <div className="absolute inset-0 bg-black/10 rounded-xl"></div>
+                <div className="absolute inset-0 bg-black/10 rounded-md"></div>
                 {/* Content über dem Overlay */}
                 <div className="relative z-10 w-full h-full flex flex-col items-center">
                 {specialDeal ? (
                   <>
-                    <div className={`w-3/5 aspect-[3/4] max-h-[140px] rounded-3xl flex items-center justify-center mb-1 relative border-2 bg-black/20 mx-auto overflow-hidden ${
+                    <div className={`w-3/5 aspect-[3/4] max-h-[140px] rounded-md flex items-center justify-center mb-1 relative border-2 bg-black/20 mx-auto overflow-hidden ${
                       specialDeal.card_rarity === 'common' ? 'border-gray-400' :
                       specialDeal.card_rarity === 'uncommon' ? 'border-green-400' :
                       specialDeal.card_rarity === 'rare' ? 'border-blue-400' :
@@ -1917,7 +1917,7 @@ const [copied, setCopied] = useState(false)
                       <img
                         src={getCloudflareImageUrl(specialDeal.card_image_url)}
                         alt={specialDeal.card_name}
-                        className="w-full h-full object-cover rounded-3xl scale-105"
+                        className="w-full h-full object-cover rounded-md scale-105"
                       />
                       <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 text-[10px] px-1.5 py-0.5 rounded-full font-bold flex items-center gap-1">
                         {renderStars(specialDeal.card_level, "xs")}
