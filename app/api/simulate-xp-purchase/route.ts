@@ -78,8 +78,8 @@ export async function POST(request: NextRequest) {
       username: username,
       ticket_type: "xp_pass",
       amount: 1,
-      price_usd: 1.5,
-      price_wld: "1.5",
+      price_usd: 5.0,
+      price_wld: "5.0",
       discounted: false,
     })
     
