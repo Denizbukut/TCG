@@ -47,6 +47,7 @@ import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { getSupabaseBrowserClient } from "@/lib/supabase"
 import DealOfTheDayDialog from "@/components/deal-of-the-day-dialog"
+import { useTranslation } from "@/hooks/use-translation"
 import { MiniKit, Tokens, tokenToDecimals, type PayCommandInput } from "@worldcoin/minikit-js"
 import { useWldPrice } from "@/contexts/WldPriceContext"
 import { claimReferralRewardForUser } from "@/app/actions/referrals"
@@ -149,6 +150,7 @@ const xpPassBenefits = [
 
 export default function Home() {
   const { user, updateUserTickets, refreshUserData } = useAuth()
+  const { t } = useTranslation()
   const [claimLoading, setClaimLoading] = useState(false)
   const [referralLoading, setReferralLoading] = useState(false)
   const [alreadyClaimed, setAlreadyClaimed] = useState(false)
@@ -170,6 +172,7 @@ export default function Home() {
     username: string
     level: number
     reward_claimed: boolean
+    wallet_address: string
   }[]
 >([])
   
@@ -212,11 +215,11 @@ export default function Home() {
   const referralSbcSlides = [
     {
       key: 'referrals',
-      title: 'Referrals',
+      title: t('referrals.referrals'),
       icon: <Gift className="h-8 w-8 text-yellow-600" />,
       bg: 'from-[#232526] to-[#414345]',
       border: 'border-yellow-400',
-      text: 'Invite friends & earn rewards!',
+      text: t('referrals.inviteFriends'),
       action: () => setShowReferralDialog(true),
       color: 'text-yellow-100',
     },
@@ -393,16 +396,16 @@ const [copied, setCopied] = useState(false)
         await handleBuyTickets(ticketAmount, ticketType)
       } else {
         toast({
-          title: "Payment Failed",
-          description: "Your payment could not be processed. Please try again.",
+          title: t('home.paymentFailed'),
+          description: t('home.paymentFailedDesc'),
           variant: "destructive",
         })
       }
     } catch (error) {
       console.error("Payment error:", error)
       toast({
-        title: "Payment Error",
-        description: "An error occurred during payment. Please try again.",
+        title: t('home.paymentError'),
+        description: t('home.paymentErrorDesc'),
         variant: "destructive",
       })
     }
@@ -411,8 +414,8 @@ const [copied, setCopied] = useState(false)
   const handleBuyTickets = async (ticketAmount: number, ticketType: "regular" | "legendary") => {
       if (!user?.username) {
         toast({
-          title: "Error",
-          description: "You must be logged in to purchase tickets",
+        title: t('common.error'),
+        description: t('home.loginRequired'),
           variant: "destructive",
         })
         return
@@ -420,7 +423,7 @@ const [copied, setCopied] = useState(false)
       try {
         const supabase = getSupabaseBrowserClient()
         if (!supabase) {
-          throw new Error("Could not connect to database")
+          throw new Error(t('home.databaseError'))
         }
         // Get current ticket counts
         const { data: userData, error: fetchError } = await supabase
@@ -429,7 +432,7 @@ const [copied, setCopied] = useState(false)
           .eq("wallet_address", user.wallet_address)
           .single()
         if (fetchError) {
-          throw new Error("Could not fetch user data")
+          throw new Error(t('home.userDataError'))
         }
         // Calculate new ticket counts - ensure we're working with numbers
         let newTicketCount = typeof userData.tickets === "number" ? userData.tickets : Number(userData.tickets) || 0
@@ -451,7 +454,7 @@ const [copied, setCopied] = useState(false)
           })
           .eq("wallet_address", user.wallet_address)
         if (updateError) {
-          throw new Error("Failed to update tickets")
+          throw new Error(t('home.updateTicketsError'))
         }
         // Update local state with explicit number types
         setTickets(newTicketCount)
@@ -466,7 +469,7 @@ const [copied, setCopied] = useState(false)
         console.error("Error buying tickets:", error)
         toast({
           title: "Error",
-          description: error instanceof Error ? error.message : "An unexpected error occurred",
+          description: error instanceof Error ? error.message : t('home.unexpectedError'),
           variant: "destructive",
         })
       } 
@@ -1003,8 +1006,8 @@ const [copied, setCopied] = useState(false)
           updateTicketTimerDisplay(result.timeUntilNextClaim)
         }
         toast({
-          title: "Already Claimed",
-          description: "You've already claimed your tickets. Check back later!",
+          title: t('home.alreadyClaimed'),
+          description: t('home.alreadyClaimedDesc'),
         })
       } else {
         toast({
@@ -1017,7 +1020,7 @@ const [copied, setCopied] = useState(false)
       console.error("Error claiming bonus:", error)
       toast({
         title: "Error",
-        description: "Failed to claim tickets",
+        description: t('home.claimTicketsError'),
         variant: "destructive",
       })
     } finally {
@@ -1178,7 +1181,7 @@ const [copied, setCopied] = useState(false)
     await new Promise((resolve) => setTimeout(resolve, 1500))
     setBuyingXpPass(false)
     setShowBuyXpPassDialog(false)
-    toast({ title: 'XP Pass gekauft!', description: 'Du hast jetzt den XP Pass aktiviert.' })
+    toast({ title: 'XP Pass Purchased!', description: 'XP Pass activated successfully!' })
     // Optional: In DB speichern, dass XP Pass aktiv ist
   }
 
@@ -1686,9 +1689,9 @@ const [copied, setCopied] = useState(false)
                           <Gift className="h-4 w-4 text-white" />
                         </div>
                         <div>
-                          <h3 className="font-medium text-sm text-yellow-100">Ticket Claim</h3>
+                          <h3 className="font-medium text-sm text-yellow-100">{t('home.ticketClaim')}</h3>
                           <p className="text-xs text-yellow-200">
-                            Get {ticketClaimAmount} tickets every 24 hours
+                            {t('home.getTicketsEvery24Hours').replace('3', ticketClaimAmount.toString())}
                           </p>
                         </div>
                       </div>
@@ -1737,8 +1740,8 @@ const [copied, setCopied] = useState(false)
                     <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center mb-1 border border-yellow-300">
                       <BookOpen className="h-5 w-5 text-white drop-shadow-lg" />
                     </div>
-                    <div className="text-sm font-bold text-yellow-100">Card Gallery</div>
-                    <div className="text-xs text-sky-400">Browse Cards</div>
+                    <div className="text-sm font-bold text-yellow-100">{t('home.cardGallery')}</div>
+                    <div className="text-xs text-sky-400">{t('home.browseCards')}</div>
                   </motion.div>
                 </Link>
               </div>
@@ -1771,10 +1774,10 @@ const [copied, setCopied] = useState(false)
                     </div>
                     <div className={`text-sm font-extrabold drop-shadow-sm tracking-wide ${
                       hasActiveDiscount ? 'text-red-100' : 'text-yellow-100'
-                    }`}>Shop</div>
+                    }`}>{t('navigation.shop')}</div>
                     <div className={`text-xs font-semibold mt-0.5 ${
                       hasActiveDiscount ? 'text-red-200' : 'text-sky-400'
-                    }`}>Exklusive Packs</div>
+                    }`}>{t('home.exclusivePacks')}</div>
                   </motion.div>
                 </Link>
               </div>
@@ -1863,10 +1866,10 @@ const [copied, setCopied] = useState(false)
                         {renderStars(dailyDeal.card_level, "xs")}
                       </div>
                     </div>
-                    <div className="text-lg font-bold text-center mb-0.5">Deal of the Day</div>
+                    <div className="text-lg font-bold text-center mb-0.5">{t('home.dealOfTheDay')}</div>
                     <div className="text-sm text-white/80 text-center mb-1">
                       {dailyDeal.card_name} <span className="text-white/70">·</span>
-                      <span className="inline-block px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold align-middle ml-1">{dailyDeal.card_rarity}</span>
+                      <span className="inline-block px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold align-middle ml-1">{t(`rarity.${dailyDeal.card_rarity}`)}</span>
                     </div>
                     <div className="flex gap-2 mb-1 justify-center">
                       {dailyDeal.classic_tickets > 0 && (
@@ -1883,7 +1886,7 @@ const [copied, setCopied] = useState(false)
                     <div className="text-lg font-bold text-center mb-1">{price ? `${(dailyDeal.price / price).toFixed(2)} WLD` : `$${dailyDeal.price.toFixed(2)} USD`}</div>
                   </>
                 ) : (
-                  <div className="flex flex-1 items-center justify-center h-full text-white/70">No Deal of the Day</div>
+                  <div className="flex flex-1 items-center justify-center h-full text-white/70">{t('home.noDealOfTheDay')}</div>
                 )}
                 </div>
               </div>
@@ -1923,10 +1926,10 @@ const [copied, setCopied] = useState(false)
                         {renderStars(specialDeal.card_level, "xs")}
                       </div>
                     </div>
-                    <div className="text-lg font-bold text-center mb-0.5">Special Deal!</div>
+                    <div className="text-lg font-bold text-center mb-0.5">{t('home.specialDeal')}</div>
                     <div className="text-sm text-white/80 text-center mb-1">
                       {specialDeal.card_name} <span className="text-white/70">·</span>
-                      <span className="inline-block px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold align-middle ml-1">{specialDeal.card_rarity}</span>
+                      <span className="inline-block px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold align-middle ml-1">{t(`rarity.${specialDeal.card_rarity}`)}</span>
                     </div>
                     <div className="flex gap-2 mb-1 justify-center">
                       {specialDeal.classic_tickets > 0 && (
@@ -1966,7 +1969,7 @@ const [copied, setCopied] = useState(false)
                     </div>
                   </>
                 ) : (
-                  <div className="flex flex-1 items-center justify-center h-full text-white/70">No Special Deal Today</div>
+                  <div className="flex flex-1 items-center justify-center h-full text-white/70">{t('home.noSpecialDeal')}</div>
                 )}
                 </div>
               </div>
@@ -2127,7 +2130,7 @@ const [copied, setCopied] = useState(false)
                           ) : (
                             <>
                               <ShoppingBag className="h-4 w-4 mr-2" />
-                              Buy Now
+{t('shop.buyNow')}
                             </>
                           )}
                         </Button>
@@ -2219,16 +2222,20 @@ const [copied, setCopied] = useState(false)
       <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center border border-yellow-300">
         <Gift className="h-5 w-5 text-white" />
       </div>
-      Invite Friends & Earn Rewards
+      {/* {t('referrals.inviteFriends')} */}
+      Invite Friends
     </DialogTitle>
     <DialogDescription className="text-sm text-yellow-200">
-      Share your referral link and earn bonus tickets when they reach level 10!<br />
-      <span className="text-xs text-red-400 font-semibold">Note: Only enter the username in the field, not the complete link!</span><br />
-      <span className="text-xs text-red-400 font-semibold">⚠️ Anyone who abuses the referral system and tries to cheat will be banned!</span>
+      {/* {t('referrals.noReferralsDesc')}<br />
+      <span className="text-xs text-red-400 font-semibold">{t('referrals.noteUsernameOnly')}</span><br />
+      <span className="text-xs text-red-400 font-semibold">⚠️ {t('referrals.warningAbuse')}</span> */}
+      Share your referral code with friends<br />
+      <span className="text-xs text-red-400 font-semibold">Note: Invited users must enter only the inviter's username</span><br />
+      <span className="text-xs text-red-400 font-semibold">⚠️ Abuse will result in ban</span>
     </DialogDescription>
     {/* Your referral link */}
     <div className="mt-6">
-      <div className="text-sm font-semibold text-yellow-100 mb-2">Your Code:</div>
+      <div className="text-sm font-semibold text-yellow-100 mb-2">{/* {t('referrals.referralCode')} */}Referral Code:</div>
       <div className="flex items-center justify-between bg-gradient-to-r from-[#232526] to-[#414345] border-2 border-yellow-400 rounded-lg px-4 py-3 shadow-lg">
         <span className="truncate text-sm font-mono text-yellow-200 font-bold">{user?.username}</span>
         <Button
@@ -2241,7 +2248,7 @@ const [copied, setCopied] = useState(false)
             setTimeout(() => setCopied(false), 2000)
           }}
         >
-          {copied ? "Copied!" : "Copy link"}
+{copied ? 'Copied!' : 'Copy Code'}
         </Button>
       </div>
     </div>
@@ -2249,7 +2256,7 @@ const [copied, setCopied] = useState(false)
     <div className="mt-6 bg-gradient-to-br from-yellow-400/20 to-yellow-600/20 border-2 border-yellow-400 rounded-lg p-4 shadow-lg">
       <h4 className="text-sm font-bold text-yellow-100 mb-3 flex items-center gap-2">
         <span className="text-yellow-400">🎁</span>
-        What you get:
+        What You Get
       </h4>
       <ul className="text-sm text-yellow-200 space-y-2">
         <li className="flex items-center gap-2">
@@ -2262,7 +2269,7 @@ const [copied, setCopied] = useState(false)
         </li>
         <li className="flex items-center gap-2">
           <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
-          Once your friend reaches <strong className="text-yellow-100">Level 10</strong>
+          Once friend reaches <strong className="text-yellow-100">Level 5</strong>
         </li>
       </ul>
     </div>
@@ -2270,11 +2277,11 @@ const [copied, setCopied] = useState(false)
     <div className="mt-6">
       <h4 className="text-sm font-bold text-yellow-100 mb-3 flex items-center gap-2">
         <span className="text-yellow-400">👥</span>
-        Your Referrals
+Your Referrals
       </h4>
       {referredUsers.length === 0 ? (
         <div className="bg-gradient-to-r from-[#232526]/50 to-[#414345]/50 border border-yellow-400/30 rounded-lg p-4 text-center">
-          <p className="text-sm text-yellow-200/70">No referrals yet.</p>
+          <p className="text-sm text-yellow-200/70">No referrals yet</p>
         </div>
       ) : (
         <div className="space-y-2 max-h-48 overflow-y-auto bg-gradient-to-r from-[#232526]/30 to-[#414345]/30 border border-yellow-400/30 rounded-lg p-3">
@@ -2282,18 +2289,18 @@ const [copied, setCopied] = useState(false)
             <div key={ref.username} className="flex justify-between items-center border-b border-yellow-400/20 pb-2 last:border-b-0">
               <span className="text-sm text-yellow-200">
                 @{ref.username.length > 10 ? ref.username.slice(0, 10) + "…" : ref.username} 
-                <span className="text-yellow-400/70 text-xs ml-1">(Lvl {ref.level})</span>
+                <span className="text-yellow-400/70 text-xs ml-1">(Level {ref.level})</span>
               </span>
               {ref.reward_claimed ? (
                 <CheckCircle className="h-4 w-4 text-green-400" />
-              ) : ref.level >= 10 ? (
+              ) : ref.level >= 5 ? (
                 <Button
                   size="sm"
                   className="bg-green-500 hover:bg-green-600 text-white font-bold text-xs border border-green-400"
                   onClick={async () => {
                     if (!user?.username) return
                     try {
-                      const res = await claimReferralRewardForUser(user.username, ref.username)
+                      const res = await claimReferralRewardForUser(user.wallet_address, ref.wallet_address)
                       if (res.success) {
                         setShowClaimAnimation(true)
                         if (
@@ -2309,8 +2316,8 @@ const [copied, setCopied] = useState(false)
                         )
                         setTimeout(() => setShowClaimAnimation(false), 1500)
                         toast({
-                          title: "Success!",
-                          description: "Referral reward claimed successfully!",
+                          title: 'Success!',
+                          description: 'Referral reward claimed!',
                         })
                       } else {
                         toast({ title: "Error", description: res.error, variant: "destructive" })
@@ -2319,16 +2326,16 @@ const [copied, setCopied] = useState(false)
                       console.error("Error claiming referral reward:", error)
                       toast({ 
                         title: "Error", 
-                        description: "Failed to claim referral reward. Please try again.", 
+                        description: 'Failed to claim referral reward', 
                         variant: "destructive" 
                       })
                     }
                   }}
                 >
-                  Claim
+                  Claim Reward
                 </Button>
               ) : (
-                <span className="text-xs text-yellow-400/50">Waiting...</span>
+                <span className="text-xs text-yellow-400/50">Claiming...</span>
               )}
             </div>
           ))}
@@ -2351,14 +2358,14 @@ const [copied, setCopied] = useState(false)
 
           {/* Description Box */}
           <div className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] p-2 rounded-xl mb-2 border border-gray-700 shadow-lg">
-            <p className="text-sm font-semibold text-white mb-2 leading-relaxed text-center">Use your Cards to get bonus Tokens when buying on Ani Wallet</p>
+            <p className="text-sm font-semibold text-white mb-2 leading-relaxed text-center">{t('home.infoText')}</p>
             <Button 
               className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-bold py-1.5 px-2 rounded-lg text-xs shadow-lg transition-all duration-200 hover:shadow-xl transform hover:scale-105"
               onClick={() => {
                 window.open('https://world.org/mini-app?app_id=app_4593f73390a9843503ec096086b43612&path=', '_blank')
               }}
             >
-              Open ANI Wallet
+{t('buttons.openAniWallet')}
             </Button>
           </div>
 

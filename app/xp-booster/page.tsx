@@ -7,7 +7,8 @@ import { MiniKit, Tokens, tokenToDecimals } from "@worldcoin/minikit-js";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/supabase-browser";
-import { useWldPrice } from "@/contexts/WldPriceContext";
+import { useWldPrice } from "@/contexts/WldPriceContext"
+import { useTranslation } from "@/hooks/use-translation";
 
 const benefitList = [
   {
@@ -48,6 +49,7 @@ const featureList = [
 export default function XpBoosterPage() {
   const { user } = useAuth();
   const { price } = useWldPrice();
+  const { t } = useTranslation();
   const [buying, setBuying] = useState(false);
   const [success, setSuccess] = useState(false);
   const [hasXpPass, setHasXpPass] = useState(false);
@@ -123,7 +125,7 @@ export default function XpBoosterPage() {
 
   const handleBuy = async () => {
     if (!user?.wallet_address) {
-      toast({ title: 'Login required', description: 'Please log in to purchase XP Pass.', variant: 'destructive' });
+      toast({ title: 'Login Required', description: 'Please log in to purchase XP Pass', variant: 'destructive' });
       return;
     }
 
@@ -140,7 +142,7 @@ export default function XpBoosterPage() {
             token_amount: tokenToDecimals(wldAmount, Tokens.WLD).toString(),
           },
         ],
-        description: "XP Pass Purchase",
+        description: 'XP Pass Purchase',
       };
       const { finalPayload } = await MiniKit.commandsAsync.pay(payload);
       
@@ -157,17 +159,17 @@ export default function XpBoosterPage() {
           setSuccess(true);
           setHasXpPass(true);
           setXpPassExpiryDate(new Date(purchaseResult.expiryDate || new Date().toISOString()));
-          toast({ title: 'XP Pass purchased!', description: 'You have successfully activated your XP Pass.' });
+          toast({ title: 'XP Pass Purchased!', description: 'Successfully activated!' });
         } else {
           console.error("Failed to save XP pass:", purchaseResult.error);
-          toast({ title: 'Payment successful but activation failed', description: 'Please contact support.', variant: 'destructive' });
+          toast({ title: 'Payment successful but activation failed', description: 'Please contact support', variant: 'destructive' });
         }
       } else {
-        toast({ title: 'Payment failed', description: 'Please try again.', variant: 'destructive' });
+        toast({ title: 'Payment failed', description: 'Please try again', variant: 'destructive' });
       }
     } catch (e) {
       console.error("Error in handleBuy:", e);
-      toast({ title: 'Payment failed', description: 'Please try again.', variant: 'destructive' });
+      toast({ title: 'Payment failed', description: 'Please try again', variant: 'destructive' });
     } finally {
       setBuying(false);
     }
@@ -198,15 +200,15 @@ export default function XpBoosterPage() {
               <Sparkles className="h-10 w-10 text-blue-500 animate-bounce drop-shadow-lg" />
               <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-700 via-cyan-500 to-blue-400 tracking-tight drop-shadow-lg">XP Pass</h1>
             </div>
-            <p className="text-gray-700 text-center text-base max-w-sm mb-6">Boost your XP gain for 7 days</p>
+            <p className="text-gray-700 text-center text-base max-w-sm mb-6">Boost your XP gain and unlock rewards faster!</p>
             
             {/* Main Benefits */}
             <div className="grid grid-cols-2 gap-4 w-full max-w-md mb-8">
               {benefitList.map((b, i) => (
                 <div key={b.title} className="flex flex-col items-center p-4 rounded-xl shadow-lg bg-gradient-to-br from-blue-400 to-blue-600 text-white transition-transform hover:scale-105 hover:shadow-2xl animate-fade-in" style={{animationDelay:`${i*0.1}s`}}>
                   <div className="mb-2">{b.icon}</div>
-                  <div className="font-bold text-sm mb-1 drop-shadow">{b.title}</div>
-                  <div className="text-xs opacity-90 text-center drop-shadow">{b.desc}</div>
+                  <div className="font-bold text-sm mb-1 drop-shadow">{b.title === 'Double XP' ? 'Double XP' : 'Faster Rewards'}</div>
+                  <div className="text-xs opacity-90 text-center drop-shadow">{b.desc === '7 days' ? '7 days' : 'Unlock quicker'}</div>
                 </div>
               ))}
             </div>
@@ -214,14 +216,24 @@ export default function XpBoosterPage() {
 
           {/* Features Grid */}
           <div className="w-full mb-8">
-            <h2 className="text-xl font-semibold text-gray-800 text-center mb-6">What you get with XP Pass</h2>
+            <h2 className="text-xl font-semibold text-gray-800 text-center mb-6">Boost your XP!</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {featureList.map((feature, index) => (
                 <div key={feature.title} className="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-blue-200 hover:bg-white/80 transition-all duration-200 hover:scale-105">
                   <div className="flex flex-col items-center text-center">
                     <div className="mb-2">{feature.icon}</div>
-                    <h3 className="font-semibold text-sm text-gray-800 mb-1">{feature.title}</h3>
-                    <p className="text-xs text-gray-600">{feature.desc}</p>
+                    <h3 className="font-semibold text-sm text-gray-800 mb-1">
+                      {feature.title === 'Level Up Faster' ? 'Level Up Faster' :
+                       feature.title === 'Better Progress' ? 'Better Progress' :
+                       feature.title === 'Achieve Goals' ? 'Achieve Goals' :
+                       'Exclusive Benefits'}
+                    </h3>
+                    <p className="text-xs text-gray-600">
+                      {feature.desc === 'Gain experience twice as fast' ? 'Gain experience twice as fast' :
+                       feature.desc === 'Unlock rewards quicker' ? 'Unlock rewards quicker' :
+                       feature.desc === 'Reach milestones faster' ? 'Reach milestones faster' :
+                       'Access premium features'}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -243,7 +255,7 @@ export default function XpBoosterPage() {
                 </div>
                 {xpPassExpiryDate && (
                   <div className="text-center">
-                    <div className="text-gray-600 text-sm">Expires on:</div>
+                    <div className="text-gray-600 text-sm">Expires on</div>
                     <div className="text-blue-700 font-semibold">
                       {xpPassExpiryDate.toLocaleDateString('en-US', {
                         year: 'numeric',
@@ -278,10 +290,10 @@ export default function XpBoosterPage() {
                   {buying ? (
                     <span className="flex items-center gap-2">
                       <span className="animate-spin h-5 w-5 border-2 border-t-transparent border-white rounded-full"></span> 
-                      Processing...
+Processing...
                     </span>
                   ) : (
-                    <span>Buy XP Pass</span>
+                    <span>Purchase XP Pass</span>
                   )}
                 </Button>
               </div>
