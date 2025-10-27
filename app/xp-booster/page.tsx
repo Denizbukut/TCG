@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/supabase-browser";
 import { useWldPrice } from "@/contexts/WldPriceContext"
-import { useTranslation } from "@/hooks/use-translation";
+// import { useTranslation } from "@/hooks/use-translation";
 
 const benefitList = [
   {
@@ -49,7 +49,7 @@ const featureList = [
 export default function XpBoosterPage() {
   const { user } = useAuth();
   const { price } = useWldPrice();
-  const { t } = useTranslation();
+  // const { t } = useTranslation();
   const [buying, setBuying] = useState(false);
   const [success, setSuccess] = useState(false);
   const [hasXpPass, setHasXpPass] = useState(false);

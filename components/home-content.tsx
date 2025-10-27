@@ -47,7 +47,7 @@ import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { getSupabaseBrowserClient } from "@/lib/supabase"
 import DealOfTheDayDialog from "@/components/deal-of-the-day-dialog"
-import { useTranslation } from "@/hooks/use-translation"
+// import { useTranslation } from "@/hooks/use-translation"
 import { MiniKit, Tokens, tokenToDecimals, type PayCommandInput } from "@worldcoin/minikit-js"
 import { useWldPrice } from "@/contexts/WldPriceContext"
 import { claimReferralRewardForUser } from "@/app/actions/referrals"
@@ -150,7 +150,7 @@ const xpPassBenefits = [
 
 export default function Home() {
   const { user, updateUserTickets, refreshUserData } = useAuth()
-  const { t } = useTranslation()
+  // const { t } = useTranslation()
   const [claimLoading, setClaimLoading] = useState(false)
   const [referralLoading, setReferralLoading] = useState(false)
   const [alreadyClaimed, setAlreadyClaimed] = useState(false)
@@ -215,11 +215,11 @@ export default function Home() {
   const referralSbcSlides = [
     {
       key: 'referrals',
-      title: t('referrals.referrals'),
+      title: 'Referrals',
       icon: <Gift className="h-8 w-8 text-yellow-600" />,
       bg: 'from-[#232526] to-[#414345]',
       border: 'border-yellow-400',
-      text: t('referrals.inviteFriends'),
+      text: 'Invite Friends',
       action: () => setShowReferralDialog(true),
       color: 'text-yellow-100',
     },
@@ -396,16 +396,16 @@ const [copied, setCopied] = useState(false)
         await handleBuyTickets(ticketAmount, ticketType)
       } else {
         toast({
-          title: t('home.paymentFailed'),
-          description: t('home.paymentFailedDesc'),
+          title: 'Payment Failed',
+          description: 'Payment could not be processed',
           variant: "destructive",
         })
       }
     } catch (error) {
       console.error("Payment error:", error)
       toast({
-        title: t('home.paymentError'),
-        description: t('home.paymentErrorDesc'),
+        title: 'Payment Error',
+        description: 'An error occurred during payment',
         variant: "destructive",
       })
     }
@@ -414,8 +414,8 @@ const [copied, setCopied] = useState(false)
   const handleBuyTickets = async (ticketAmount: number, ticketType: "regular" | "legendary") => {
       if (!user?.username) {
         toast({
-        title: t('common.error'),
-        description: t('home.loginRequired'),
+        title: 'Error',
+        description: 'Please log in to continue',
           variant: "destructive",
         })
         return
@@ -423,7 +423,7 @@ const [copied, setCopied] = useState(false)
       try {
         const supabase = getSupabaseBrowserClient()
         if (!supabase) {
-          throw new Error(t('home.databaseError'))
+          throw new Error('Database connection failed')
         }
         // Get current ticket counts
         const { data: userData, error: fetchError } = await supabase
@@ -432,7 +432,7 @@ const [copied, setCopied] = useState(false)
           .eq("wallet_address", user.wallet_address)
           .single()
         if (fetchError) {
-          throw new Error(t('home.userDataError'))
+          throw new Error('Failed to fetch user data')
         }
         // Calculate new ticket counts - ensure we're working with numbers
         let newTicketCount = typeof userData.tickets === "number" ? userData.tickets : Number(userData.tickets) || 0
@@ -454,7 +454,7 @@ const [copied, setCopied] = useState(false)
           })
           .eq("wallet_address", user.wallet_address)
         if (updateError) {
-          throw new Error(t('home.updateTicketsError'))
+          throw new Error('Failed to update tickets')
         }
         // Update local state with explicit number types
         setTickets(newTicketCount)
@@ -469,7 +469,7 @@ const [copied, setCopied] = useState(false)
         console.error("Error buying tickets:", error)
         toast({
           title: "Error",
-          description: error instanceof Error ? error.message : t('home.unexpectedError'),
+          description: error instanceof Error ? error.message : 'An unexpected error occurred',
           variant: "destructive",
         })
       } 
@@ -1006,8 +1006,8 @@ const [copied, setCopied] = useState(false)
           updateTicketTimerDisplay(result.timeUntilNextClaim)
         }
         toast({
-          title: t('home.alreadyClaimed'),
-          description: t('home.alreadyClaimedDesc'),
+          title: 'Already Claimed',
+          description: 'You have already claimed your daily bonus',
         })
       } else {
         toast({
@@ -1020,7 +1020,7 @@ const [copied, setCopied] = useState(false)
       console.error("Error claiming bonus:", error)
       toast({
         title: "Error",
-        description: t('home.claimTicketsError'),
+        description: 'Failed to claim tickets',
         variant: "destructive",
       })
     } finally {
@@ -1689,9 +1689,9 @@ const [copied, setCopied] = useState(false)
                           <Gift className="h-4 w-4 text-white" />
                         </div>
                         <div>
-                          <h3 className="font-medium text-sm text-yellow-100">{t('home.ticketClaim')}</h3>
+                          <h3 className="font-medium text-sm text-yellow-100">Daily Ticket Claim</h3>
                           <p className="text-xs text-yellow-200">
-                            {t('home.getTicketsEvery24Hours').replace('3', ticketClaimAmount.toString())}
+                            Get {ticketClaimAmount} tickets every 24 hours
                           </p>
                         </div>
                       </div>
@@ -1740,8 +1740,8 @@ const [copied, setCopied] = useState(false)
                     <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center mb-1 border border-yellow-300">
                       <BookOpen className="h-5 w-5 text-white drop-shadow-lg" />
                     </div>
-                    <div className="text-sm font-bold text-yellow-100">{t('home.cardGallery')}</div>
-                    <div className="text-xs text-sky-400">{t('home.browseCards')}</div>
+                    <div className="text-sm font-bold text-yellow-100">Card Gallery</div>
+                    <div className="text-xs text-sky-400">Browse Cards</div>
                   </motion.div>
                 </Link>
               </div>
@@ -1774,10 +1774,10 @@ const [copied, setCopied] = useState(false)
                     </div>
                     <div className={`text-sm font-extrabold drop-shadow-sm tracking-wide ${
                       hasActiveDiscount ? 'text-red-100' : 'text-yellow-100'
-                    }`}>{t('navigation.shop')}</div>
+                    }`}>Shop</div>
                     <div className={`text-xs font-semibold mt-0.5 ${
                       hasActiveDiscount ? 'text-red-200' : 'text-sky-400'
-                    }`}>{t('home.exclusivePacks')}</div>
+                    }`}>Exclusive Packs</div>
                   </motion.div>
                 </Link>
               </div>
@@ -1866,10 +1866,10 @@ const [copied, setCopied] = useState(false)
                         {renderStars(dailyDeal.card_level, "xs")}
                       </div>
                     </div>
-                    <div className="text-lg font-bold text-center mb-0.5">{t('home.dealOfTheDay')}</div>
+                    <div className="text-lg font-bold text-center mb-0.5">Deal of the Day</div>
                     <div className="text-sm text-white/80 text-center mb-1">
                       {dailyDeal.card_name} <span className="text-white/70">·</span>
-                      <span className="inline-block px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold align-middle ml-1">{t(`rarity.${dailyDeal.card_rarity}`)}</span>
+                      <span className="inline-block px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold align-middle ml-1">{dailyDeal.card_rarity}</span>
                     </div>
                     <div className="flex gap-2 mb-1 justify-center">
                       {dailyDeal.classic_tickets > 0 && (
@@ -1886,7 +1886,7 @@ const [copied, setCopied] = useState(false)
                     <div className="text-lg font-bold text-center mb-1">{price ? `${(dailyDeal.price / price).toFixed(2)} WLD` : `$${dailyDeal.price.toFixed(2)} USD`}</div>
                   </>
                 ) : (
-                  <div className="flex flex-1 items-center justify-center h-full text-white/70">{t('home.noDealOfTheDay')}</div>
+                  <div className="flex flex-1 items-center justify-center h-full text-white/70">No deal available today</div>
                 )}
                 </div>
               </div>
@@ -1926,10 +1926,10 @@ const [copied, setCopied] = useState(false)
                         {renderStars(specialDeal.card_level, "xs")}
                       </div>
                     </div>
-                    <div className="text-lg font-bold text-center mb-0.5">{t('home.specialDeal')}</div>
+                    <div className="text-lg font-bold text-center mb-0.5">Special Deal</div>
                     <div className="text-sm text-white/80 text-center mb-1">
                       {specialDeal.card_name} <span className="text-white/70">·</span>
-                      <span className="inline-block px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold align-middle ml-1">{t(`rarity.${specialDeal.card_rarity}`)}</span>
+                      <span className="inline-block px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold align-middle ml-1">{specialDeal.card_rarity}</span>
                     </div>
                     <div className="flex gap-2 mb-1 justify-center">
                       {specialDeal.classic_tickets > 0 && (
@@ -1969,7 +1969,7 @@ const [copied, setCopied] = useState(false)
                     </div>
                   </>
                 ) : (
-                  <div className="flex flex-1 items-center justify-center h-full text-white/70">{t('home.noSpecialDeal')}</div>
+                  <div className="flex flex-1 items-center justify-center h-full text-white/70">No special deal available</div>
                 )}
                 </div>
               </div>
@@ -2130,7 +2130,7 @@ const [copied, setCopied] = useState(false)
                           ) : (
                             <>
                               <ShoppingBag className="h-4 w-4 mr-2" />
-{t('shop.buyNow')}
+Buy Now
                             </>
                           )}
                         </Button>
@@ -2358,14 +2358,14 @@ Your Referrals
 
           {/* Description Box */}
           <div className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] p-2 rounded-xl mb-2 border border-gray-700 shadow-lg">
-            <p className="text-sm font-semibold text-white mb-2 leading-relaxed text-center">{t('home.infoText')}</p>
+            <p className="text-sm font-semibold text-white mb-2 leading-relaxed text-center">Earn bonus rewards by holding cards in your ANI wallet!</p>
             <Button 
               className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-bold py-1.5 px-2 rounded-lg text-xs shadow-lg transition-all duration-200 hover:shadow-xl transform hover:scale-105"
               onClick={() => {
                 window.open('https://world.org/mini-app?app_id=app_4593f73390a9843503ec096086b43612&path=', '_blank')
               }}
             >
-{t('buttons.openAniWallet')}
+Open ANI Wallet
             </Button>
           </div>
 
