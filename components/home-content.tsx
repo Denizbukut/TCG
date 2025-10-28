@@ -2335,7 +2335,7 @@ Buy Now
                   Claim Reward
                 </Button>
               ) : (
-                <span className="text-xs text-yellow-400/50">Claiming...</span>
+                <span className="text-xs text-yellow-400/50">Level up to 5</span>
               )}
             </div>
           ))}
@@ -2358,7 +2358,7 @@ Buy Now
 
           {/* Description Box */}
           <div className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] p-2 rounded-xl mb-2 border border-gray-700 shadow-lg">
-            <p className="text-sm font-semibold text-white mb-2 leading-relaxed text-center">Card Bonus Buttons</p>
+            <p className="text-sm font-semibold text-white mb-2 leading-relaxed text-center">Use your cards to get bonus tokens when buying on ANI wallet</p>
             <Button 
               className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-bold py-1.5 px-2 rounded-lg text-xs shadow-lg transition-all duration-200 hover:shadow-xl transform hover:scale-105"
               onClick={() => {
