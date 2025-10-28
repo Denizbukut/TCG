@@ -2031,8 +2031,24 @@ const [copied, setCopied] = useState(false)
                         <div className="absolute w-full h-full bg-gradient-to-b from-blue-900/30 to-transparent"></div>
                         <div className="absolute -top-24 left-1/2 transform -translate-x-1/2 w-96 h-96 rounded-full bg-blue-500/10 blur-3xl"></div>
                       </div>
-                      <div className="relative w-40 h-56 shadow-[0_0_15px_rgba(61,174,245,0.5)]">
-                        <div className="absolute inset-0 rounded-lg border-2 border-[#3DAEF5] overflow-hidden">
+                      <div className={`relative w-40 h-56 ${
+                        specialDeal.card_rarity === 'common' ? 'shadow-[0_0_15px_rgba(156,163,175,0.5)]' :
+                        specialDeal.card_rarity === 'uncommon' ? 'shadow-[0_0_15px_rgba(34,197,94,0.5)]' :
+                        specialDeal.card_rarity === 'rare' ? 'shadow-[0_0_15px_rgba(59,130,246,0.5)]' :
+                        specialDeal.card_rarity === 'epic' ? 'shadow-[0_0_15px_rgba(147,51,234,0.5)]' :
+                        specialDeal.card_rarity === 'legendary' ? 'shadow-[0_0_20px_rgba(251,191,36,0.6)]' :
+                        specialDeal.card_rarity === 'mythic' ? 'shadow-[0_0_20px_rgba(239,68,68,0.6)]' :
+                        'shadow-[0_0_15px_rgba(61,174,245,0.5)]'
+                      }`}>
+                        <div className={`absolute inset-0 rounded-lg border-2 overflow-hidden ${
+                          specialDeal.card_rarity === 'common' ? 'border-gray-400' :
+                          specialDeal.card_rarity === 'uncommon' ? 'border-green-400' :
+                          specialDeal.card_rarity === 'rare' ? 'border-blue-400' :
+                          specialDeal.card_rarity === 'epic' ? 'border-purple-400' :
+                          specialDeal.card_rarity === 'legendary' ? 'border-yellow-400' :
+                          specialDeal.card_rarity === 'mythic' ? 'border-red-400' :
+                          'border-[#3DAEF5]'
+                        }`}>
                           <img
                             src={getCloudflareImageUrl(specialDeal.card_image_url || '')}
                             alt={specialDeal.card_name || 'Card'}
