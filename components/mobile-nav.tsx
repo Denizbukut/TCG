@@ -8,11 +8,12 @@ import { cn } from "@/lib/utils"
 import { Home, CreditCard, Package, Repeat, ShoppingCart, Trophy } from "lucide-react"
 import { motion } from "framer-motion"
 // import LanguageSwitcher from "./language-switcher"
-import { useTranslation } from "@/hooks/use-translation"
+// import { useTranslation } from "@/hooks/use-translation"
 
 export default function MobileNav() {
   const pathname = usePathname()
-  const { t } = useTranslation()
+  // const { t } = useTranslation()
+  const t = (key: string) => key // Fallback function
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-black border-t border-gray-800 z-50 backdrop-blur-md bg-black/90 shadow-[0_-1px_10px_rgba(0,0,0,0.3)]">
