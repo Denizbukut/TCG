@@ -12,7 +12,7 @@ import { renderStars } from "@/utils/card-stars"
 import { motion, AnimatePresence } from "framer-motion"
 import { MiniKit, tokenToDecimals, Tokens, type PayCommandInput } from "@worldcoin/minikit-js"
 import { useWldPrice } from "@/contexts/WldPriceContext"
-import { useTranslation } from "@/hooks/use-translation"
+// import { useTranslation } from "@/hooks/use-translation"
 
 interface DailyDeal {
   id: number
@@ -52,7 +52,8 @@ export default function DealOfTheDayDialog({
   username,
   onPurchaseSuccess,
 }: DealOfTheDayDialogProps) {
-  const { t } = useTranslation()
+  // const { t } = useTranslation()
+  const t = (key: string) => key // Fallback function
   const [isPurchasing, setIsPurchasing] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const hasMarkedAsSeen = useRef(false)
