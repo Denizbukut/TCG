@@ -12,6 +12,7 @@ import { renderStars } from "@/utils/card-stars"
 import { motion, AnimatePresence } from "framer-motion"
 import { MiniKit, tokenToDecimals, Tokens, type PayCommandInput } from "@worldcoin/minikit-js"
 import { useWldPrice } from "@/contexts/WldPriceContext"
+import { useTranslation } from "@/hooks/use-translation"
 
 interface DailyDeal {
   id: number
@@ -51,6 +52,7 @@ export default function DealOfTheDayDialog({
   username,
   onPurchaseSuccess,
 }: DealOfTheDayDialogProps) {
+  const { t } = useTranslation()
   const [isPurchasing, setIsPurchasing] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const hasMarkedAsSeen = useRef(false)
@@ -351,7 +353,7 @@ export default function DealOfTheDayDialog({
 
                 {/* What's Included */}
                 <div className="bg-gray-900/50 rounded-xl p-4 mb-5 border border-gray-700/50">
-                  <h4 className="text-sm font-medium text-gray-300 mb-3">What's Included:</h4>
+                  <h4 className="text-sm font-medium text-gray-300 mb-3">What's Included</h4>
                   <div className="space-y-3">
                     <div className="flex items-center">
                       <div
@@ -362,7 +364,7 @@ export default function DealOfTheDayDialog({
                       <div>
                         <p className="text-sm font-medium text-white">{deal.card_name}</p>
                         <p className="text-xs text-gray-400">
-                          Level {deal.card_level} {deal.card_rarity} Card
+                          Level {deal.card_level} {deal.card_rarity}
                         </p>
                       </div>
                     </div>
@@ -396,7 +398,7 @@ export default function DealOfTheDayDialog({
                 {/* Price and Action */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-400">Price:</p>
+                    <p className="text-sm text-gray-400">Price</p>
                     <p className="text-2xl font-bold text-violet-400">{price
     ? `${(deal.price / price).toFixed(2)} WLD`
     : `$${deal.price.toFixed(2)} USD`}</p>
