@@ -150,7 +150,9 @@ const xpPassBenefits = [
 
 export default function Home() {
   const { user, updateUserTickets, refreshUserData } = useAuth()
-  const { t, locale } = useTranslation()
+  // const { t, locale } = useTranslation()
+  const t = (key: string) => key // Fallback function
+  const locale = 'en' // Fallback locale
   const [claimLoading, setClaimLoading] = useState(false)
   const [referralLoading, setReferralLoading] = useState(false)
   const [alreadyClaimed, setAlreadyClaimed] = useState(false)
