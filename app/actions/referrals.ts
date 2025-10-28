@@ -62,7 +62,7 @@ export async function claimReferralRewardForUser(referrerWalletAddress: string, 
     // Get referral record
     const { data: referral, error: referralError } = await supabase
       .from("referrals")
-      .select("id, reward_claimed")
+      .select("id, rewards_claimed")
       .eq("referrer_wallet_address", referrerWalletAddress)
       .eq("referred_wallet_address", referredWalletAddress)
       .single()
@@ -72,7 +72,7 @@ export async function claimReferralRewardForUser(referrerWalletAddress: string, 
       return { success: false, error: "Failed to fetch referral record." }
     }
 
-    if (!referral || referral.reward_claimed) {
+    if (!referral || referral.rewards_claimed) {
       return { success: false, error: "Reward already claimed or referral not found." }
     }
 
@@ -108,7 +108,7 @@ export async function claimReferralRewardForUser(referrerWalletAddress: string, 
     // Mark referral as claimed
     const { error: claimError } = await supabase
       .from("referrals")
-      .update({ reward_claimed: true, claimed_at: new Date().toISOString() })
+      .update({ rewards_claimed: true, claimed_at: new Date().toISOString() })
       .eq("id", referral.id)
 
     if (claimError) {
@@ -136,7 +136,7 @@ export async function getReferredUsers(referrerWalletAddress: string) {
     // Get referrals for this specific user
     const { data, error } = await supabase
       .from("referrals")
-      .select("id, referred_wallet_address, reward_claimed, created_at")
+      .select("id, referred_wallet_address, rewards_claimed, created_at")
       .eq("referrer_wallet_address", referrerWalletAddress)
 
     console.log("🔍 Query for referrer_wallet_address:", referrerWalletAddress)
@@ -188,7 +188,7 @@ export async function getReferredUsers(referrerWalletAddress: string) {
         wallet_address: ref.referred_wallet_address,
         username: username,
         level: level,
-        reward_claimed: ref.reward_claimed ?? false,
+        reward_claimed: ref.rewards_claimed ?? false,
         created_at: ref.created_at
       }
     })
