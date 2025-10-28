@@ -210,7 +210,7 @@ if (!isHumanVerified) {
     checkUser()
   }, [])
 
-  const login = async (walletAddress: string, username?: string) => {
+  const login = async (walletAddress: string, username?: string, referralCode?: string) => {
     try {
 
       // Try to load user data from database first
@@ -266,6 +266,34 @@ if (!isHumanVerified) {
       if (error) {
         console.error("Error creating new user in database:", error)
         return { success: false, error: "Failed to create user in database" }
+      }
+
+      // Handle referral code if provided
+      if (referralCode && referralCode.trim().toLowerCase()) {
+        console.log("Processing referral code in auth-context:", referralCode)
+        const { data: referrer, error: referrerError } = await supabase
+          .from("users")
+          .select("wallet_address")
+          .eq("username", referralCode)
+          .single()
+
+        if (referrer && !referrerError) {
+          console.log("Referrer found in auth-context:", referrer)
+          const { error: referralInsertError } = await supabase
+            .from("referrals")
+            .insert({
+              referrer_wallet_address: referrer.wallet_address,
+              referred_wallet_address: walletAddress,
+            })
+          
+          if (referralInsertError) {
+            console.error("Error inserting referral in auth-context:", referralInsertError)
+          } else {
+            console.log("Referral successfully created in auth-context!")
+          }
+        } else {
+          console.log("Referrer not found in auth-context or error:", referrerError)
+        }
       }
 
       localStorage.setItem("animeworld_user", JSON.stringify(newUserData))

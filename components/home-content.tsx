@@ -47,7 +47,7 @@ import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { getSupabaseBrowserClient } from "@/lib/supabase"
 import DealOfTheDayDialog from "@/components/deal-of-the-day-dialog"
-// import { useTranslation } from "@/hooks/use-translation"
+import { useTranslation } from "@/hooks/use-translation"
 import { MiniKit, Tokens, tokenToDecimals, type PayCommandInput } from "@worldcoin/minikit-js"
 import { useWldPrice } from "@/contexts/WldPriceContext"
 import { claimReferralRewardForUser } from "@/app/actions/referrals"
@@ -150,7 +150,7 @@ const xpPassBenefits = [
 
 export default function Home() {
   const { user, updateUserTickets, refreshUserData } = useAuth()
-  // const { t } = useTranslation()
+  const { t, locale } = useTranslation()
   const [claimLoading, setClaimLoading] = useState(false)
   const [referralLoading, setReferralLoading] = useState(false)
   const [alreadyClaimed, setAlreadyClaimed] = useState(false)
@@ -215,11 +215,11 @@ export default function Home() {
   const referralSbcSlides = [
     {
       key: 'referrals',
-      title: 'Referrals',
+      title: "Referrals",
       icon: <Gift className="h-8 w-8 text-yellow-600" />,
       bg: 'from-[#232526] to-[#414345]',
       border: 'border-yellow-400',
-      text: 'Invite Friends',
+      text: "Invite Friends",
       action: () => setShowReferralDialog(true),
       color: 'text-yellow-100',
     },
@@ -396,16 +396,16 @@ const [copied, setCopied] = useState(false)
         await handleBuyTickets(ticketAmount, ticketType)
       } else {
         toast({
-          title: 'Payment Failed',
-          description: 'Payment could not be processed',
+          title: t('home.paymentFailed'),
+          description: t('home.paymentFailedDesc'),
           variant: "destructive",
         })
       }
     } catch (error) {
       console.error("Payment error:", error)
       toast({
-        title: 'Payment Error',
-        description: 'An error occurred during payment',
+        title: t('home.paymentError'),
+        description: t('home.paymentErrorDesc'),
         variant: "destructive",
       })
     }
@@ -414,8 +414,8 @@ const [copied, setCopied] = useState(false)
   const handleBuyTickets = async (ticketAmount: number, ticketType: "regular" | "legendary") => {
       if (!user?.username) {
         toast({
-        title: 'Error',
-        description: 'Please log in to continue',
+        title: t('common.error'),
+        description: t('home.loginRequired'),
           variant: "destructive",
         })
         return
@@ -423,7 +423,7 @@ const [copied, setCopied] = useState(false)
       try {
         const supabase = getSupabaseBrowserClient()
         if (!supabase) {
-          throw new Error('Database connection failed')
+          throw new Error(t('home.databaseError'))
         }
         // Get current ticket counts
         const { data: userData, error: fetchError } = await supabase
@@ -454,7 +454,7 @@ const [copied, setCopied] = useState(false)
           })
           .eq("wallet_address", user.wallet_address)
         if (updateError) {
-          throw new Error('Failed to update tickets')
+          throw new Error(t('home.updateTicketsError'))
         }
         // Update local state with explicit number types
         setTickets(newTicketCount)
@@ -469,7 +469,7 @@ const [copied, setCopied] = useState(false)
         console.error("Error buying tickets:", error)
         toast({
           title: "Error",
-          description: error instanceof Error ? error.message : 'An unexpected error occurred',
+          description: error instanceof Error ? error.message : t('home.unexpectedError'),
           variant: "destructive",
         })
       } 
@@ -1006,8 +1006,8 @@ const [copied, setCopied] = useState(false)
           updateTicketTimerDisplay(result.timeUntilNextClaim)
         }
         toast({
-          title: 'Already Claimed',
-          description: 'You have already claimed your daily bonus',
+          title: t('home.alreadyClaimed'),
+          description: t('home.alreadyClaimedDesc'),
         })
       } else {
         toast({
@@ -1020,7 +1020,7 @@ const [copied, setCopied] = useState(false)
       console.error("Error claiming bonus:", error)
       toast({
         title: "Error",
-        description: 'Failed to claim tickets',
+        description: t('home.claimTicketsError'),
         variant: "destructive",
       })
     } finally {
@@ -1079,22 +1079,22 @@ const [copied, setCopied] = useState(false)
   const passSlides = [
     {
       key: 'gamepass',
-      title: 'Game Pass',
+      title: t('passes.gamePass'),
       icon: <Crown className="h-8 w-8 text-amber-800" />, 
       bg: 'from-amber-400 to-amber-600',
       border: 'border-yellow-100',
-      text: 'Claim rewards!',
+      text: t('passes.gamePassDescription'),
       href: '/pass',
       color: 'text-yellow-700',
       dot: 'bg-yellow-500',
     },
     {
       key: 'xppass',
-      title: 'XP Pass',
+      title: t('passes.xpPass'),
       icon: <Sparkles className="h-8 w-8 text-blue-800" />, 
       bg: 'from-blue-400 to-blue-600',
       border: 'border-blue-100',
-      text: 'Boost your XP gain!', // Nur kurzer Text, keine Benefits und kein Kaufen-Button
+      text: t('passes.xpPassDescription'), // Nur kurzer Text, keine Benefits und kein Kaufen-Button
       href: '/xp-booster',
       color: 'text-blue-700',
       dot: 'bg-blue-500',
@@ -1181,7 +1181,7 @@ const [copied, setCopied] = useState(false)
     await new Promise((resolve) => setTimeout(resolve, 1500))
     setBuyingXpPass(false)
     setShowBuyXpPassDialog(false)
-    toast({ title: 'XP Pass Purchased!', description: 'XP Pass activated successfully!' })
+    toast({ title: t('passes.xpPassPurchased'), description: t('passes.xpPassActivated') })
     // Optional: In DB speichern, dass XP Pass aktiv ist
   }
 
@@ -1689,9 +1689,9 @@ const [copied, setCopied] = useState(false)
                           <Gift className="h-4 w-4 text-white" />
                         </div>
                         <div>
-                          <h3 className="font-medium text-sm text-yellow-100">Daily Ticket Claim</h3>
+                          <h3 className="font-medium text-sm text-yellow-100">{t('home.ticketClaim')}</h3>
                           <p className="text-xs text-yellow-200">
-                            Get {ticketClaimAmount} tickets every 24 hours
+                            {t('home.getTicketsEvery24Hours').replace('3', ticketClaimAmount.toString())}
                           </p>
                         </div>
                       </div>
@@ -1740,8 +1740,8 @@ const [copied, setCopied] = useState(false)
                     <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center mb-1 border border-yellow-300">
                       <BookOpen className="h-5 w-5 text-white drop-shadow-lg" />
                     </div>
-                    <div className="text-sm font-bold text-yellow-100">Card Gallery</div>
-                    <div className="text-xs text-sky-400">Browse Cards</div>
+                    <div className="text-sm font-bold text-yellow-100">{t('home.cardGallery')}</div>
+                    <div className="text-xs text-sky-400">{t('home.browseCards')}</div>
                   </motion.div>
                 </Link>
               </div>
@@ -1774,10 +1774,10 @@ const [copied, setCopied] = useState(false)
                     </div>
                     <div className={`text-sm font-extrabold drop-shadow-sm tracking-wide ${
                       hasActiveDiscount ? 'text-red-100' : 'text-yellow-100'
-                    }`}>Shop</div>
+                    }`}>{t('navigation.shop')}</div>
                     <div className={`text-xs font-semibold mt-0.5 ${
                       hasActiveDiscount ? 'text-red-200' : 'text-sky-400'
-                    }`}>Exclusive Packs</div>
+                    }`}>{t('home.exclusivePacks')}</div>
                   </motion.div>
                 </Link>
               </div>
@@ -1866,10 +1866,10 @@ const [copied, setCopied] = useState(false)
                         {renderStars(dailyDeal.card_level, "xs")}
                       </div>
                     </div>
-                    <div className="text-lg font-bold text-center mb-0.5">Deal of the Day</div>
+                    <div className="text-lg font-bold text-center mb-0.5">{t('home.dealOfTheDay')}</div>
                     <div className="text-sm text-white/80 text-center mb-1">
                       {dailyDeal.card_name} <span className="text-white/70">·</span>
-                      <span className="inline-block px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold align-middle ml-1">{dailyDeal.card_rarity}</span>
+                      <span className="inline-block px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold align-middle ml-1">{t(`rarity.${dailyDeal.card_rarity}`)}</span>
                     </div>
                     <div className="flex gap-2 mb-1 justify-center">
                       {dailyDeal.classic_tickets > 0 && (
@@ -1886,7 +1886,7 @@ const [copied, setCopied] = useState(false)
                     <div className="text-lg font-bold text-center mb-1">{price ? `${(dailyDeal.price / price).toFixed(2)} WLD` : `$${dailyDeal.price.toFixed(2)} USD`}</div>
                   </>
                 ) : (
-                  <div className="flex flex-1 items-center justify-center h-full text-white/70">No deal available today</div>
+                  <div className="flex flex-1 items-center justify-center h-full text-white/70">{t('home.noDealOfTheDay')}</div>
                 )}
                 </div>
               </div>
@@ -1926,10 +1926,10 @@ const [copied, setCopied] = useState(false)
                         {renderStars(specialDeal.card_level, "xs")}
                       </div>
                     </div>
-                    <div className="text-lg font-bold text-center mb-0.5">Special Deal</div>
+                    <div className="text-lg font-bold text-center mb-0.5">{t('home.specialDeal')}</div>
                     <div className="text-sm text-white/80 text-center mb-1">
                       {specialDeal.card_name} <span className="text-white/70">·</span>
-                      <span className="inline-block px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold align-middle ml-1">{specialDeal.card_rarity}</span>
+                      <span className="inline-block px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold align-middle ml-1">{t(`rarity.${specialDeal.card_rarity}`)}</span>
                     </div>
                     <div className="flex gap-2 mb-1 justify-center">
                       {specialDeal.classic_tickets > 0 && (
@@ -1969,7 +1969,7 @@ const [copied, setCopied] = useState(false)
                     </div>
                   </>
                 ) : (
-                  <div className="flex flex-1 items-center justify-center h-full text-white/70">No special deal available</div>
+                  <div className="flex flex-1 items-center justify-center h-full text-white/70">{t('home.noSpecialDeal')}</div>
                 )}
                 </div>
               </div>
@@ -2043,7 +2043,7 @@ const [copied, setCopied] = useState(false)
                         </div>
                         <div className="absolute -top-4 -right-4 bg-[#3DAEF5] text-white text-xs font-bold py-1 px-3 rounded-full flex items-center gap-1 shadow-lg">
                           <Sparkles className="h-3 w-3" />
-                          <span>Special Deal</span>
+                          <span>{t('home.specialDeal')}</span>
                         </div>
                       </div>
                     </div>
@@ -2059,7 +2059,9 @@ const [copied, setCopied] = useState(false)
                       </div>
                       {/* What's Included */}
                       <div className="bg-gray-900/50 rounded-xl p-4 mb-5 border border-gray-700/50">
-                        <h4 className="text-sm font-medium text-gray-300 mb-3">What's Included:</h4>
+                        <h4 className="text-sm font-medium text-gray-300 mb-3">
+                          What's Included
+                        </h4>
                         <div className="space-y-3">
                           <div className="flex items-center">
                             <div className="w-9 h-9 rounded-md border-2 border-violet-500 flex items-center justify-center mr-3 bg-gray-800">
@@ -2067,7 +2069,7 @@ const [copied, setCopied] = useState(false)
                             </div>
                             <div>
                               <p className="text-sm font-medium text-white">{specialDeal.card_name}</p>
-                              <p className="text-xs text-gray-400">Level {specialDeal.card_level} {specialDeal.card_rarity} Card</p>
+                              <p className="text-xs text-gray-400">{t('home.levelCard', undefined, { level: specialDeal.card_level, rarity: specialDeal.card_rarity })}</p>
                             </div>
                           </div>
                           {/* Classic Tickets */}
@@ -2076,8 +2078,8 @@ const [copied, setCopied] = useState(false)
                               <Ticket className="h-4 w-4 text-blue-400" />
                             </div>
                             <div>
-                              <p className="text-sm font-medium text-white">{specialDeal.classic_tickets} Regular Tickets</p>
-                              <p className="text-xs text-gray-400">For regular card packs</p>
+                              <p className="text-sm font-medium text-white">{specialDeal.classic_tickets} {t('home.regularTickets')}</p>
+                              <p className="text-xs text-gray-400">{t('home.forRegularCardPacks')}</p>
                             </div>
                           </div>
                           {/* Elite Tickets */}
@@ -2086,8 +2088,8 @@ const [copied, setCopied] = useState(false)
                               <Crown className="h-4 w-4 text-purple-400" />
                             </div>
                             <div>
-                              <p className="text-sm font-medium text-white">{specialDeal.elite_tickets} Legendary Tickets</p>
-                              <p className="text-xs text-gray-400">For legendary card packs</p>
+                              <p className="text-sm font-medium text-white">{specialDeal.elite_tickets} {t('home.legendaryTickets')}</p>
+                              <p className="text-xs text-gray-400">{t('home.forLegendaryCardPacks')}</p>
                             </div>
                           </div>
                           {/* Icon Tickets */}
@@ -2105,12 +2107,12 @@ const [copied, setCopied] = useState(false)
                       {/* Price and Action */}
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm text-gray-400">Price:</p>
+                          <p className="text-sm text-gray-400">{t('home.price')}</p>
                           {specialDeal.discount_percentage && specialDeal.discount_percentage > 0 ? (
                             <div>
                               <p className="text-lg line-through text-gray-500">{price ? `${(specialDeal.price / price).toFixed(2)} WLD` : `$${specialDeal.price.toFixed(2)} USD`}</p>
                               <p className="text-2xl font-bold text-green-400">{price ? `${((specialDeal.price * (1 - specialDeal.discount_percentage / 100)) / price).toFixed(2)} WLD` : `$${(specialDeal.price * (1 - specialDeal.discount_percentage / 100)).toFixed(2)} USD`}</p>
-                              <p className="text-sm text-red-400 font-bold">-{specialDeal.discount_percentage}% OFF!</p>
+                              <p className="text-sm text-red-400 font-bold">-{specialDeal.discount_percentage}% {t('home.off')}</p>
                             </div>
                           ) : (
                             <p className="text-2xl font-bold text-[#3DAEF5]">{price ? `${(specialDeal.price / price).toFixed(2)} WLD` : `$${specialDeal.price.toFixed(2)} USD`}</p>
@@ -2125,12 +2127,12 @@ const [copied, setCopied] = useState(false)
                           {buyingSpecialDeal ? (
                             <>
                               <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
-                              Processing...
+                              {t('home.processing')}
                             </>
                           ) : (
                             <>
                               <ShoppingBag className="h-4 w-4 mr-2" />
-Buy Now
+{t('home.buyNow')}
                             </>
                           )}
                         </Button>
@@ -2222,20 +2224,16 @@ Buy Now
       <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center border border-yellow-300">
         <Gift className="h-5 w-5 text-white" />
       </div>
-      {/* {t('referrals.inviteFriends')} */}
       Invite Friends
     </DialogTitle>
     <DialogDescription className="text-sm text-yellow-200">
-      {/* {t('referrals.noReferralsDesc')}<br />
-      <span className="text-xs text-red-400 font-semibold">{t('referrals.noteUsernameOnly')}</span><br />
-      <span className="text-xs text-red-400 font-semibold">⚠️ {t('referrals.warningAbuse')}</span> */}
-      Share your referral code with friends<br />
-      <span className="text-xs text-red-400 font-semibold">Note: Invited users must enter only the inviter's username</span><br />
-      <span className="text-xs text-red-400 font-semibold">⚠️ Abuse will result in ban</span>
+      Share your referral code with friends to earn rewards!<br />
+      <span className="text-xs text-red-400 font-semibold">Note: Only username works as referral code</span><br />
+      <span className="text-xs text-red-400 font-semibold">⚠️ Abuse will result in account suspension</span>
     </DialogDescription>
     {/* Your referral link */}
     <div className="mt-6">
-      <div className="text-sm font-semibold text-yellow-100 mb-2">{/* {t('referrals.referralCode')} */}Referral Code:</div>
+      <div className="text-sm font-semibold text-yellow-100 mb-2">Your Referral Code</div>
       <div className="flex items-center justify-between bg-gradient-to-r from-[#232526] to-[#414345] border-2 border-yellow-400 rounded-lg px-4 py-3 shadow-lg">
         <span className="truncate text-sm font-mono text-yellow-200 font-bold">{user?.username}</span>
         <Button
@@ -2248,7 +2246,7 @@ Buy Now
             setTimeout(() => setCopied(false), 2000)
           }}
         >
-{copied ? 'Copied!' : 'Copy Code'}
+{copied ? "Copied!" : "Copy Code"}
         </Button>
       </div>
     </div>
@@ -2277,7 +2275,7 @@ Buy Now
     <div className="mt-6">
       <h4 className="text-sm font-bold text-yellow-100 mb-3 flex items-center gap-2">
         <span className="text-yellow-400">👥</span>
-Your Referrals
+        Your Referrals
       </h4>
       {referredUsers.length === 0 ? (
         <div className="bg-gradient-to-r from-[#232526]/50 to-[#414345]/50 border border-yellow-400/30 rounded-lg p-4 text-center">
@@ -2316,8 +2314,8 @@ Your Referrals
                         )
                         setTimeout(() => setShowClaimAnimation(false), 1500)
                         toast({
-                          title: 'Success!',
-                          description: 'Referral reward claimed!',
+                        title: "Success!",
+                        description: "Referral reward claimed!",
                         })
                       } else {
                         toast({ title: "Error", description: res.error, variant: "destructive" })
@@ -2326,7 +2324,7 @@ Your Referrals
                       console.error("Error claiming referral reward:", error)
                       toast({ 
                         title: "Error", 
-                        description: 'Failed to claim referral reward', 
+                        description: "Failed to claim referral reward", 
                         variant: "destructive" 
                       })
                     }
@@ -2358,7 +2356,7 @@ Your Referrals
 
           {/* Description Box */}
           <div className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] p-2 rounded-xl mb-2 border border-gray-700 shadow-lg">
-            <p className="text-sm font-semibold text-white mb-2 leading-relaxed text-center">Earn bonus rewards by holding cards in your ANI wallet!</p>
+            <p className="text-sm font-semibold text-white mb-2 leading-relaxed text-center">Card Bonus Buttons</p>
             <Button 
               className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-bold py-1.5 px-2 rounded-lg text-xs shadow-lg transition-all duration-200 hover:shadow-xl transform hover:scale-105"
               onClick={() => {

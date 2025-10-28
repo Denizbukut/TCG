@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { useEffect } from "react"
 import { MiniKit } from "@worldcoin/minikit-js"
 import { incrementLegendaryDraw } from "../actions/weekly-contest"
+// import { useTranslation } from "@/hooks/use-translation"
 
 
 export default function LoginPage() {
@@ -20,6 +21,8 @@ export default function LoginPage() {
   const [referralCode, setReferralCode] = useState("")
   const router = useRouter()
   const { login } = useAuth()
+  // const { t } = useTranslation()
+  const t = (key: string) => key // Fallback function
   
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -70,8 +73,8 @@ export default function LoginPage() {
         try {
           // Create Supabase client
           const supabase = createClient(
-            "https://jrfevsjtghhnefoditrn.supabase.co",
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyZmV2c2p0Z2hobmVmb2RpdHJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEzODg2MjgsImV4cCI6MjA2Njk2NDYyOH0.O2yaqEdZ-UMwvwn326qc6M9Kc2Qb9uF_K8_PbI9Dh_g",
+            "https://lyqscqywaxqhodhzjued.supabase.co",
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
           )
 
           // Check if user exists
@@ -85,62 +88,8 @@ export default function LoginPage() {
             console.error("Error checking if user exists:", fetchError)
           }
 
-          // If user doesn't exist, create a new user
-          if (!existingUser) {
-            console.log("User doesn't exist, creating new user:", userIdentifier)
-            const { data: newUser, error: insertError } = await supabase
-            .from("users")
-            .insert([
-              {
-                wallet_address: address,
-                username: userIdentifier,
-                tickets: 5,
-                coins: 1000,
-                level: 1,
-                experience: 0,
-                world_id: address,
-                elite_tickets: 2,
-                icon_tickets: 0,
-                has_premium: false,
-                next_level_exp: 100,
-                score: 0,
-                tokens: 0,
-                clan_id: null,
-                has_xp_pass: false,
-                cards_sold_since_last_purchase: 0,
-                avatar_id: 1,
-                prestige_points: 100,
-              },
-            ])
-            .select()
-
-            if (insertError) {
-              console.error("Error creating new user:", insertError)
-            } else {
-              console.log("New user created successfully:", newUser)
-              if (referralCode.trim().toLowerCase()) {
-      const { data: referrer, error: referrerError } = await supabase
-        .from("users")
-        .select("wallet_address")
-        .eq("username", referralCode)
-        .single()
-        // Note: incrementLegendaryDraw needs to be updated to use wallet_address instead of username
-        // await incrementLegendaryDraw(referrer.wallet_address, 0)
-
-      if (referrer && !referrerError) {
-        await supabase.from("referrals").insert({
-          referrer_wallet_address: referrer.wallet_address,
-          referred_wallet_address: address,
-        })
-      } else {
-        setReferralWarning("This referral code is invalid.")
-      }
-    }
-  
-
-
-            }
-          } else {
+          // Don't create user here - let auth-context handle it with referral logic
+          if (existingUser) {
             console.log("User already exists:", existingUser)
 
             // Update the last_login timestamp
@@ -160,8 +109,8 @@ export default function LoginPage() {
           // Continue with login even if database operations fail
         }
 
-        // Login with the auth context
-        const loginResult = await login(address, userIdentifier)
+        // Login with the auth context (including referral code)
+        const loginResult = await login(address, userIdentifier, referralCode)
 
         if (loginResult.success) {
           // Navigate to home page
@@ -186,7 +135,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen relative flex items-end justify-center">
-      
       {/* Full screen background image using Next.js Image component for better optimization */}
       <div className="absolute inset-0 z-0">
         <img
@@ -211,7 +159,7 @@ export default function LoginPage() {
     <input
       id="referral"
       type="text"
-      placeholder="Enter referral code (optional)"
+      placeholder="Enter Referral Code"
       value={referralCode}
       onChange={(e) => setReferralCode(e.target.value)}
       className="w-full rounded-xl border border-gray-300 bg-white py-3 px-4 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition duration-200"
