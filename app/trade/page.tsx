@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import ProtectedRoute from "@/components/protected-route"
 import MobileNav from "@/components/mobile-nav"
@@ -222,25 +222,14 @@ export default function TradePage() {
     totalPages: 0,
   })
 
-  // Debounced search function for marketplace
-  const debouncedSearch = debounce(() => {
-    setMarketPage(1) // Reset to page 1 when search changes
-    loadMarketListings(1) // Load page 1 with the new search term
-  }, 500)
-
-  // Debounced search function for recent sales
-  const debouncedSalesSearch = debounce(() => {
-    setRecentSalesPage(1) // Reset to page 1 when search changes
-    loadRecentSales(1) // Load page 1 with the new search term
-  }, 500)
-
   console.log(user)
 
+  // Fetch sold count
   useEffect(() => {
     const fetchSoldCount = async () => {
       const supabase = getSupabaseBrowserClient()
       if (!supabase) {
-        throw new Error(t('trade.databaseError'))
+        throw new Error('Database connection error')
       }
       const { data, error } = await supabase
         .from("users")
@@ -256,49 +245,12 @@ export default function TradePage() {
     fetchSoldCount()
   }, [user?.username])
 
-  // Check for daily deal when user is available - DISABLED on Trade page
-  // useEffect(() => {
-  //   if (!user?.username || !user?.wallet_address) return
-  //   if (dailyDealLoading) return
-
-  //   console.log("Checking daily deal for user:", user.username)
-  //   setDailyDealLoading(true)
-
-  //   const checkDailyDeal = async () => {
-  //     try {
-  //       console.log("Fetching daily deal for wallet:", user.wallet_address)
-  //       const result = await getDailyDeal(user.wallet_address)
-  //       console.log("Daily deal result:", result)
-
-  //       if (result.success && result.deal) {
-  //         console.log("Deal found, setting state")
-  //         setDailyDeal(result.deal)
-  //         setDailyDealInteraction(result.interaction ?? null)
-
-  //         const interaction = result.interaction || { seen: false, dismissed: false, purchased: false }
-  //         console.log("Interaction status:", interaction)
-          
-  //         // Always show deal for testing
-  //         console.log("Opening daily deal dialog")
-  //         setShowDailyDealDialog(true)
-  //         setHasShownDailyDeal(true)
-  //       }
-  //     } catch (error) {
-  //       console.error("Error checking daily deal:", error)
-  //     } finally {
-  //       setDailyDealLoading(false)
-  //     }
-  //   }
-
-  //   checkDailyDeal()
-  // }, [user?.username, user?.wallet_address])
-
   const percentage = Math.min(((soldCount ?? 0) / 3) * 100, 100)
-
   const radius = 20
   const circumference = 2 * Math.PI * radius
   const offset = circumference - (percentage / 100) * circumference
 
+  // Initialize data when user is available
   useEffect(() => {
     if (!user?.username || hasInitialized) return
 
@@ -321,35 +273,25 @@ export default function TradePage() {
     setHasInitialized(true)
   }, [user?.username])
 
+  // Handle search and filter changes with debounce
   useEffect(() => {
     if (!user?.username || !hasInitialized) return
 
-    if (activeTab === "marketplace") {
-      setMarketPage(1)
-      debouncedSearch()
-      loadMarketListings(1)
-    }
-
-    if (activeTab === "sales-history") {
-      if (historyType === "my") {
-        setTransactionsPage(1)
-        loadTransactionHistory(1)
-      } else {
+    const timeoutId = setTimeout(() => {
+      if (activeTab === "marketplace") {
+        setMarketPage(1)
+        loadMarketListings(1)
+      } else if (activeTab === "sales-history" && historyType === "all") {
         setRecentSalesPage(1)
-        debouncedSalesSearch()
         loadRecentSales(1)
       }
-    }
+    }, 300) // 300ms debounce
 
-    if (activeTab === "sell") {
-      setUserListingsPage(1)
-      loadUserListings(1)
-    }
-  }, [activeTab, searchTerm, rarityFilter, sortOption, historyType, salesSearchTerm])
-  console.log(user)
+    return () => clearTimeout(timeoutId)
+  }, [searchTerm, rarityFilter, sortOption, salesSearchTerm, activeTab, historyType])
 
   // Load market listings with pagination
-  const loadMarketListings = async (pageToLoad = marketPage) => {
+  const loadMarketListings = useCallback(async (pageToLoad = marketPage) => {
     if (!user?.username) return
 
     setLoading(true)
@@ -357,13 +299,15 @@ export default function TradePage() {
       // Prepare filters
       const filters: any = {
         rarity: rarityFilter !== "all" ? rarityFilter : undefined,
-        sort: sortOption, // Pass the sort option to the server
+        sort: sortOption,
       }
 
       // Add search term to filters if present
-      if (searchTerm) {
-        filters.search = searchTerm
+      if (searchTerm.trim()) {
+        filters.search = searchTerm.trim()
       }
+
+      console.log("🔍 Loading market listings:", { pageToLoad, filters })
 
       const result = await getMarketListings(pageToLoad, 20, filters)
       if (result.success) {
@@ -371,7 +315,9 @@ export default function TradePage() {
         if (result.pagination) {
           setMarketPagination(result.pagination)
         }
+        console.log("✅ Market listings loaded:", result.listings?.length || 0, "items")
       } else {
+        console.error("❌ Error loading market listings:", result.error)
         toast({
           title: "Error",
           description: result.error,
@@ -379,16 +325,16 @@ export default function TradePage() {
         })
       }
     } catch (error) {
-      console.error("Error loading market listings:", error)
+      console.error("❌ Error loading market listings:", error)
       toast({
         title: "Error",
-        description: t('trade.failedToLoadMarketplace'),
+        description: 'Failed to load marketplace data',
         variant: "destructive",
       })
     } finally {
       setLoading(false)
     }
-  }
+  }, [user?.username, searchTerm, rarityFilter, sortOption, marketPage])
 
   // Load user listings with pagination
   const loadUserListings = async (pageToLoad = userListingsPage) => {
@@ -416,7 +362,7 @@ export default function TradePage() {
       console.error("Error loading user listings:", error)
       toast({
         title: "Error",
-        description: t('trade.failedToLoadListings'),
+        description: 'Failed to load your listings',
         variant: "destructive",
       })
     } finally {
@@ -450,7 +396,7 @@ export default function TradePage() {
       console.error("Error loading transaction history:", error)
       toast({
         title: "Error",
-        description: t('trade.failedToLoadHistory'),
+        description: 'Failed to load transaction history',
         variant: "destructive",
       })
     } finally {
@@ -459,20 +405,21 @@ export default function TradePage() {
   }
 
   // Load recent sales with pagination
-  const loadRecentSales = async (pageToLoad = recentSalesPage) => {
+  const loadRecentSales = useCallback(async (pageToLoad = recentSalesPage) => {
     setLoading(true)
     try {
-      console.log("Loading recent sales page:", pageToLoad, "with search term:", salesSearchTerm)
-      const result = await getRecentSales(pageToLoad, 20, salesSearchTerm)
+      const searchQuery = salesSearchTerm.trim() || ""
+      console.log("🔍 Loading recent sales:", { pageToLoad, searchQuery })
+
+      const result = await getRecentSales(pageToLoad, 20, searchQuery)
       if (result.success) {
-        console.log("Recent sales loaded successfully:", result.sales?.length || 0, "items")
         setRecentSales(result.sales || [])
         if (result.pagination) {
-          console.log("Pagination info:", result.pagination)
           setRecentSalesPagination(result.pagination)
         }
+        console.log("✅ Recent sales loaded:", result.sales?.length || 0, "items")
       } else {
-        console.error("Error in result:", result.error)
+        console.error("❌ Error loading recent sales:", result.error)
         toast({
           title: "Error",
           description: result.error,
@@ -480,16 +427,16 @@ export default function TradePage() {
         })
       }
     } catch (error) {
-      console.error("Error loading recent sales:", error)
+      console.error("❌ Error loading recent sales:", error)
       toast({
         title: "Error",
-        description: t('trade.failedToLoadSales'),
+        description: 'Failed to load recent sales',
         variant: "destructive",
       })
     } finally {
       setLoading(false)
     }
-  }
+  }, [salesSearchTerm, recentSalesPage])
 
   // Handle page changes
   const handleMarketPageChange = (newPage: number) => {
@@ -1087,10 +1034,20 @@ export default function TradePage() {
                       <Search className="absolute left-2 top-2.5 h-4 w-4 text-yellow-400" />
                       <Input
                         placeholder="Search cards or sellers..."
-                        className="pl-8 bg-black/80 text-white border border-yellow-400 placeholder-yellow-300 focus:ring-yellow-400"
+                        className="pl-8 pr-8 bg-black/80 text-white border border-yellow-400 placeholder-yellow-300 focus:ring-yellow-400"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                       />
+                      {searchTerm && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSearchTerm("")}
+                          className="absolute right-1 top-1 h-6 w-6 p-0 text-yellow-400 hover:text-yellow-300"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      )}
                     </div>
                     <Select value={rarityFilter} onValueChange={setRarityFilter}>
                       <SelectTrigger className="w-[130px] bg-black/80 text-yellow-300 border border-yellow-400">
@@ -1398,10 +1355,20 @@ export default function TradePage() {
                         <Search className="absolute left-2 top-2.5 h-4 w-4 text-yellow-400" />
                         <Input
                           placeholder="Search cards, buyers or sellers..."
-                          className="pl-8 bg-black/80 text-white border border-yellow-400 placeholder-yellow-300 focus:ring-yellow-400"
+                          className="pl-8 pr-8 bg-black/80 text-white border border-yellow-400 placeholder-yellow-300 focus:ring-yellow-400"
                           value={salesSearchTerm}
                           onChange={(e) => setSalesSearchTerm(e.target.value)}
                         />
+                        {salesSearchTerm && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSalesSearchTerm("")}
+                            className="absolute right-1 top-1 h-6 w-6 p-0 text-yellow-400 hover:text-yellow-300"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
                       <div className="flex justify-between items-center mt-2">
                         <div className="text-sm text-yellow-200">
