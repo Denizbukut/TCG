@@ -180,7 +180,7 @@ export default function TradePage() {
   const [cancelLoading, setCancelLoading] = useState(false)
   const [showPurchaseSuccess, setShowPurchaseSuccess] = useState(false)
   const [listingCount, setListingCount] = useState(0)
-  const [maxListings, setMaxListings] = useState(7)
+  const [maxListings, setMaxListings] = useState(3)
   const [listingLimitReached, setListingLimitReached] = useState(false)
   const [hasInitialized, setHasInitialized] = useState(false)
   const [soldCount, setSoldCount] = useState<number | null>(null)
@@ -290,6 +290,14 @@ export default function TradePage() {
     return () => clearTimeout(timeoutId)
   }, [searchTerm, rarityFilter, sortOption, salesSearchTerm, activeTab, historyType])
 
+  // Refresh user listings when switching to sell tab
+  useEffect(() => {
+    if (activeTab === "sell" && user?.username) {
+      console.log("🔄 Refreshing user listings for sell tab")
+      loadUserListings(1)
+    }
+  }, [activeTab, user?.username])
+
   // Load market listings with pagination
   const loadMarketListings = useCallback(async (pageToLoad = marketPage) => {
     if (!user?.username) return
@@ -337,21 +345,24 @@ export default function TradePage() {
   }, [user?.username, searchTerm, rarityFilter, sortOption, marketPage])
 
   // Load user listings with pagination
-  const loadUserListings = async (pageToLoad = userListingsPage) => {
+  const loadUserListings = useCallback(async (pageToLoad = userListingsPage) => {
     if (!user?.username) return
 
     setLoading(true)
     try {
+      console.log("🔍 Loading user listings for:", user.wallet_address)
       const result = await getUserListings(user.wallet_address, pageToLoad, 20)
       if (result.success) {
         setUserListings(result.listings || [])
         setListingCount(result.listingCount || 0)
-        setMaxListings(result.maxListings || 7)
-        setListingLimitReached((result.listingCount || 0) >= (result.maxListings || 7))
+        setMaxListings(result.maxListings || 3)
+        setListingLimitReached((result.listingCount || 0) >= (result.maxListings || 3))
         if (result.pagination) {
           setUserListingsPagination(result.pagination)
         }
+        console.log("✅ User listings loaded:", result.listings?.length || 0, "items")
       } else {
+        console.error("❌ Error loading user listings:", result.error)
         toast({
           title: "Error",
           description: result.error,
@@ -359,7 +370,7 @@ export default function TradePage() {
         })
       }
     } catch (error) {
-      console.error("Error loading user listings:", error)
+      console.error("❌ Error loading user listings:", error)
       toast({
         title: "Error",
         description: 'Failed to load your listings',
@@ -368,7 +379,7 @@ export default function TradePage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user?.username, user?.wallet_address, userListingsPage])
 
   // Load transaction history with pagination
   const loadTransactionHistory = async (pageToLoad = transactionsPage) => {
@@ -835,6 +846,8 @@ export default function TradePage() {
         })
         // Aktualisiere die Listings
         loadUserListings()
+        // Auch die Marketplace-Listings aktualisieren
+        loadMarketListings()
       } else {
         toast({
           title: "Error",
