@@ -273,6 +273,7 @@ export default function TradePage() {
     setHasInitialized(true)
   }, [user?.username])
 
+
   // Handle search and filter changes with debounce
   useEffect(() => {
     if (!user?.username || !hasInitialized) return
@@ -517,19 +518,62 @@ export default function TradePage() {
     
     console.log("Using seller address:", sellerAddress)
 
-    const total  = BigInt(toWei(selectedListing?.price ?? 1))
-    const ten    = (total * BigInt("10")) / BigInt("100") // 10%
-    const ninety = total - ten   
-
-    const addrTen = "0xDb4D9195EAcE195440fbBf6f80cA954bf782468E"
-    const addrNinety = sellerAddress
-    console.log("addrNinety", addrNinety)
-    console.log("selectedListing", selectedListing)
-    console.log("addrTen", addrTen)
-    console.log("ten", ten)
-    console.log("ninety", ninety)
-
+    // WLD-TRANSAKTION FÜR BLOCKIERTE KARTE
+    let unblockTimeout: NodeJS.Timeout | null = null
+    
     try {
+      console.log("🔥 Starting WLD transaction...")
+      console.log("🔥 Listing ID:", selectedListing.id)
+      console.log("🔥 Current listing status:", selectedListing.status)
+      
+      // Prüfe ob Karte noch blockiert ist (optional - kann auch active sein)
+      if (selectedListing.status !== "blocked" && selectedListing.status !== "active") {
+        console.error("🔒 Card is not available!")
+        toast({
+          title: "Card Not Available",
+          description: "This card is no longer available for purchase!",
+          variant: "destructive",
+        })
+        return
+      }
+      
+      console.log("🔒 Card is available, proceeding with WLD transaction...")
+      
+      // TIMEOUT: Falls User abbricht, Karte nach 20 Sekunden freigeben
+      unblockTimeout = setTimeout(async () => {
+        console.log("⏰ Timeout reached - unblocking card automatically")
+        try {
+          const supabase = getSupabaseBrowserClient()
+          if (supabase) {
+            await supabase
+              .from("market_listings")
+              .update({ 
+                status: "active", 
+                blocked_at: null 
+              })
+              .eq("id", selectedListing.id)
+              .eq("status", "blocked")
+            
+            console.log("⏰ Card unblocked due to timeout")
+            loadMarketListings() // UI aktualisieren
+          }
+        } catch (error) {
+          console.error("⏰ Error unblocking card:", error)
+        }
+      }, 20000) // 20 Sekunden
+      
+      // SCHRITT 2: Jetzt die WLD-Transaktion durchführen
+      const total  = BigInt(toWei(selectedListing?.price ?? 1))
+      const ten    = (total * BigInt("10")) / BigInt("100") // 10%
+      const ninety = total - ten   
+
+      const addrTen = "0xDb4D9195EAcE195440fbBf6f80cA954bf782468E"
+      const addrNinety = sellerAddress
+      console.log("addrNinety", addrNinety)
+      console.log("selectedListing", selectedListing)
+      console.log("addrTen", addrTen)
+      console.log("ten", ten)
+      console.log("ninety", ninety)
       console.log("Attempting MiniKit transaction...")
       
       // Prüfe ob MiniKit verfügbar ist
@@ -580,13 +624,34 @@ export default function TradePage() {
           console.error("Error saving market fees:", error)
         }
         
-        // Nur nach erfolgreicher MiniKit-Transaktion den Kauf abschließen
-        console.log("🔥 MiniKit transaction successful, completing purchase...")
+        // NUR nach erfolgreicher WLD-Transaktion den Backend-Kauf durchführen
+        console.log("🔥 WLD transaction successful, completing purchase...")
         console.log("🔥 About to call handlePurchase...")
-        await handlePurchase()
-        console.log("🔥 handlePurchase completed")
+        
+        // Timeout löschen da Kauf erfolgreich
+        if (unblockTimeout) {
+          clearTimeout(unblockTimeout)
+          console.log("⏰ Timeout cleared - purchase successful")
+        }
+        
+        try {
+          await handlePurchase()
+          console.log("🔥 handlePurchase completed")
+        } catch (error) {
+          console.error("🔥 handlePurchase failed:", error)
+          // WICHTIG: Hier sollte ein Rollback der WLD-Transaktion stattfinden
+          // Aber das ist technisch schwierig mit Blockchain-Transaktionen
+          toast({
+            title: "Purchase Failed",
+            description: "The card purchase failed after payment. Please contact support.",
+            variant: "destructive",
+          })
+        }
       } else if (finalPayload.status === 'error') {
         console.error('Error sending transaction', finalPayload)
+        if (unblockTimeout) {
+          clearTimeout(unblockTimeout) // Timeout löschen bei Fehler
+        }
         toast({
           title: "Transaction Failed",
           description: `Transaction was rejected: ${finalPayload.error_code || 'Unknown error'}`,
@@ -594,6 +659,9 @@ export default function TradePage() {
         })
       } else {
         console.error('Unknown transaction status', finalPayload)
+        if (unblockTimeout) {
+          clearTimeout(unblockTimeout) // Timeout löschen bei Fehler
+        }
         toast({
           title: "Transaction Failed",
           description: "Transaction failed with unknown status",
@@ -602,6 +670,9 @@ export default function TradePage() {
       }
     } catch (error) {
       console.error('Error sending transaction', error)
+      if (unblockTimeout) {
+        clearTimeout(unblockTimeout) // Timeout löschen bei Fehler
+      }
       
       let errorMessage = "Failed to initiate transaction. Please try again."
       
@@ -688,7 +759,7 @@ export default function TradePage() {
     }
   }
 
-  // Blockiere eine Karte für den Kauf
+  // Blockiere eine Karte für den Kauf - SOFORTIGE BLOCKIERUNG!
   const handleBlockForPurchase = async (listing?: MarketListing) => {
     console.log("🔥 handleBlockForPurchase called!")
     const listingToBlock = listing || selectedListing
@@ -704,29 +775,31 @@ export default function TradePage() {
       return
     }
 
-    // Show immediate feedback
-    toast({
-      title: "Processing...",
-      description: "Attempting to reserve card for purchase",
-    })
-
+    // SOFORTIGE BLOCKIERUNG - keine Toast-Nachricht, direkt blockieren!
     try {
-      console.log("Attempting to block listing:", listingToBlock.id)
+      console.log("🔒 SOFORTIGE BLOCKIERUNG - Attempting to block listing:", listingToBlock.id)
       const result = await blockListingForPurchase(listingToBlock.id)
-      console.log("Block result:", result)
+      console.log("🔒 Block result:", result)
       
       if (result.success) {
-        // Karte erfolgreich blockiert, zeige Purchase Dialog
-        console.log("Successfully blocked listing, showing purchase dialog")
+        // Karte erfolgreich blockiert - SOFORT UI aktualisieren!
+        console.log("🔒 Successfully blocked listing - updating UI immediately")
+        
+        // SOFORTIGE UI-AKTUALISIERUNG für alle User
+        await loadMarketListings()
+        console.log("🔒 UI updated - 'Being Purchased' now visible to ALL users")
+        
+        // Jetzt Purchase Dialog zeigen
         setSelectedListing(listingToBlock)
         setShowPurchaseDialog(true)
+        
         toast({
-          title: "Success",
-          description: "Card reserved for purchase!",
+          title: "Card Reserved!",
+          description: "This card is now reserved for you!",
         })
       } else {
         // Karte bereits blockiert oder nicht verfügbar
-        console.error("Failed to block listing:", result.error)
+        console.error("🔒 Failed to block listing:", result.error)
         toast({
           title: "Card Not Available",
           description: result.error,
@@ -734,7 +807,7 @@ export default function TradePage() {
         })
       }
     } catch (error) {
-      console.error("Error blocking listing:", error)
+      console.error("🔒 Error blocking listing:", error)
       toast({
         title: "Error",
         description: "Failed to reserve card. Please try again.",
@@ -743,7 +816,7 @@ export default function TradePage() {
     }
   }
 
-  // Kaufe eine Karte - JETZT MIT SOFORTIGER BLOCKIERUNG
+  // Kaufe eine Karte - KARTE IST BEREITS BLOCKIERT
   const handlePurchase = async () => {
     console.log("🔥 handlePurchase called with:", {
       user: user,
@@ -763,7 +836,7 @@ export default function TradePage() {
         description: "User wallet address not found. Cannot complete purchase.",
         variant: "destructive",
       })
-      return
+      return false
     }
 
     console.log("🔥 Starting purchase with:", {
@@ -774,30 +847,8 @@ export default function TradePage() {
 
     setPurchaseLoading(true)
     
-    // SOFORTIGE BLOCKIERUNG: Verhindere weitere Käufe während der Verarbeitung
-    toast({
-      title: "🔒 Securing Purchase...",
-      description: "Reserving this card exclusively for you!",
-      duration: 2000,
-    })
-    
     try {
-      // SCHRITT 1: Sofort blockieren um Race Conditions zu verhindern
-      console.log("🔒 Blocking listing to prevent race conditions...")
-      const blockResult = await blockListingForPurchase(selectedListing.id)
-      
-      if (!blockResult.success) {
-        console.error("🔒 Failed to block listing:", blockResult.error)
-        toast({
-          title: "Card Not Available",
-          description: "This card was just purchased by someone else!",
-          variant: "destructive",
-        })
-        setPurchaseLoading(false)
-        return
-      }
-
-      // SCHRITT 2: Jetzt den Kauf durchführen
+      // KARTE IST BEREITS BLOCKIERT - direkt Kauf durchführen
       console.log("🔥 Calling purchaseCard function...")
       const result = await purchaseCard(user.wallet_address, selectedListing.id)
       console.log("🔥 Purchase result:", result)
@@ -812,6 +863,8 @@ export default function TradePage() {
           title: "Success!",
           description: "Card purchased successfully!",
         })
+        setPurchaseLoading(false)
+        return true
       } else {
         console.error("🔥 Purchase failed:", result.error)
         toast({
@@ -819,6 +872,8 @@ export default function TradePage() {
           description: result.error,
           variant: "destructive",
         })
+        setPurchaseLoading(false)
+        return false
       }
     } catch (error) {
       console.error("🔥 Error purchasing card:", error)
@@ -827,6 +882,7 @@ export default function TradePage() {
         description: "Failed to purchase card",
         variant: "destructive",
       })
+      return false
     } finally {
       setPurchaseLoading(false)
     }
@@ -834,12 +890,18 @@ export default function TradePage() {
 
   // Storniere ein Listing
   const handleCancelListing = async (listingId: string) => {
-    if (!user?.username) return
+    // ✅ SOFORTIGER CHECK - Verhindert mehrfache Klicks
+    if (!user?.wallet_address || cancelLoading) return
 
-    setCancelLoading(true)
+    console.log("🔥 Starting cancel listing process for:", listingId)
+    setCancelLoading(true)  // ✅ Sofort setzen
+    
     try {
       const result = await cancelListing(user.wallet_address, listingId)
+      console.log("🔥 Cancel result:", result)
+      
       if (result.success) {
+        console.log("🔥 Cancel successful!")
         toast({
           title: "Success",
           description: "Listing cancelled successfully!",
@@ -849,6 +911,7 @@ export default function TradePage() {
         // Auch die Marketplace-Listings aktualisieren
         loadMarketListings()
       } else {
+        console.error("🔥 Cancel failed:", result.error)
         toast({
           title: "Error",
           description: result.error,
@@ -856,7 +919,7 @@ export default function TradePage() {
         })
       }
     } catch (error) {
-      console.error("Error cancelling listing:", error)
+      console.error("🔥 Error cancelling listing:", error)
       toast({
         title: "Error",
         description: "Failed to cancel listing",
@@ -901,6 +964,8 @@ export default function TradePage() {
       }
     }
   }
+
+
 
   const handleSuccessAnimationComplete = () => {
     setShowPurchaseSuccess(false)
@@ -1511,13 +1576,30 @@ export default function TradePage() {
                   {selectedListing.seller_wallet_address !== user?.wallet_address && (
                     <Button
                       onClick={() => {
+                        if (selectedListing.status === "blocked") {
+                          toast({
+                            title: "Card Being Purchased",
+                            description: "This card is currently being purchased by another user. Please try again in a few seconds.",
+                            variant: "destructive",
+                          })
+                          return
+                        }
                         setShowCardDetailsDialog(false)
                         handleBlockForPurchase()
                       }}
-                      disabled={purchaseLoading}
-                      className="w-full mt-4 bg-gradient-to-r from-violet-500 to-fuchsia-500"
+                      disabled={purchaseLoading || selectedListing.status === "blocked"}
+                      className={`w-full mt-4 ${
+                        selectedListing.status === "blocked" 
+                          ? "bg-gray-500 cursor-not-allowed" 
+                          : "bg-gradient-to-r from-violet-500 to-fuchsia-500"
+                      }`}
                     >
-                      {purchaseLoading ? (
+                      {selectedListing.status === "blocked" ? (
+                        <>
+                          <AlertCircle className="h-4 w-4 mr-2" />
+                          Being Purchased
+                        </>
+                      ) : purchaseLoading ? (
                         <>
                           <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
                           Processing...
@@ -1617,17 +1699,35 @@ export default function TradePage() {
                   </Button>
                   <Button
                     onClick={() => {
+                      if (selectedListing.status === "blocked") {
+                        toast({
+                          title: "Card Being Purchased",
+                          description: "This card is currently being purchased by another user. Please try again in a few seconds.",
+                          variant: "destructive",
+                        })
+                        return
+                      }
                       console.log("Buy with WLD button clicked")
                       sendTransaction()
                     }}
                     disabled={
                       purchaseLoading ||
                       (user?.coins || 0) < selectedListing.price ||
-                      selectedListing.seller_wallet_address === user?.wallet_address
+                      selectedListing.seller_wallet_address === user?.wallet_address ||
+                      selectedListing.status === "blocked"
                     }
-                    className="bg-gradient-to-r from-violet-500 to-fuchsia-500"
+                    className={`${
+                      selectedListing.status === "blocked" 
+                        ? "bg-gray-500 cursor-not-allowed" 
+                        : "bg-gradient-to-r from-violet-500 to-fuchsia-500"
+                    }`}
                   >
-                    {purchaseLoading ? (
+                    {selectedListing.status === "blocked" ? (
+                      <>
+                        <AlertCircle className="h-4 w-4 mr-2" />
+                        Being Purchased
+                      </>
+                    ) : purchaseLoading ? (
                       <>
                         <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
                         Processing...
@@ -1798,7 +1898,20 @@ function MarketplaceCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      onClick={() => listing.status !== "blocked" && !purchaseLoading && onShowDetails()}
+      onClick={() => {
+        if (listing.status === "blocked") {
+          // Zeige eine Nachricht dass die Karte gerade gekauft wird
+          toast({
+            title: "Card Being Purchased",
+            description: "This card is currently being purchased by another user. Please try again in a few seconds.",
+            variant: "destructive",
+          })
+          return
+        }
+        if (!purchaseLoading) {
+          onShowDetails()
+        }
+      }}
       className={`bg-gradient-to-br from-black/80 to-black/60 rounded-2xl shadow-lg p-4 flex items-center gap-4 mb-4 border border-yellow-400 transition-transform ${
         listing.status === "blocked" || purchaseLoading
           ? "cursor-not-allowed opacity-75" 

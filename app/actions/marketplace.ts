@@ -669,39 +669,7 @@ export async function createListing(
       }
     }
 
-    // Calculate score based on card rarity
-    const scoreForCard = getScoreForRarity(cardDetails.rarity as CardRarity)
-
-    // Get user's current score
-    const { data: scoreUserData, error: userScoreError } = await supabase
-      .from("users")
-      .select("score")
-      .eq("wallet_address", walletAddress)
-      .single()
-
-    if (userScoreError) {
-      console.error("Error fetching user score:", userScoreError)
-      return { success: false, error: "Failed to fetch user score" }
-    }
-
-    // Calculate new score (deduct the points)
-    const currentScore = scoreUserData.score || 0
-    const newScore = Math.max(0, currentScore - scoreForCard) // Ensure score doesn't go below 0
-
-    console.log(`Deducting score for listing: ${walletAddress}: ${currentScore} -> ${newScore} (-${scoreForCard} points)`)
-
-    // Update user's score
-    const { error: updateScoreError } = await supabase
-      .from("users")
-      .update({ score: newScore })
-      .eq("wallet_address", walletAddress)
-
-    if (updateScoreError) {
-      console.error("Error updating score for listing:", updateScoreError)
-      return { success: false, error: "Failed to update user score" }
-    }
-
-    // Erstelle das Listing
+    // Erstelle das Listing ZUERST
     console.log("Creating listing with data:", {
       seller_wallet_address: walletAddress, // Verwende wallet_address als seller_wallet_address
       seller_world_id: worldId,
@@ -753,6 +721,35 @@ export async function createListing(
     }
 
     console.log("Card removed from collection successfully")
+
+    // JETZT Score reduzieren (nach erfolgreichem Listing)
+    const scoreForCard = getScoreForRarity(cardDetails.rarity as CardRarity)
+    const { data: scoreUserData, error: userScoreError } = await supabase
+      .from("users")
+      .select("score")
+      .eq("wallet_address", walletAddress)
+      .single()
+
+    if (userScoreError) {
+      console.error("Error fetching user score:", userScoreError)
+      // Nicht kritisch - Listing ist bereits erstellt
+    } else {
+      const currentScore = scoreUserData.score || 0
+      const newScore = Math.max(0, currentScore - scoreForCard)
+      
+      console.log(`Deducting score for listing: ${walletAddress}: ${currentScore} -> ${newScore} (-${scoreForCard} points)`)
+
+      const { error: updateScoreError } = await supabase
+        .from("users")
+        .update({ score: newScore })
+        .eq("wallet_address", walletAddress)
+
+      if (updateScoreError) {
+        console.error("Error updating score for listing:", updateScoreError)
+        // Nicht kritisch - Listing ist bereits erstellt
+      }
+    }
+
     console.log("=== CREATE LISTING COMPLETE ===")
 
     // Nur Trade-Seite neu laden, Collection wird über onSuccess callback aktualisiert
@@ -777,21 +774,41 @@ export async function createListing(
 export async function unblockExpiredListings() {
   try {
     const supabase = createSupabaseServer()
-    const thirtySecondsAgo = new Date(Date.now() - 30000).toISOString()
+    const twentySecondsAgo = new Date(Date.now() - 20000).toISOString() // 20 Sekunden
 
-    const { error } = await supabase
+    console.log("🔓 Checking for expired blocks older than:", twentySecondsAgo)
+
+    // NUR abgelaufene Blocks freigeben (älter als 20 Sekunden)
+    const { data: expiredBlockedListings, error: fetchError } = await supabase
       .from("market_listings")
-      .update({ 
-        status: "active", 
-        blocked_at: null 
-      })
+      .select("id, blocked_at, status")
       .eq("status", "blocked")
-      .lt("blocked_at", thirtySecondsAgo)
+      .lt("blocked_at", twentySecondsAgo) // Nur älter als 20 Sekunden
 
-    if (error) {
-      console.error("Error unblocking expired listings:", error)
+    if (fetchError) {
+      console.error("Error fetching expired blocked listings:", fetchError)
+      return
+    }
+
+    if (expiredBlockedListings && expiredBlockedListings.length > 0) {
+      console.log("🔓 Found", expiredBlockedListings.length, "expired blocked listings - unblocking...")
+      
+      const { error } = await supabase
+        .from("market_listings")
+        .update({ 
+          status: "active", 
+          blocked_at: null 
+        })
+        .eq("status", "blocked")
+        .lt("blocked_at", twentySecondsAgo)
+
+      if (error) {
+        console.error("Error unblocking expired listings:", error)
+      } else {
+        console.log("🔓 Successfully unblocked", expiredBlockedListings.length, "expired blocked listings!")
+      }
     } else {
-      console.log("Checked for expired blocks")
+      console.log("🔓 No expired blocked listings found")
     }
   } catch (error) {
     console.error("Error in unblockExpiredListings:", error)
@@ -805,6 +822,9 @@ export async function blockListingForPurchase(listingId: string) {
   try {
     console.log("blockListingForPurchase called with listingId:", listingId)
     const supabase = createSupabaseServer()
+
+    // Bereinige abgelaufene Blocks zuerst
+    await unblockExpiredListings()
 
     // Prüfe ob die Karte noch verfügbar ist
     const { data: listing, error: listingError } = await supabase
@@ -828,6 +848,7 @@ export async function blockListingForPurchase(listingId: string) {
     }
 
     // Prüfe ob die Karte bereits blockiert ist
+    console.log("🔍 Checking if listing is already blocked...")
     const { data: blockedListing, error: blockedError } = await supabase
       .from("market_listings")
       .select("*")
@@ -835,18 +856,37 @@ export async function blockListingForPurchase(listingId: string) {
       .eq("status", "blocked")
       .single()
 
+    console.log("🔍 Blocked listing check result:", { blockedListing, blockedError })
+
     if (blockedListing && !blockedError) {
-      // Prüfe ob der Block älter als 1 Minute ist
+      console.log("🔍 Found blocked listing:", {
+        id: blockedListing.id,
+        status: blockedListing.status,
+        blocked_at: blockedListing.blocked_at,
+        seller: blockedListing.seller_wallet_address
+      })
+      
+      // Prüfe ob der Block älter als 30 Sekunden ist
       const blockedAt = new Date(blockedListing.blocked_at)
       const now = new Date()
       const timeDiff = now.getTime() - blockedAt.getTime()
       
+      console.log("🔍 Block timing:", {
+        blockedAt: blockedAt.toISOString(),
+        now: now.toISOString(),
+        timeDiffMs: timeDiff,
+        timeDiffSeconds: Math.floor(timeDiff / 1000)
+      })
+      
       if (timeDiff < 30000) { // 30 Sekunden = 30000ms
         const remainingTime = Math.ceil((30000 - timeDiff) / 1000)
+        console.log("🔍 Block is still valid, remaining time:", remainingTime, "seconds")
         return { 
           success: false, 
           error: `Card is currently being purchased by another user. Please wait ${remainingTime} seconds.` 
         }
+      } else {
+        console.log("🔍 Block is expired, will be cleared")
       }
     }
 
@@ -907,6 +947,9 @@ export async function blockListingForPurchase(listingId: string) {
 export async function purchaseCard(walletAddress: string, listingId: string) {
   try {
     const supabase = createSupabaseServer()
+
+    // Bereinige abgelaufene Blocks zuerst
+    await unblockExpiredListings()
 
     // Vereinfachte parallele Abfragen
     const [buyerResult, listingResult] = await Promise.all([
@@ -997,7 +1040,7 @@ export async function purchaseCard(walletAddress: string, listingId: string) {
     await supabase
       .from("users")
       .update({ cards_sold_since_last_purchase: newSoldCount })
-      .eq("username", listing.seller_id)
+      .eq("wallet_address", listing.seller_wallet_address)
     
     // 5. Neue Karteninstanz für den Käufer erstellen
     const { data: newCard, error: createError } = await supabase
@@ -1082,104 +1125,27 @@ export async function purchaseCard(walletAddress: string, listingId: string) {
 
 /**
  * Storniert ein Listing und gibt die Karte zurück
- * Jetzt wird der Eintrag komplett aus der Datenbank gelöscht
+ * ATOMIC TRANSACTION - Alles oder Nichts
  */
 export async function cancelListing(walletAddress: string, listingId: string) {
   try {
     const supabase = createSupabaseServer()
-
-    // Hole das Listing
-    const { data: listing, error: listingError } = await supabase
-      .from("market_listings")
-      .select("*")
-      .eq("id", listingId)
-      .eq("seller_wallet_address", walletAddress)
-      .eq("status", "active")
-      .single()
-
-    if (listingError || !listing) {
-      console.error("Error fetching listing:", listingError)
-      return { success: false, error: "Listing not found or already sold" }
-    }
-
-    // Get the card details to determine rarity and calculate score
-    const { data: cardDetails, error: cardDetailsError } = await supabase
-      .from("cards")
-      .select("rarity")
-      .eq("id", listing.card_id)
-      .single()
-
-    if (cardDetailsError || !cardDetails) {
-      console.error("Error fetching card details:", cardDetailsError)
-      // Continue with cancellation even if score update fails
-    } else {
-      // Calculate score based on card rarity
-      const scoreForCard = getScoreForRarity(cardDetails.rarity as CardRarity)
-
-      // Get seller's current score
-      const { data: sellerData, error: sellerError } = await supabase
-        .from("users")
-        .select("score")
-        .eq("wallet_address", walletAddress)
-        .single()
-
-      if (sellerError || !sellerData) {
-        console.error("Error fetching seller score:", sellerError)
-        // Continue with cancellation even if score update fails
-      } else {
-        // Calculate new score (restore the points)
-        const currentScore = sellerData.score || 0
-        const newScore = currentScore + scoreForCard
-
-        console.log(`Restoring score on cancellation: ${walletAddress}: ${currentScore} -> ${newScore}`)
-
-        // Update seller's score
-        const { error: updateScoreError } = await supabase
-          .from("users")
-          .update({ score: newScore })
-          .eq("wallet_address", walletAddress)
-
-        if (updateScoreError) {
-          console.error("Error restoring score on cancellation:", updateScoreError)
-          // Continue with cancellation even if score update fails
-        }
-      }
-    }
-
-    // Gib die Karte zurück an die Collection
-    console.log("Returning card to seller collection:", { 
-      card_id: listing.card_id, 
-      card_level: listing.card_level,
-      walletAddress 
+    
+    // ✅ ATOMIC TRANSACTION - Alles oder Nichts
+    const { error } = await supabase.rpc('cancel_listing_atomic', {
+      p_wallet_address: walletAddress,
+      p_listing_id: listingId
     })
     
-    const { error: insertCardError } = await supabase
-      .from("user_card_instances")
-      .insert({
-        wallet_address: walletAddress,
-        card_id: listing.card_id,
-        level: listing.card_level || 1,
-        favorite: false,
-        obtained_at: new Date().toISOString().split("T")[0],
-      })
-
-    if (insertCardError) {
-      console.error("Error returning card to collection:", insertCardError)
-      return { success: false, error: "Failed to return card to your collection" }
+    if (error) {
+      console.error("Error in cancelListing atomic transaction:", error)
+      return { success: false, error: error.message }
     }
-
-    console.log("Card returned to collection successfully")
     
-    // Lösche das Listing komplett aus der Datenbank
-    const { error: deleteError } = await supabase.from("market_listings").delete().eq("id", listingId)
-
-    if (deleteError) {
-      console.error("Error deleting listing:", deleteError)
-      return { success: false, error: "Failed to delete listing" }
-    }
-
+    // Revalidate paths after successful cancellation
     revalidatePath("/trade")
     revalidatePath("/collection")
+    
     return { success: true, message: "Listing cancelled successfully" }
   } catch (error) {
     console.error("Error in cancelListing:", error)
