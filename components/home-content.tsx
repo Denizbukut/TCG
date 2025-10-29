@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { useAuth } from "@/contexts/auth-context"
 import { claimDailyBonus } from "@/app/actions"
 import { getReferredUsers } from "@/app/actions/referrals"
-import { getDailyDeal, getSpecialDeal, purchaseDeal } from "@/app/actions/deals" // Import getSpecialDeal and purchaseDeal
+import { getDailyDeal, getSpecialDeal, purchaseDeal, markDealAsSeen } from "@/app/actions/deals" // Import getSpecialDeal, purchaseDeal and markDealAsSeen
 import { getActiveTimeDiscount } from "@/app/actions/time-discount" // Import time discount function
 import { getSBCChallenges, getUserSBCProgress, type SBCChallenge, type SBCUserProgress } from "@/app/actions/sbc"
 import ProtectedRoute from "@/components/protected-route"
@@ -674,22 +674,40 @@ const [copied, setCopied] = useState(false)
       try {
         const result = await getDailyDeal(user.wallet_address)
 
+        console.log("=== checkDailyDeal DEBUG ===")
+        console.log("Result:", result)
+        
         if (result.success && result.deal) {
+          console.log("Setting daily deal:", result.deal)
           setDailyDeal(result.deal)
           setDailyDealInteraction(result.interaction ?? null)
 
-          if (!result.interaction.seen && !result.interaction.dismissed && !result.interaction.purchased) {
+          // Check if interaction exists and if deal should be shown
+          const interaction = result.interaction
+          if (interaction && !interaction.seen && !interaction.dismissed && !interaction.purchased) {
             console.log("Opening daily deal dialog")
             setShowDailyDealDialog(true)
             setHasShownDailyDeal(true)
           } else {
             console.log("Not opening daily deal dialog:", {
-              seen: result.interaction.seen,
-              dismissed: result.interaction.dismissed,
-              purchased: result.interaction.purchased
+              hasInteraction: !!interaction,
+              seen: interaction?.seen,
+              dismissed: interaction?.dismissed,
+              purchased: interaction?.purchased
             })
             setHasShownDailyDeal(true) // Mark as shown even if not opening
           }
+        } else if (result.success && !result.deal) {
+          // No deal available
+          console.log("No deal available - result.deal is null")
+          setDailyDeal(null)
+          setDailyDealInteraction(null)
+          setHasShownDailyDeal(true)
+        } else {
+          console.log("Result not successful:", result)
+          setDailyDeal(null)
+          setDailyDealInteraction(null)
+          setHasShownDailyDeal(true)
         }
       } catch (error) {
         console.error("Error checking daily deal:", error)
@@ -1240,6 +1258,9 @@ const [copied, setCopied] = useState(false)
       
       if (result.success) {
         toast({ title: 'Deal purchased!', description: 'Your deal was successfully purchased.' });
+        // Close the dialog
+        setShowDailyDealDialog(false);
+        setHasShownDailyDeal(true);
         // Update tickets display
         if (result.newTickets !== undefined && result.newEliteTickets !== undefined) {
           await updateUserTickets?.(result.newTickets, result.newEliteTickets);
@@ -2251,9 +2272,19 @@ const [copied, setCopied] = useState(false)
         {dailyDeal && dailyDeal.card_name && (
           <DealOfTheDayDialog
             isOpen={showDailyDealDialog}
-            onClose={() => {
+            onClose={async () => {
               setShowDailyDealDialog(false)
               setHasShownDailyDeal(true) // Mark as shown when closed
+              
+              // Mark deal as seen when dialog is closed
+              if (dailyDeal && user?.wallet_address) {
+                try {
+                  await markDealAsSeen(user.wallet_address, dailyDeal.id)
+                  console.log("Deal marked as seen on close")
+                } catch (error) {
+                  console.error("Error marking deal as seen on close:", error)
+                }
+              }
             }}
             deal={dailyDeal}
             username={user?.wallet_address || ""}

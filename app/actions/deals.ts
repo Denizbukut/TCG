@@ -30,7 +30,9 @@ export const getDailyDeal = async (walletAddress: string) => {
       return { success: false, error: "No deal available" }
     }
 
-    console.log("Using deal:", deal)
+    console.log("=== getDailyDeal DEBUG ===")
+    console.log("Found deal for today:", deal)
+    console.log("Today's date:", today)
 
     // Get card information
     const { data: card, error: cardError } = await supabase.from("cards").select("*").eq("id", deal.card_id).single()
@@ -52,16 +54,20 @@ export const getDailyDeal = async (walletAddress: string) => {
 
 
     // Check if user has already interacted with this deal
-    const { data: interaction, error: interactionError } = await supabase
+    // Get the most recent interaction, prioritizing purchased ones
+    const { data: interactions, error: interactionError } = await supabase
       .from("deal_interactions")
       .select("*")
       .eq("wallet_address", walletAddress)
       .eq("deal_id", deal.id)
-      .single()
+      .order("purchased", { ascending: false }) // purchased=true first
+      .order("interaction_date", { ascending: false }) // then by date
+      .limit(1)
+
+    const interaction = interactions?.[0]
 
     // If no interaction record exists, create one with seen=false and dismissed=false
-    if (interactionError && interactionError.code === "PGRST116") {
-      // PGRST116 means no rows returned
+    if (interactionError || !interaction) {
       const { error: insertError } = await supabase.from("deal_interactions").insert({
         wallet_address: walletAddress,
         deal_id: deal.id,
@@ -102,21 +108,16 @@ export const getDailyDeal = async (walletAddress: string) => {
         purchased: interaction.purchased
       })
       
-      // Only hide deal if it has been purchased
-      if (interaction.purchased) {
-        console.log("Deal should NOT be shown - already purchased")
-        return {
-          success: true,
-          deal: null, // Don't show the deal
-          interaction: interaction,
-        }
-      } else {
-        console.log("Deal should be shown - not purchased")
-      }
+      // Show deal even if purchased, but with interaction status
+      console.log("Deal should be shown with interaction status")
     } else {
       console.log("No interaction found - deal should be shown")
     }
 
+    console.log("=== getDailyDeal FINAL RESULT ===")
+    console.log("Formatted deal:", formattedDeal)
+    console.log("Interaction:", interaction)
+    
     return {
       success: true,
       deal: formattedDeal,
@@ -141,12 +142,17 @@ export async function markDealAsSeen(walletAddress: string, dealId: number) {
     const supabase = createSupabaseServer()
 
     // First, check if record already exists and is already seen
-    const { data: existingData, error: fetchError } = await supabase
+    // Get the most recent interaction, prioritizing purchased ones
+    const { data: interactions, error: fetchError } = await supabase
       .from("deal_interactions")
       .select("*")
       .eq("wallet_address", walletAddress)
       .eq("deal_id", dealId)
-      .single()
+      .order("purchased", { ascending: false }) // purchased=true first
+      .order("interaction_date", { ascending: false }) // then by date
+      .limit(1)
+
+    const existingData = interactions?.[0]
 
     console.log("Existing record:", { existingData, fetchError })
 
@@ -156,7 +162,7 @@ export async function markDealAsSeen(walletAddress: string, dealId: number) {
       return { success: true }
     }
 
-    if (fetchError && fetchError.code !== "PGRST116") {
+    if (fetchError) {
       console.error("Error fetching existing record:", fetchError)
       return { success: false, error: "Failed to fetch existing record" }
     }
