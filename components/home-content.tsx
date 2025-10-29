@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { useAuth } from "@/contexts/auth-context"
 import { claimDailyBonus } from "@/app/actions"
 import { getReferredUsers } from "@/app/actions/referrals"
-import { getDailyDeal, getSpecialDeal } from "@/app/actions/deals" // Import getSpecialDeal
+import { getDailyDeal, getSpecialDeal, purchaseDeal } from "@/app/actions/deals" // Import getSpecialDeal and purchaseDeal
 import { getActiveTimeDiscount } from "@/app/actions/time-discount" // Import time discount function
 import { getSBCChallenges, getUserSBCProgress, type SBCChallenge, type SBCUserProgress } from "@/app/actions/sbc"
 import ProtectedRoute from "@/components/protected-route"
@@ -1232,14 +1232,25 @@ const [copied, setCopied] = useState(false)
 
   // Direct purchase handler for Daily Deal
   const handleBuyDailyDeal = async () => {
-    if (!user?.username || !dailyDeal) return;
+    if (!user?.wallet_address || !dailyDeal) return;
     setBuyingDailyDeal(true);
     try {
-      // Here call the purchase logic for dailyDeal (e.g. purchaseDeal API)
-      // await purchaseDeal(dailyDeal.id, user.username);
-      toast({ title: 'Deal purchased!', description: 'Your deal was successfully purchased.' });
-      // Optional: Update tickets, close dialog etc.
+      // Call the purchase logic for dailyDeal
+      const result = await purchaseDeal(user.wallet_address, dailyDeal.id);
+      
+      if (result.success) {
+        toast({ title: 'Deal purchased!', description: 'Your deal was successfully purchased.' });
+        // Update tickets display
+        if (result.newTickets !== undefined && result.newEliteTickets !== undefined) {
+          await updateUserTickets?.(result.newTickets, result.newEliteTickets);
+        }
+        // Refresh user data
+        await refreshUserData?.();
+      } else {
+        toast({ title: 'Error', description: result.error || 'Purchase failed', variant: 'destructive' });
+      }
     } catch (e) {
+      console.error('Error purchasing daily deal:', e);
       toast({ title: 'Error', description: 'Purchase failed', variant: 'destructive' });
     } finally {
       setBuyingDailyDeal(false);
