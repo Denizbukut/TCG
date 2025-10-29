@@ -13,6 +13,7 @@ import MobileNav from "@/components/mobile-nav"
 import { Button } from "@/components/ui/button"
 import CardCatalog from "@/components/card-catalog"
 import { useRouter } from "next/navigation"
+// import LanguageSwitcher from "@/components/language-switcher"
 import { getTimeUntilContestEnd, isContestActive } from "@/lib/weekly-contest-config"
 
 // Add ChatOverlay component at the bottom of the file
@@ -47,7 +48,6 @@ import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { getSupabaseBrowserClient } from "@/lib/supabase"
 import DealOfTheDayDialog from "@/components/deal-of-the-day-dialog"
-// import { useTranslation } from "@/hooks/use-translation"
 import { MiniKit, Tokens, tokenToDecimals, type PayCommandInput } from "@worldcoin/minikit-js"
 import { useWldPrice } from "@/contexts/WldPriceContext"
 import { claimReferralRewardForUser } from "@/app/actions/referrals"
@@ -150,9 +150,19 @@ const xpPassBenefits = [
 
 export default function Home() {
   const { user, updateUserTickets, refreshUserData } = useAuth()
-  // const { t, locale } = useTranslation()
-  const t = (key: string) => key // Simple fallback
-  const locale = 'en' // Fallback locale
+  // const { tSync, locale, changeLanguage, isInitialized } = useTranslation()
+  // const t = (key: string) => {
+  //   if (!isInitialized) {
+  //     return key // Return key if not initialized yet
+  //   }
+  //   const translation = tSync(key, key)
+  //   // If translation is the same as key, it means translation failed
+  //   if (translation === key) {
+  //     console.warn(`Translation not found for key: ${key}`)
+  //   }
+  //   return translation
+  // }
+  const t = (key: string) => key // Fallback: return key as-is
   const [claimLoading, setClaimLoading] = useState(false)
   const [referralLoading, setReferralLoading] = useState(false)
   const [alreadyClaimed, setAlreadyClaimed] = useState(false)
@@ -1311,7 +1321,7 @@ const [copied, setCopied] = useState(false)
           const { error: purchaseRecordError } = await supabase
             .from("special_deal_purchases")
             .insert({
-              user_id: user.username,
+              wallet_address: user.wallet_address,
               special_deal_id: specialDeal.id,
               purchased_at: new Date().toISOString(),
             });
@@ -1415,12 +1425,13 @@ const [copied, setCopied] = useState(false)
         {/* Header with glass effect */}
         <header className="sticky top-0 z-30 backdrop-blur-md bg-gradient-to-br from-[#232526]/90 to-[#414345]/90 border-b-2 border-yellow-400 shadow-sm">
           <div className="w-full px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center">
+            <div className="flex items-center gap-3">
               <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">
                 CRYPTO TCG
               </h1>
+              
               {/* Social Icon Buttons */}
-              <div className="flex gap-2 ml-3 items-center">
+              <div className="flex gap-2 items-center">
                 <a
                   href="https://x.com/ani_labs_world"
                   target="_blank"
@@ -1433,31 +1444,36 @@ const [copied, setCopied] = useState(false)
                     <path d="M17.53 3H21.5L14.36 10.66L22.75 21H16.28L11.22 14.73L5.52 21H1.54L9.04 12.76L1 3H7.6L12.18 8.67L17.53 3ZM16.4 19.13H18.18L7.45 4.76H5.54L16.4 19.13Z" fill="currentColor"/>
                   </svg>
                 </a>
-            
-            {/* Info Icon */}
-            <button
-              onClick={() => setShowInfoDialog(true)}
-              className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center transition-transform hover:scale-105 shadow border-2 border-yellow-300"
-              aria-label="Info"
-            >
-              <Info className="h-4 w-4 text-black" />
-            </button>
-      
-      {/* Tickets Display */}
-      <div className="flex items-center gap-2 ml-2">
-        <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#232526] to-[#414345] px-2 py-1 rounded-full shadow-sm border-2 border-blue-400 min-w-[54px]">
-          <Ticket className="h-4 w-4 text-blue-400 mx-auto" />
-          <span className="font-medium text-xs text-center text-blue-100">{tickets}</span>
-        </div>
-        <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#232526] to-[#414345] px-2 py-1 rounded-full shadow-sm border-2 border-purple-400 min-w-[54px]">
-          <Ticket className="h-4 w-4 text-purple-400 mx-auto" />
-          <span className="font-medium text-xs text-center text-purple-100">{eliteTickets}</span>
-        </div>
-      </div>
-    </div>
+              
+                {/* Info Icon */}
+                <button
+                  onClick={() => setShowInfoDialog(true)}
+                  className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center transition-transform hover:scale-105 shadow border-2 border-yellow-300"
+                  aria-label="Info"
+                >
+                  <Info className="h-4 w-4 text-black" />
+                </button>
+              </div>
+              
+              {/* Tickets Display */}
+              <div className="flex items-center gap-2">
+                <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#232526] to-[#414345] px-2 py-1 rounded-full shadow-sm border-2 border-blue-400 min-w-[54px]">
+                  <Ticket className="h-4 w-4 text-blue-400 mx-auto" />
+                  <span className="font-medium text-xs text-center text-blue-100">{tickets}</span>
+                </div>
+                <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#232526] to-[#414345] px-2 py-1 rounded-full shadow-sm border-2 border-purple-400 min-w-[54px]">
+                  <Ticket className="h-4 w-4 text-purple-400 mx-auto" />
+                  <span className="font-medium text-xs text-center text-purple-100">{eliteTickets}</span>
+                </div>
+              </div>
             </div>
-  </div>
-</header>
+            
+            <div className="flex items-center gap-3">
+              {/* Language Switcher */}
+              {/* <LanguageSwitcher /> */}
+            </div>
+          </div>
+        </header>
 
         <main className="w-full px-2 md:px-6 flex-1 overflow-y-auto overscroll-contain"> {/* Padding hinzugefügt */}
          
@@ -1742,8 +1758,8 @@ const [copied, setCopied] = useState(false)
                     <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center mb-1 border border-yellow-300">
                       <BookOpen className="h-5 w-5 text-white drop-shadow-lg" />
                     </div>
-                    <div className="text-sm font-bold text-yellow-100">Card Gallery</div>
-                    <div className="text-xs text-sky-400">Browse Cards</div>
+                    <div className="text-sm font-bold text-yellow-100">{/* t('home.cardGallery') */}Card Gallery</div>
+                    <div className="text-xs text-sky-400">{/* t('home.browseCards') */}Browse Cards</div>
                   </motion.div>
                 </Link>
               </div>
@@ -1776,10 +1792,10 @@ const [copied, setCopied] = useState(false)
                     </div>
                     <div className={`text-sm font-extrabold drop-shadow-sm tracking-wide ${
                       hasActiveDiscount ? 'text-red-100' : 'text-yellow-100'
-                    }`}>Shop</div>
+                    }`}>{/* t('home.shop') */}Shop</div>
                     <div className={`text-xs font-semibold mt-0.5 ${
                       hasActiveDiscount ? 'text-red-200' : 'text-sky-400'
-                    }`}>Exclusive Packs</div>
+                    }`}>{/* t('home.exclusivePacks') */}Exclusive Packs</div>
                   </motion.div>
                 </Link>
               </div>
@@ -2145,12 +2161,12 @@ const [copied, setCopied] = useState(false)
                           {buyingSpecialDeal ? (
                             <>
                               <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
-                              Processing...
+{/* t('common.processing') */}Processing
                             </>
                           ) : (
                             <>
                               <ShoppingBag className="h-4 w-4 mr-2" />
-Buy Now
+{/* t('home.buyNow') */}Buy Now
                             </>
                           )}
                         </Button>
@@ -2285,7 +2301,7 @@ Buy Now
         </li>
         <li className="flex items-center gap-2">
           <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
-          Once friend reaches <strong className="text-yellow-100">Level 5</strong>
+          Once friend reaches <strong className="text-yellow-100">Level 3</strong>
         </li>
       </ul>
     </div>
@@ -2309,7 +2325,7 @@ Buy Now
               </span>
               {ref.reward_claimed ? (
                 <CheckCircle className="h-4 w-4 text-green-400" />
-              ) : ref.level >= 5 ? (
+              ) : ref.level >= 3 ? (
                 <Button
                   size="sm"
                   className="bg-green-500 hover:bg-green-600 text-white font-bold text-xs border border-green-400"

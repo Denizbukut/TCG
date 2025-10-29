@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     const { error: purchaseError } = await supabase
       .from('special_deal_purchases')
       .insert({
-        user_id: username,
+        wallet_address: walletAddress,
         special_deal_id: deal.id,
         purchased_at: new Date().toISOString(),
       })
