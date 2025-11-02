@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
+import { useI18n } from "@/contexts/i18n-context"
 import ProtectedRoute from "@/components/protected-route"
 import MobileNav from "@/components/mobile-nav"
 import { Button } from "@/components/ui/button"
@@ -22,6 +23,7 @@ import { getBattleLimitStatus } from "@/app/battle-limit-actions"
 
 export default function ShopPage() {
   const { user, updateUserTickets } = useAuth()
+  const { t } = useI18n()
   const [isLoading, setIsLoading] = useState<Record<string, boolean>>({})
   const [tickets, setTickets] = useState<number>(user?.tickets ? Number(user.tickets) : 0)
   const [eliteTickets, setEliteTickets] = useState<number>(
@@ -293,8 +295,8 @@ const WLD_TOKEN = "0x2cFc85d8E48F8EAB294be644d9E25C3030863003" // WLD (World Cha
       await handleBuyTickets(packageId, ticketAmount, ticketType)
     } else {
       toast({
-        title: "Payment Failed",
-        description: "Your payment could not be processed. Please try again.",
+        title: t("shop.payment_failed", "Payment Failed"),
+        description: t("shop.payment_failed_desc", "Your payment could not be processed. Please try again."),
         variant: "destructive",
       })
       setIsLoading({ ...isLoading, [packageId]: false })
@@ -302,8 +304,8 @@ const WLD_TOKEN = "0x2cFc85d8E48F8EAB294be644d9E25C3030863003" // WLD (World Cha
   } catch (error) {
     console.error("Payment error:", error)
     toast({
-      title: "Payment Error",
-      description: "An error occurred during payment. Please try again.",
+      title: t("shop.payment_error", "Payment Error"),
+      description: t("shop.payment_error_desc", "An error occurred during payment. Please try again."),
       variant: "destructive",
     })
     setIsLoading({ ...isLoading, [packageId]: false })
@@ -438,8 +440,8 @@ const WLD_TOKEN = "0x2cFc85d8E48F8EAB294be644d9E25C3030863003" // WLD (World Cha
   const handleBuyTickets = async (packageId: string, ticketAmount: number, ticketType: "regular" | "legendary" | "icon") => {
     if (!user?.username) {
       toast({
-        title: "Error",
-        description: "You must be logged in to purchase tickets",
+        title: t("shop.error", "Error"),
+        description: t("shop.login_required_to_purchase", "You must be logged in to purchase tickets"),
         variant: "destructive",
       })
       setIsLoading({ ...isLoading, [packageId]: false })
@@ -526,14 +528,18 @@ await supabase.from("ticket_purchases").insert({
 })
 
       toast({
-        title: "Purchase Successful!",
-        description: `You've purchased ${ticketAmount} ${ticketType === "legendary" ? "elite" : ticketType === "icon" ? "icon" : "classic"} tickets!${discountMessage}`,
+        title: t("shop.purchase_successful", "Purchase Successful!"),
+        description: t("shop.purchase_successful_desc", "You've purchased {amount} {type} tickets!{discount}", { 
+          amount: ticketAmount, 
+          type: ticketType === "legendary" ? "elite" : ticketType === "icon" ? "icon" : "classic",
+          discount: discountMessage
+        }),
       })
     } catch (error) {
       console.error("Error buying tickets:", error)
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        title: t("shop.error", "Error"),
+        description: error instanceof Error ? error.message : t("shop.unexpected_error", "An unexpected error occurred"),
         variant: "destructive",
       })
     } finally {
@@ -582,7 +588,7 @@ await supabase.from("ticket_purchases").insert({
         {/* Shop Header mit Ticket-Anzeige oben rechts */}
         <div className="flex items-center justify-between max-w-lg mx-auto px-4 py-3">
           <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-gray-200 to-gray-400 bg-clip-text text-transparent drop-shadow-lg">
-            Ticket Shop
+            {t("shop.title", "Ticket Shop")}
           </h1>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded-full shadow-sm border border-blue-400/30 backdrop-blur-md">
@@ -611,13 +617,13 @@ await supabase.from("ticket_purchases").insert({
             >
               <div className="flex items-center justify-center gap-2 mb-1">
                 <Clock className="h-4 w-4 text-red-200" />
-                <p className="font-bold text-sm tracking-wide">🔥 LIMITED TIME OFFER!</p>
+                <p className="font-bold text-sm tracking-wide">🔥 {t("shop.limited_offer", "LIMITED TIME OFFER!")}</p>
               </div>
               <p className="text-xs opacity-90 mb-2">
-                {Math.round(timeDiscount.value * 100)}% off all tickets!
+                {t("shop.discount_off", "{percent}% off all tickets!", { percent: Math.round(timeDiscount.value * 100) })}
               </p>
               <div className="flex items-center justify-center gap-1">
-                <span className="text-xs opacity-75">Ends in:</span>
+                <span className="text-xs opacity-75">{t("shop.ends_in", "Ends in:")}:</span>
                 <span className="font-mono font-bold text-sm text-red-200">{discountTimeLeft}</span>
               </div>
             </motion.div>
@@ -630,11 +636,11 @@ await supabase.from("ticket_purchases").insert({
     animate={{ opacity: 1, y: 0 }}
     className="bg-gradient-to-r from-gray-700/80 to-gray-900/80 text-gray-100 rounded-xl p-3 text-center shadow-lg border border-gray-400/30 backdrop-blur-md"
   >
-    <p className="font-semibold text-sm tracking-wide">🎉 Discount Active!</p>
+    <p className="font-semibold text-sm tracking-wide">🎉 {t("shop.discount_active", "Discount Active!")}</p>
     <p className="text-xs opacity-90">
       {userClanRole === "cheap_hustler"
-        ? "You get 10% off all ticket purchases as a Cheap Hustler!"
-        : "You get 10% off all ticket purchases as a Leader of a 30+ member clan!"}
+        ? t("shop.cheap_hustler_discount", "You get 10% off all ticket purchases as a Cheap Hustler!")
+        : t("shop.leader_discount", "You get 10% off all ticket purchases as a Leader of a 30+ member clan!")}
     </p>
   </motion.div>
 )}
@@ -661,14 +667,14 @@ await supabase.from("ticket_purchases").insert({
                       className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-blue-300 data-[state=active]:text-blue-200 data-[state=active]:shadow transition-all font-semibold tracking-wide"
                     >
                       <Ticket className="h-4 w-4 mr-2 text-blue-300" />
-                      Regular Tickets
+                      {t("shop.regular_tickets", "Regular Tickets")}
                     </TabsTrigger>
                     <TabsTrigger
                       value="legendary"
                       className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-purple-400 data-[state=active]:text-purple-200 data-[state=active]:shadow transition-all font-semibold tracking-wide"
                     >
                       <Ticket className="h-4 w-4 mr-2 text-purple-300" />
-                      Legendary Tickets
+                      {t("shop.legendary_tickets", "Legendary Tickets")}
                     </TabsTrigger>
                     {/* <TabsTrigger
                       value="icon"
@@ -710,7 +716,7 @@ await supabase.from("ticket_purchases").insert({
                   <CardTitle className="text-base font-extrabold flex items-center text-blue-200 drop-shadow">
                     <span className="mr-1">{pkg.amount}</span>
                     <Ticket className="h-4 w-4 text-blue-300 drop-shadow-lg mx-1" />
-                    <span className="ml-1 text-xs">{pkg.amount === 1 ? "Regular Ticket" : "Regular Tickets"}</span>
+                    <span className="ml-1 text-xs">{pkg.amount === 1 ? t("shop.regular_ticket", "Regular Ticket") : t("shop.regular_tickets", "Regular Tickets")}</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-2 pt-0 pb-1 flex-1">
@@ -743,10 +749,10 @@ await supabase.from("ticket_purchases").insert({
                     {isLoading[pkg.id] ? (
                       <>
                         <div className="h-4 w-4 border-2 border-t-transparent border-blue-300 rounded-full animate-spin mr-2"></div>
-                        Processing...
+                        {t("shop.processing", "Processing...")}
                       </>
                     ) : (
-                      "Purchase"
+                      t("shop.purchase", "Purchase")
                     )}
                   </Button>
                 </CardFooter>
@@ -787,7 +793,7 @@ await supabase.from("ticket_purchases").insert({
                   <CardTitle className="text-base font-extrabold flex items-center text-purple-200 drop-shadow">
                     <span className="mr-1">{pkg.amount}</span>
                     <Ticket className="h-4 w-4 text-purple-300 drop-shadow-lg mx-1" />
-                    <span className="ml-1 text-xs">{pkg.amount === 1 ? "Legendary Ticket" : "Legendary Tickets"}</span>
+                    <span className="ml-1 text-xs">{pkg.amount === 1 ? t("shop.legendary_ticket", "Legendary Ticket") : t("shop.legendary_tickets", "Legendary Tickets")}</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-2 pt-0 pb-1 flex-1">
@@ -818,10 +824,10 @@ await supabase.from("ticket_purchases").insert({
                     {isLoading[pkg.id] ? (
                       <>
                         <div className="h-4 w-4 border-2 border-t-transparent border-purple-300 rounded-full animate-spin mr-2"></div>
-                        Processing...
+                        {t("shop.processing", "Processing...")}
                       </>
                     ) : (
-                      "Purchase"
+                      t("shop.purchase", "Purchase")
                     )}
                   </Button>
                 </CardFooter>
@@ -956,9 +962,9 @@ await supabase.from("ticket_purchases").insert({
             className="bg-white/10 rounded-xl p-5 shadow-lg space-y-4 border border-gray-400/20 backdrop-blur-md"
           >
             <div className="flex items-center justify-between">
-              <h3 className="font-medium text-gray-100">Payment Information</h3>
+              <h3 className="font-medium text-gray-100">{t("shop.payment_info", "Payment Information")}</h3>
               <Badge variant="outline" className="text-gray-300 bg-gray-900/30 border-gray-400/30">
-                Secure
+                {t("shop.secure", "Secure")}
               </Badge>
             </div>
 
@@ -968,29 +974,28 @@ await supabase.from("ticket_purchases").insert({
               <div className="space-y-2">
                 <div className="flex items-center text-sm text-gray-200/80">
                   <Check className="h-4 w-4 text-yellow-200 mr-2" />
-                  Instant delivery
+                  {t("shop.instant_delivery", "Instant delivery")}
                 </div>
                 <div className="flex items-center text-sm text-gray-200/80">
                   <Check className="h-4 w-4 text-yellow-200 mr-2" />
-                  Secure transactions
+                  {t("shop.secure_transactions", "Secure transactions")}
                 </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center text-sm text-gray-200/80">
                   <Check className="h-4 w-4 text-yellow-200 mr-2" />
-                  No hidden fees
+                  {t("shop.no_hidden_fees", "No hidden fees")}
                 </div>
                 <div className="flex items-center text-sm text-gray-200/80">
                   <Check className="h-4 w-4 text-yellow-200 mr-2" />
-                  24/7 support
+                  {t("shop.support_24_7", "24/7 support")}
                 </div>
               </div>
             </div>
 
             <div className="pt-2">
               <p className="text-xs text-gray-200/70">
-                WLD is the Worldcoin token used for payments in this app. All transactions are processed securely and
-                tickets are added instantly to your account.
+                {t("shop.wld_description", "WLD is the Worldcoin token used for payments in this app. All transactions are processed securely and tickets are added instantly to your account.")}
               </p>
             </div>
           </motion.div>

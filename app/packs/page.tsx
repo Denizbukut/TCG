@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { getSupabaseBrowserClient } from "@/lib/supabase"
 import { useAuth } from "@/contexts/auth-context"
+import { useI18n } from "@/contexts/i18n-context"
 import { drawCards } from "@/app/actions"
 import ProtectedRoute from "@/components/protected-route"
 import MobileNav from "@/components/mobile-nav"
@@ -18,6 +19,7 @@ import { motion } from "framer-motion"
 
 export default function PacksPage() {
   const { user, updateUserTickets } = useAuth()
+  const { t } = useI18n()
   const [isDrawing, setIsDrawing] = useState(false)
   const [showResults, setShowResults] = useState(false)
   const [showAnimation, setShowAnimation] = useState(false)
@@ -163,7 +165,7 @@ export default function PacksPage() {
         <header className="bg-orange-600 text-white p-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold">Card Packs</h1>
+              <h1 className="text-2xl font-bold">{t("packs.title", "Card Packs")}</h1>
               {/* Tickets neben dem Card Packs Titel */}
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1 bg-white/20 px-2 py-1 rounded-full">

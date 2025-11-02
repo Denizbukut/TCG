@@ -792,19 +792,19 @@ export async function unblockExpiredListings() {
 
     if (expiredBlockedListings && expiredBlockedListings.length > 0) {
       console.log("🔓 Found", expiredBlockedListings.length, "expired blocked listings - unblocking...")
-      
-      const { error } = await supabase
-        .from("market_listings")
-        .update({ 
-          status: "active", 
-          blocked_at: null 
-        })
-        .eq("status", "blocked")
+
+    const { error } = await supabase
+      .from("market_listings")
+      .update({ 
+        status: "active", 
+        blocked_at: null 
+      })
+      .eq("status", "blocked")
         .lt("blocked_at", twentySecondsAgo)
 
-      if (error) {
-        console.error("Error unblocking expired listings:", error)
-      } else {
+    if (error) {
+      console.error("Error unblocking expired listings:", error)
+    } else {
         console.log("🔓 Successfully unblocked", expiredBlockedListings.length, "expired blocked listings!")
       }
     } else {
@@ -1130,7 +1130,7 @@ export async function purchaseCard(walletAddress: string, listingId: string) {
 export async function cancelListing(walletAddress: string, listingId: string) {
   try {
     const supabase = createSupabaseServer()
-    
+
     // ✅ ATOMIC TRANSACTION - Alles oder Nichts
     const { error } = await supabase.rpc('cancel_listing_atomic', {
       p_wallet_address: walletAddress,

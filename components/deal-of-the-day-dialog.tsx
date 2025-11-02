@@ -12,7 +12,7 @@ import { renderStars } from "@/utils/card-stars"
 import { motion, AnimatePresence } from "framer-motion"
 import { MiniKit, tokenToDecimals, Tokens, type PayCommandInput } from "@worldcoin/minikit-js"
 import { useWldPrice } from "@/contexts/WldPriceContext"
-// import { useTranslation } from "@/hooks/use-translation"
+import { useI18n } from "@/contexts/i18n-context"
 
 interface DailyDeal {
   id: number
@@ -52,8 +52,7 @@ export default function DealOfTheDayDialog({
   username,
   onPurchaseSuccess,
 }: DealOfTheDayDialogProps) {
-  // const { t } = useTranslation()
-  const t = (key: string) => key // Fallback function
+  const { t } = useI18n()
   const [isPurchasing, setIsPurchasing] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const hasMarkedAsSeen = useRef(false)
@@ -134,6 +133,18 @@ export default function DealOfTheDayDialog({
 
   const rarityStyle = rarityStyles[deal.card_rarity as keyof typeof rarityStyles] || rarityStyles.common
 
+  // Helper function to translate rarity
+  const getDisplayRarity = (rarity: string) => {
+    const rarityMap: Record<string, string> = {
+      common: t("rarity.common", "Common"),
+      rare: t("rarity.rare", "Rare"),
+      epic: t("rarity.epic", "Epic"),
+      legendary: t("rarity.legendary", "Legendary"),
+      goat: t("rarity.goat", "GOAT"),
+    }
+    return rarityMap[rarity.toLowerCase()] || rarity
+  }
+
   const handleDismiss = async () => {
     try {
       const result = await markDealAsDismissed(username, deal.id)
@@ -178,16 +189,16 @@ export default function DealOfTheDayDialog({
       } else {
         console.error("Payment failed:", finalPayload)
         toast({
-          title: "Payment Failed",
-          description: "Transaction was not successful",
+          title: t("deals.payment_failed", "Payment Failed"),
+          description: t("deals.transaction_unsuccessful", "Transaction was not successful"),
           variant: "destructive",
         })
       }
     } catch (error) {
       console.error("Error in sendPayment:", error)
       toast({
-        title: "Payment Error",
-        description: "Failed to process payment",
+        title: t("deals.payment_error", "Payment Error"),
+        description: t("deals.failed_process_payment", "Failed to process payment"),
         variant: "destructive",
       })
     }
@@ -215,16 +226,16 @@ export default function DealOfTheDayDialog({
         }, 2000)
       } else {
         toast({
-          title: "Purchase Failed",
-          description: result.error || "Failed to purchase the deal",
+          title: t("deals.purchase_failed", "Purchase Failed"),
+          description: result.error || t("deals.failed_purchase_deal", "Failed to purchase the deal"),
           variant: "destructive",
         })
       }
     } catch (error) {
       console.error("Error purchasing deal:", error)
       toast({
-        title: "Error",
-        description: "An unexpected error occurred",
+        title: t("common.error", "Error"),
+        description: t("common.unexpected_error", "An unexpected error occurred"),
         variant: "destructive",
       })
     } finally {
@@ -264,7 +275,7 @@ export default function DealOfTheDayDialog({
       }}
     >
       <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-xl border-0 bg-gray-900 text-white">
-        <DialogTitle className="sr-only">Deal of the Day</DialogTitle>
+        <DialogTitle className="sr-only">{t("deals.deal_of_the_day", "Deal of the Day")}</DialogTitle>
         <AnimatePresence>
           {showSuccess ? (
             <motion.div
@@ -287,7 +298,7 @@ export default function DealOfTheDayDialog({
                 transition={{ delay: 0.3 }}
                 className="text-xl font-bold mb-2 text-green-400"
               >
-                Purchase Successful!
+                {t("deals.purchase_successful", "Purchase Successful!")}
               </motion.h3>
               <motion.p
                 initial={{ y: 20, opacity: 0 }}
@@ -295,7 +306,7 @@ export default function DealOfTheDayDialog({
                 transition={{ delay: 0.4 }}
                 className="text-gray-400"
               >
-                You've claimed today's special deal
+                {t("deals.claimed_special_deal", "You've claimed today's special deal")}
               </motion.p>
             </motion.div>
           ) : (
@@ -336,7 +347,7 @@ export default function DealOfTheDayDialog({
 
                   <div className="absolute -top-4 -right-4 bg-violet-600 text-white text-xs font-bold py-1 px-3 rounded-full flex items-center gap-1 shadow-lg">
                     <Sparkles className="h-3 w-3" />
-                    <span>Daily Deal</span>
+                    <span>{t("deals.daily_deal", "Daily Deal")}</span>
                   </div>
                 </div>
               </div>
@@ -346,7 +357,7 @@ export default function DealOfTheDayDialog({
                 <div className="mb-5">
                   <div className="flex items-center justify-between mb-1">
                     <h3 className="text-xl font-bold text-white">{deal.card_name}</h3>
-                    <Badge className={rarityStyle.badge}>{deal.card_rarity}</Badge>
+                    <Badge className={rarityStyle.badge}>{getDisplayRarity(deal.card_rarity)}</Badge>
                   </div>
                   <p className={`text-sm ${rarityStyle.text}`}>{deal.card_character}</p>
                   <p className="text-sm text-gray-400 mt-3">{deal.description}</p>
@@ -354,7 +365,7 @@ export default function DealOfTheDayDialog({
 
                 {/* What's Included */}
                 <div className="bg-gray-900/50 rounded-xl p-4 mb-5 border border-gray-700/50">
-                  <h4 className="text-sm font-medium text-gray-300 mb-3">What's Included</h4>
+                  <h4 className="text-sm font-medium text-gray-300 mb-3">{t("deals.whats_included", "What's Included")}</h4>
                   <div className="space-y-3">
                     <div className="flex items-center">
                       <div
@@ -365,7 +376,7 @@ export default function DealOfTheDayDialog({
                       <div>
                         <p className="text-sm font-medium text-white">{deal.card_name}</p>
                         <p className="text-xs text-gray-400">
-                          Level {deal.card_level} {deal.card_rarity}
+                          {t("common.level", "Level")} {deal.card_level} {getDisplayRarity(deal.card_rarity)}
                         </p>
                       </div>
                     </div>
@@ -376,8 +387,8 @@ export default function DealOfTheDayDialog({
                           <Ticket className="h-4 w-4 text-blue-400" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-white">{deal.classic_tickets} Regular Tickets</p>
-                          <p className="text-xs text-gray-400">For regular card packs</p>
+                          <p className="text-sm font-medium text-white">{deal.classic_tickets} {t("deals.regular_tickets", "Regular Tickets")}</p>
+                          <p className="text-xs text-gray-400">{t("deals.for_regular_packs", "For regular card packs")}</p>
                         </div>
                       </div>
                     )}
@@ -388,8 +399,8 @@ export default function DealOfTheDayDialog({
                           <Crown className="h-4 w-4 text-purple-400" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-white">{deal.elite_tickets} Legendary Tickets</p>
-                          <p className="text-xs text-gray-400">For legendary card packs</p>
+                          <p className="text-sm font-medium text-white">{deal.elite_tickets} {t("deals.legendary_tickets", "Legendary Tickets")}</p>
+                          <p className="text-xs text-gray-400">{t("deals.for_legendary_packs", "For legendary card packs")}</p>
                         </div>
                       </div>
                     )}
@@ -399,7 +410,7 @@ export default function DealOfTheDayDialog({
                 {/* Price and Action */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-400">Price</p>
+                    <p className="text-sm text-gray-400">{t("common.price", "Price")}</p>
                     <p className="text-2xl font-bold text-violet-400">{price
     ? `${(deal.price / price).toFixed(2)} WLD`
     : `$${deal.price.toFixed(2)} USD`}</p>
@@ -414,12 +425,12 @@ export default function DealOfTheDayDialog({
                     {isPurchasing ? (
                       <>
                         <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
-                        Processing...
+                        {t("common.processing", "Processing...")}
                       </>
                     ) : (
                       <>
                         <ShoppingBag className="h-4 w-4 mr-2" />
-                        Buy Now
+                        {t("deals.buy_now", "Buy Now")}
                       </>
                     )}
                   </Button>

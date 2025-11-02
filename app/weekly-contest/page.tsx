@@ -7,6 +7,7 @@ import { ArrowLeft, Trophy } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import CardItem from "@/components/card-item"
 import { WEEKLY_CONTEST_CONFIG, getContestEndTimestamp, getTimeUntilContestEnd } from "@/lib/weekly-contest-config"
+import { useI18n } from "@/contexts/i18n-context"
 
 const WEEKLY_PRIZE_POOL = WEEKLY_CONTEST_CONFIG.prizePool
 
@@ -25,6 +26,7 @@ type UserStats = {
 export default function WeeklyContestPage() {
   const { user } = useAuth()
   const router = useRouter()
+  const { t } = useI18n()
   const [leaderboard, setLeaderboard] = useState<Entry[]>([])
   const [userStats, setUserStats] = useState<UserStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -86,14 +88,14 @@ export default function WeeklyContestPage() {
           <span className="relative">
             <Trophy className="w-7 h-7 text-yellow-400 animate-trophy-float" style={{ filter: 'drop-shadow(0 0 8px #FFD700)' }} />
           </span>
-          Weekly Contest
+          {t("contest.title", "Weekly Contest")}
         </h1>
       </header>
 
       <main className="max-w-md mx-auto p-4 space-y-6">
         <div className="text-center text-lg font-bold">
           {contestEnded ? (
-            <div className="text-red-500 text-2xl font-extrabold">The contest has ended</div>
+            <div className="text-red-500 text-2xl font-extrabold">{t("contest.ended", "Contest Ended")}</div>
           ) : (
             <div className="flex justify-center gap-4 text-base mt-2">
               {time && (
@@ -109,9 +111,9 @@ export default function WeeklyContestPage() {
         </div>
 
         <div className="bg-gradient-to-br from-[#232526] to-[#18181b] border-2 border-yellow-400 rounded-2xl shadow-xl p-6 text-center mb-4">
-          <h2 className="text-xl font-bold text-yellow-300 mb-2">Your Mission:</h2>
+          <h2 className="text-xl font-bold text-yellow-300 mb-2">{t("contest.your_mission", "Your Mission:")}</h2>
           <div className="text-2xl font-extrabold bg-gradient-to-r from-yellow-200 via-yellow-400 to-yellow-600 bg-clip-text text-transparent animate-gradient-move mb-4">
-            Earn as many <span className="text-yellow-400">Points</span> as possible!
+            {t("contest.earn_points", "Earn as many Points as possible!")}
           </div>
           
           {/* Double Points Today Banner - UNCOMMENT FOR SPECIAL EVENTS */}
@@ -125,36 +127,36 @@ export default function WeeklyContestPage() {
           </div> */}
           
             <div className="text-sm text-yellow-100 space-y-1">
-              <div>• Bundesliga Cards = <span className="font-bold text-yellow-400">1 Point</span></div>
-              <div>• Premier League Cards = <span className="font-bold text-yellow-400">1 Point</span></div>
-              <div>• Ultimate Cards = <span className="font-bold text-yellow-400">5 Points</span></div>
-              <div>• GOAT Packs = <span className="font-bold text-yellow-400">15 Points</span></div>
+              <div>• {t("contest.rare_cards", "Rare Cards")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
+              <div>• {t("contest.epic_cards", "Epic Cards")} = <span className="font-bold text-yellow-400">4 {t("contest.points", "Points")}</span></div>
+              <div>• {t("contest.referrals", "Referrals")} = <span className="font-bold text-yellow-400">5 {t("contest.points", "Points")}</span></div>
+              <div>• {t("contest.legendary_cards", "Legendary Cards")} = <span className="font-bold text-yellow-400">15 {t("contest.points", "Points")}</span></div>
             </div>
         </div>
 
         <div className="bg-gradient-to-br from-[#232526] to-[#18181b] border-2 border-yellow-400 rounded-2xl shadow-xl p-6">
-          <h2 className="text-lg font-bold text-yellow-300 mb-2">Your Progress</h2>
+          <h2 className="text-lg font-bold text-yellow-300 mb-2">{t("contest.your_progress", "Your Progress")}</h2>
           {loading ? (
-            <p className="text-base text-gray-300">Loading your stats...</p>
+            <p className="text-base text-gray-300">{t("contest.loading_stats", "Loading your stats...")}</p>
           ) : userStats ? (
             <div className="space-y-1">
               <p className="text-lg text-yellow-100">
-                You earned <span className="font-extrabold text-yellow-400 text-2xl">{userStats.legendary_count}</span> points this week.
+                {t("contest.you_earned", "You earned")} <span className="font-extrabold text-yellow-400 text-2xl">{userStats.legendary_count}</span> {t("contest.points_this_week", "points this week.")}
               </p>
               {userStats.rank && (
                 <p className="text-base text-yellow-200">
-                  Current rank: <span className="font-bold text-yellow-400">#{userStats.rank}</span>
+                  {t("contest.current_rank", "Current rank:")}: <span className="font-bold text-yellow-400">#{userStats.rank}</span>
                 </p>
               )}
             </div>
           ) : (
-            <p className="text-base text-gray-300">No points earned yet this week.</p>
+            <p className="text-base text-gray-300">{t("contest.no_points", "No points earned yet this week.")}</p>
           )}
         </div>
 
         <div className="bg-gradient-to-br from-[#232526] to-[#18181b] border-2 border-yellow-400 rounded-2xl shadow-xl p-6 space-y-4">
           <div>
-            <h2 className="text-lg font-bold text-yellow-300 mb-2">🏆 Prize Pool</h2>
+            <h2 className="text-lg font-bold text-yellow-300 mb-2">🏆 {t("contest.prize_pool", "Prize Pool")}</h2>
             <ul className="text-lg text-yellow-100 space-y-2">
               {WEEKLY_PRIZE_POOL.map((prize, idx) => (
                 <li key={prize.rank} className={`flex items-center gap-3 px-2 py-2 rounded-xl ${
@@ -164,7 +166,7 @@ export default function WeeklyContestPage() {
                   'bg-black/20'
                 }`}>
                   <span className="text-2xl drop-shadow-lg">{prize.icon}</span>
-                  <span className="flex-1 font-bold text-yellow-200">{prize.rank}</span>
+                  <span className="flex-1 font-bold text-yellow-200">{prize.rank.replace(/Place/g, t("contest.place", "Place"))}</span>
                   <span className="font-extrabold bg-gradient-to-r from-yellow-200 via-yellow-400 to-yellow-600 bg-clip-text text-transparent animate-gradient-move">{prize.reward}</span>
                 </li>
               ))}
@@ -173,11 +175,11 @@ export default function WeeklyContestPage() {
         </div>
 
         <div className="bg-gradient-to-br from-[#232526] to-[#18181b] border-2 border-yellow-400 rounded-2xl shadow-xl p-6">
-          <h2 className="text-lg font-bold text-yellow-300 mb-2">Top 20 Players</h2>
+          <h2 className="text-lg font-bold text-yellow-300 mb-2">{t("contest.leaderboard", "Leaderboard")}</h2>
           {loading ? (
-            <p className="text-center text-gray-300">Loading leaderboard...</p>
+            <p className="text-center text-gray-300">{t("contest.loading_leaderboard", "Loading leaderboard...")}</p>
           ) : leaderboard.length === 0 ? (
-            <p className="text-center text-gray-300">No entries yet this week.</p>
+            <p className="text-center text-gray-300">{t("contest.no_entries", "No entries yet this week.")}</p>
           ) : (
             <div className="space-y-2">
               {leaderboard.map((entry, index) => (

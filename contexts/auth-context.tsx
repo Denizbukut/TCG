@@ -290,6 +290,24 @@ if (!isHumanVerified) {
             console.error("Error inserting referral in auth-context:", referralInsertError)
           } else {
             console.log("Referral successfully created in auth-context!")
+            
+            // 🎯 Award Weekly Contest points to referrer immediately upon signup
+            try {
+              const response = await fetch("/api/referral-signup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ referrerWalletAddress: referrer.wallet_address }),
+              })
+              const result = await response.json()
+              
+              if (result.success) {
+                console.log("✅ Weekly Contest points awarded successfully:", result.points || 5)
+              } else {
+                console.log("⚠️ Contest points not awarded:", result.message || result.error)
+              }
+            } catch (contestError) {
+              console.error("⚠️ Failed to award contest points, but signup continues:", contestError)
+            }
           }
         } else {
           console.log("Referrer not found in auth-context or error:", referrerError)

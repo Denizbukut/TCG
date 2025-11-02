@@ -7,10 +7,22 @@ export async function GET(request: NextRequest) {
   const weekStart = WEEKLY_CONTEST_CONFIG.weekStart
 
   const { searchParams } = new URL(request.url)
-  const walletAddress = searchParams.get("walletAddress")
+  let walletAddress = searchParams.get("walletAddress")
+  const username = searchParams.get("username")
+
+  // Wenn username übergeben wurde, hole die wallet_address aus der users-Tabelle
+  if (!walletAddress && username) {
+    const { data: userData } = await supabase
+      .from("users")
+      .select("wallet_address")
+      .eq("username", username)
+      .single()
+    
+    walletAddress = userData?.wallet_address
+  }
 
   if (!walletAddress) {
-    return NextResponse.json({ success: false, error: "Wallet address is required" }, { status: 400 })
+    return NextResponse.json({ success: false, error: "Wallet address or username is required" }, { status: 400 })
   }
 
   try {

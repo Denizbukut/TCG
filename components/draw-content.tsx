@@ -20,6 +20,7 @@ import { MiniKit, Tokens, type PayCommandInput, tokenToDecimals } from "@worldco
 import { useWldPrice } from "@/contexts/WldPriceContext"
 import { Info } from "lucide-react"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
+import { useI18n } from "@/contexts/i18n-context"
 // import { isUserBanned } from "@/lib/banned-users" // Lokale Version verwendet
 import { getActiveGodPackDiscount } from "@/app/actions/god-pack-discount"
 
@@ -158,6 +159,7 @@ const getCloudflareImageUrl = (imagePath?: string) => {
 export default function DrawPage() {
   const router = useRouter()
   const { user, updateUserTickets, updateUserExp, refreshUserData, updateUserScore } = useAuth()
+  const { t } = useI18n()
   const [isDrawing, setIsDrawing] = useState(false)
   const [drawnCards, setDrawnCards] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<"regular" | "legendary" | "god" | "icon">("regular")
@@ -706,11 +708,26 @@ const [showInfo, setShowInfo] = useState(false)
 
         // Mission tracking für legendary cards
         const legendaryCards = result.cards?.filter((card: any) => card.rarity === "legendary") || []
+        const epicCards = result.cards?.filter((card: any) => card.rarity === "epic") || []
+        const rareCards = result.cards?.filter((card: any) => card.rarity === "rare") || []
+        
         if (legendaryCards.length > 0 && user?.wallet_address) {
           await incrementMission(user.wallet_address, "draw_legendary_card", legendaryCards.length)
         }
+        
+        // Weekly Contest: Punkte für Rare, Epic und Legendary Cards
+        if (user?.wallet_address) {
+          let totalPoints = 0
+          totalPoints += rareCards.length * 2      // 2 Punkte pro Rare
+          totalPoints += epicCards.length * 4      // 4 Punkte pro Epic
+          totalPoints += legendaryCards.length * 15 // 15 Punkte pro Legendary
+          
+          if (totalPoints > 0) {
+            await incrementLegendaryDraw(user.wallet_address, totalPoints)
+          }
+        }
 
-        const premierLeagueCards = result.cards?.filter((card: any) => card.league_id === "3cd1fa22-d6fd-466a-8fe2-ca5c661d015d") || []
+        /* const premierLeagueCards = result.cards?.filter((card: any) => card.league_id === "3cd1fa22-d6fd-466a-8fe2-ca5c661d015d") || []
         if (premierLeagueCards.length > 0 && user?.username) {
           await incrementLegendaryDraw(user.username, premierLeagueCards.length * 1)
         }
@@ -724,7 +741,7 @@ const [showInfo, setShowInfo] = useState(false)
         
         if (goatPacks > 0 && user?.username) {
           await incrementLegendaryDraw(user.username, goatPacks * 15);
-        }
+        } */
         
 
 
@@ -1052,11 +1069,11 @@ const [showInfo, setShowInfo] = useState(false)
 
   // Hilfsfunktion für die Anzeige der Rarity-Namen
   const getDisplayRarity = (rarity: string) => {
-    if (rarity === 'common' || rarity === 'basic') return 'Common';
-    if (rarity === 'rare') return 'Rare';
-    if (rarity === 'epic') return 'Epic';
-    if (rarity === 'legendary' || rarity === 'ultima') return 'Legendary';
-    if (rarity === 'godlike' || rarity === 'goat') return 'GOAT';
+    if (rarity === 'common' || rarity === 'basic') return t('rarity.common', 'Common');
+    if (rarity === 'rare') return t('rarity.rare', 'Rare');
+    if (rarity === 'epic') return t('rarity.epic', 'Epic');
+    if (rarity === 'legendary' || rarity === 'ultima') return t('rarity.legendary', 'Legendary');
+    if (rarity === 'godlike' || rarity === 'goat') return t('rarity.goat', 'GOAT');
     return rarity.charAt(0).toUpperCase() + rarity.slice(1);
   };
 
@@ -1163,7 +1180,7 @@ const [showInfo, setShowInfo] = useState(false)
                   >
                     <div className="flex items-center justify-center gap-1">
                       <Ticket className="h-3 w-3" />
-                      <span>Regular</span>
+                      <span>{t("draw.regular_pack", "Regular")}</span>
                     </div>
                   </button>
                   <button
@@ -1176,7 +1193,7 @@ const [showInfo, setShowInfo] = useState(false)
                   >
                     <div className="flex items-center justify-center gap-1">
                       <Ticket className="h-3 w-3" />
-                      <span>Legendary</span>
+                      <span>{t("draw.legendary_pack", "Legendary")}</span>
                     </div>
                   </button>
                   {/* <button
@@ -1278,9 +1295,9 @@ const [showInfo, setShowInfo] = useState(false)
 
                       <div className="text-center mb-4">
                         <h3 className="text-lg font-medium text-white">
-                          {activeTab === "god" ? "GOAT" : activeTab === "legendary" ? "Legendary" : activeTab === "icon" ? "ICON" : "Regular"} Card Pack
+                          {activeTab === "god" ? t("draw.god_pack", "GOAT") : activeTab === "legendary" ? t("draw.legendary_pack", "Legendary") : activeTab === "icon" ? t("draw.icon_pack", "ICON") : t("draw.regular_pack", "Regular")} {t("draw.card_pack", "Card Pack")}
                         </h3>
-                        <p className="text-sm text-gray-500">Contains 1 random card</p>
+                        <p className="text-sm text-gray-500">{t("draw.contains_one_card", "Contains 1 random card")}</p>
                         <div className="flex items-center justify-center gap-1 mt-1 text-xs text-violet-600">
                           <Star className="h-3 w-3" />
                           {userClanRole === "xp_hunter" || userClanRole === "leader" || hasXpPass ? (
@@ -1342,25 +1359,25 @@ const [showInfo, setShowInfo] = useState(false)
                             )}
                             <div className="space-y-2">
                               <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-500">Common</span>
+                                <span className="text-gray-500">{t("rarity.common", "Common")}</span>
                                 <div className="flex items-center gap-2">
                                   <span className="text-gray-500">{hasPremiumPass ? "50%" : "60%"}</span>
                                 </div>
                               </div>
                               <div className="flex justify-between items-center text-sm">
-                                <span className="text-blue-500">Rare</span>
+                                <span className="text-blue-500">{t("rarity.rare", "Rare")}</span>
                                 <div className="flex items-center gap-2">
                                   <span className="text-blue-500">{hasPremiumPass ? "34%" : "34%"}</span>
                                 </div>
                               </div>
                               <div className="flex justify-between items-center text-sm">
-                                <span className="text-purple-500">Epic</span>
+                                <span className="text-purple-500">{t("rarity.epic", "Epic")}</span>
                                 <div className="flex items-center gap-2">
                                   <span className="text-purple-500">{hasPremiumPass ? "15%" : "6%"}</span>
                                 </div>
                               </div>
                               <div className="flex justify-between items-center text-sm">
-                                <span className="text-amber-500">Legendary</span>
+                                <span className="text-amber-500">{t("rarity.legendary", "Legendary")}</span>
                                 <div className="flex items-center gap-2">
                                   <span className="text-amber-500">{hasPremiumPass ? "1%" : "0%"}</span>
                                 </div>
@@ -1371,19 +1388,19 @@ const [showInfo, setShowInfo] = useState(false)
                           <div className="border border-gray-200 rounded-lg p-3 relative">
                             <div className="space-y-2">
                               <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-500">Common</span>
+                                <span className="text-gray-500">{t("rarity.common", "Common")}</span>
                                 <span className="text-gray-500">17%</span>
                               </div>
                               <div className="flex justify-between items-center text-sm">
-                                <span className="text-blue-500">Rare</span>
+                                <span className="text-blue-500">{t("rarity.rare", "Rare")}</span>
                                 <span className="text-blue-500">50%</span>
                               </div>
                               <div className="flex justify-between items-center text-sm">
-                                <span className="text-purple-500">Epic</span>
+                                <span className="text-purple-500">{t("rarity.epic", "Epic")}</span>
                                 <span className="text-purple-500">30%</span>
                               </div>
                               <div className="flex justify-between items-center text-sm">
-                                <span className="text-amber-500">Legendary</span>
+                                <span className="text-amber-500">{t("rarity.legendary", "Legendary")}</span>
                                 <span className="text-amber-500">3%</span>
                               </div>
                             </div>
@@ -1397,25 +1414,25 @@ const [showInfo, setShowInfo] = useState(false)
                             )}
                             <div className="space-y-2">
                               <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-500">Common</span>
+                                <span className="text-gray-500">{t("rarity.common", "Common")}</span>
                                 <div className="flex items-center gap-2">
                                   <span className="text-gray-500">{hasPremiumPass ? "50%" : "60%"}</span>
                                 </div>
                               </div>
                               <div className="flex justify-between items-center text-sm">
-                                <span className="text-blue-500">Rare</span>
+                                <span className="text-blue-500">{t("rarity.rare", "Rare")}</span>
                                 <div className="flex items-center gap-2">
                                   <span className="text-blue-500">{hasPremiumPass ? "34%" : "34%"}</span>
                                 </div>
                               </div>
                               <div className="flex justify-between items-center text-sm">
-                                <span className="text-purple-500">Epic</span>
+                                <span className="text-purple-500">{t("rarity.epic", "Epic")}</span>
                                 <div className="flex items-center gap-2">
                                   <span className="text-purple-500">{hasPremiumPass ? "14%" : "5%"}</span>
                                 </div>
                               </div>
                               <div className="flex justify-between items-center text-sm">
-                                <span className="text-amber-500">Legendary</span>
+                                <span className="text-amber-500">{t("rarity.legendary", "Legendary")}</span>
                                 <div className="flex items-center gap-2">
                                   <span className="text-amber-500">{hasPremiumPass ? "2%" : "1%"}</span>
                                 </div>
@@ -1439,12 +1456,12 @@ const [showInfo, setShowInfo] = useState(false)
                                 {isDrawing ? (
                                   <div className="flex items-center justify-center">
                                     <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
-                                    <span className="text-sm font-medium">Opening...</span>
+                                    <span className="text-sm font-medium">{t("draw.opening_pack", "Opening...")}</span>
                                   </div>
                                 ) : (
                                   <div className="flex items-center gap-2">
                                     <Zap className="h-5 w-5" />
-                                    <span className="font-bold text-base">1 Pack</span>
+                                    <span className="font-bold text-base">{t("draw.one_pack", "1 Pack")}</span>
                                     {godPackDiscount?.isActive ? (
                                       <span className="block text-sm">
                                         <span className="line-through text-gray-300">{(0.91 / (price || 1)).toFixed(3)} WLD</span>
@@ -1487,12 +1504,12 @@ const [showInfo, setShowInfo] = useState(false)
                                 {isDrawing ? (
                                   <div className="flex items-center justify-center">
                                     <div className="h-4 w-4 border-2 border-t-transparent border-current rounded-full animate-spin mr-2"></div>
-                                    <span className="text-sm font-medium">Opening...</span>
+                                    <span className="text-sm font-medium">{t("draw.opening_pack", "Opening...")}</span>
                                   </div>
                                 ) : (
                                   <div className="flex items-center gap-2">
                                     <Zap className="h-5 w-5" />
-                                    <span className="font-bold text-base text-white">5 Packs</span>
+                                    <span className="font-bold text-base text-white">{t("draw.five_packs", "5 Packs")}</span>
                                     <span className="block text-sm">
                                       <span className="text-white">
                                         {godPackDiscount?.isActive 
@@ -1528,12 +1545,12 @@ const [showInfo, setShowInfo] = useState(false)
                                 {isDrawing ? (
                                   <div className="flex items-center justify-center">
                                     <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
-                                    <span className="text-sm font-medium">Opening...</span>
+                                    <span className="text-sm font-medium">{t("draw.opening_pack", "Opening...")}</span>
                                   </div>
                                 ) : (
                                   <div className="flex items-center gap-2">
                                     <Ticket className="h-5 w-5" />
-                                    <span className="font-bold text-base">1 Pack</span>
+                                    <span className="font-bold text-base">{t("draw.one_pack", "1 Pack")}</span>
                                   </div>
                                 )}
                               </Button>
@@ -1554,12 +1571,12 @@ const [showInfo, setShowInfo] = useState(false)
                                 {isDrawing ? (
                                   <div className="flex items-center justify-center">
                                     <div className="h-4 w-4 border-2 border-t-transparent border-current rounded-full animate-spin mr-2"></div>
-                                    <span className="text-sm font-medium">Opening...</span>
+                                    <span className="text-sm font-medium">{t("draw.opening_pack", "Opening...")}</span>
                                   </div>
                                 ) : (
                                   <div className="flex items-center gap-2">
                                     <Ticket className="h-5 w-5" />
-                                    <span className="font-bold text-base">5 Packs</span>
+                                    <span className="font-bold text-base">{t("draw.five_packs", "5 Packs")}</span>
                                   </div>
                                 )}
                               </Button>
@@ -1586,7 +1603,7 @@ const [showInfo, setShowInfo] = useState(false)
                               ) : (
                                 <div className="flex items-center gap-2">
                                   <Ticket className="h-5 w-5" />
-                                  <span className="font-bold text-base">20 Packs (Bulk)</span>
+                                  <span className="font-bold text-base">{t("draw.twenty_packs_bulk", "20 Packs (Bulk)")}</span>
                                 </div>
                               )}
                             </Button>
@@ -1613,7 +1630,7 @@ const [showInfo, setShowInfo] = useState(false)
                 className="w-full border border-gray-300 text-gray-700 hover:bg-gray-50"
               >
                 <Ticket className="h-4 w-4 mr-2 text-orange-500" />
-                Need more tickets? Visit the Shop
+                {t("draw.need_more_tickets", "Need more tickets? Visit the Shop")}
               </Button>
             </motion.div>
           )}
@@ -1629,8 +1646,8 @@ const [showInfo, setShowInfo] = useState(false)
               >
                 <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-3">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold">Bulk Opening Results</h2>
-                    <div className="text-sm text-gray-600">{drawnCards.length} cards</div>
+                    <h2 className="text-lg font-semibold">{t("draw.bulk_opening_results", "Bulk Opening Results")}</h2>
+                    <div className="text-sm text-gray-600">{drawnCards.length} {t("draw.cards", "cards")}</div>
                   </div>
                 </div>
 
@@ -1666,10 +1683,10 @@ const [showInfo, setShowInfo] = useState(false)
                       {isUpdatingScore ? (
                         <div className="flex items-center justify-center">
                           <div className="h-5 w-5 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
-                          <span>Adding to Collection...</span>
+                          <span>{t("draw.adding_to_collection", "Adding to Collection...")}</span>
                         </div>
                       ) : (
-                        "Add to Collection"
+                        t("draw.add_to_collection", "Add to Collection")
                       )}
                     </Button>
                   </div>
@@ -1718,10 +1735,10 @@ const [showInfo, setShowInfo] = useState(false)
                     {isUpdatingScore ? (
                       <div className="flex items-center justify-center">
                         <div className="h-5 w-5 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
-                        <span>Adding to Collection...</span>
+                        <span>{t("draw.adding_to_collection", "Adding to Collection...")}</span>
                       </div>
                     ) : (
-                      `Add All ${drawnCards.length} Cards to Collection`
+                      t("draw.add_all_cards", "Add All {count} Cards to Collection", { count: drawnCards.length })
                     )}
                   </Button>
                 </div>
@@ -1829,8 +1846,8 @@ const [showInfo, setShowInfo] = useState(false)
                       ease: "easeInOut",
                     }}
                   >
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Opening 20 Packs...</h2>
-                    <p className="text-gray-600">Preparing your cards</p>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">{t("draw.opening_20_packs", "Opening 20 Packs...")}</h2>
+                    <p className="text-gray-600">{t("draw.preparing_cards", "Preparing your cards")}</p>
                   </motion.div>
 
                   {/* Animated Progress Indicator */}
@@ -2025,7 +2042,7 @@ const [showInfo, setShowInfo] = useState(false)
                         <div className="pb-1 pr-1 flex justify-end">
                           <div className="bg-gradient-to-l from-black/70 via-black/50 to-transparent px-2 py-1 rounded-lg flex items-center gap-1 backdrop-blur-sm">
                             <span className="text-white text-sm font-semibold anime-text">
-                              {selectedBulkCard.rarity?.toUpperCase()}
+                              {getDisplayRarity(selectedBulkCard.rarity || '').toUpperCase()}
                             </span>
                           </div>
                         </div>
@@ -2147,7 +2164,7 @@ const [showInfo, setShowInfo] = useState(false)
                               : "bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 rounded-full w-40"
                       }
                     >
-                      Open
+                      {t("draw.open", "Open")}
                     </Button>
                   )}
                 </div>
@@ -2341,7 +2358,7 @@ const [showInfo, setShowInfo] = useState(false)
                             <div className="absolute inset-0 flex flex-col justify-end p-1">
                               <div className="bg-black/70 backdrop-blur-sm rounded px-1 py-0.5 flex items-center justify-center">
                                 <span className={`text-xs font-bold anime-text ${rarityStyles.text}`}>
-                                  {card?.rarity?.charAt(0).toUpperCase()}
+                                  {getDisplayRarity(card?.rarity || '').charAt(0).toUpperCase()}
                                 </span>
                               </div>
                             </div>
@@ -2482,7 +2499,7 @@ const [showInfo, setShowInfo] = useState(false)
                               <div className="pb-1 pr-1 flex justify-end">
                                 <div className="bg-gradient-to-l from-black/70 via-black/50 to-transparent px-2 py-1 rounded-lg flex items-center gap-1 backdrop-blur-sm">
                                   <span className="text-white text-sm font-semibold anime-text">
-                                    {getCurrentCard()?.rarity?.toUpperCase()}
+                                    {getDisplayRarity(getCurrentCard()?.rarity || '').toUpperCase()}
                                   </span>
                                 </div>
                               </div>
@@ -2551,10 +2568,10 @@ const [showInfo, setShowInfo] = useState(false)
                     {isUpdatingScore ? (
                       <div className="flex items-center">
                         <div className="h-5 w-5 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
-                        <span>Updating...</span>
+                        <span>{t("common.updating", "Updating...")}</span>
                       </div>
                     ) : (
-                      `Add ${isMultiDraw ? "Cards" : "Card"} to Collection`
+                      isMultiDraw ? t("draw.add_cards_to_collection", "Add Cards to Collection") : t("draw.add_card_to_collection", "Add Card to Collection")
                     )}
                   </Button>
 
@@ -2698,9 +2715,9 @@ const [showInfo, setShowInfo] = useState(false)
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.5, duration: 0.5 }}
                   >
-                    <h2 className="text-2xl font-bold text-center">Level Up!</h2>
-                    <p className="text-lg font-medium text-center text-amber-600">You reached Level {newLevel}!</p>
-                    <p className="text-sm text-center text-gray-600 mt-1">+100 Leaderboard Points</p>
+                    <h2 className="text-2xl font-bold text-center">{t("draw.level_up", "Level Up!")}</h2>
+                    <p className="text-lg font-medium text-center text-amber-600">{t("draw.reached_level", "You reached Level {level}!", { level: newLevel })}</p>
+                    <p className="text-sm text-center text-gray-600 mt-1">{t("draw.leaderboard_points", "+100 Leaderboard Points")}</p>
                   </motion.div>
 
                   <motion.div
@@ -2716,7 +2733,7 @@ const [showInfo, setShowInfo] = useState(false)
                       }}
                       className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-8"
                     >
-                      Continue
+                      {t("common.continue", "Continue")}
                     </Button>
                   </motion.div>
                 </motion.div>

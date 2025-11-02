@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/supabase-browser";
 import { useWldPrice } from "@/contexts/WldPriceContext"
-// import { useTranslation } from "@/hooks/use-translation";
+import { useI18n } from "@/contexts/i18n-context"
 
 const benefitList = [
   {
@@ -49,7 +49,7 @@ const featureList = [
 export default function XpBoosterPage() {
   const { user } = useAuth();
   const { price } = useWldPrice();
-  // const { t } = useTranslation();
+  const { t } = useI18n();
   const [buying, setBuying] = useState(false);
   const [success, setSuccess] = useState(false);
   const [hasXpPass, setHasXpPass] = useState(false);
@@ -181,7 +181,7 @@ export default function XpBoosterPage() {
       <Link href="/" className="fixed top-4 left-4 z-20">
         <Button variant="outline" className="flex items-center gap-2 px-4 py-2 rounded-full shadow bg-white/80 hover:bg-white">
           <Home className="h-5 w-5 text-blue-600" />
-          <span className="font-semibold text-blue-700">Back to Home</span>
+          <span className="font-semibold text-blue-700">{t("common.back", "Back to Home")}</span>
         </Button>
       </Link>
       
@@ -198,17 +198,17 @@ export default function XpBoosterPage() {
           <div className="flex flex-col items-center mb-8">
             <div className="flex items-center gap-3 mb-4">
               <Sparkles className="h-10 w-10 text-blue-500 animate-bounce drop-shadow-lg" />
-              <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-700 via-cyan-500 to-blue-400 tracking-tight drop-shadow-lg">XP Pass</h1>
+              <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-700 via-cyan-500 to-blue-400 tracking-tight drop-shadow-lg">{t("xp_pass.title", "XP Pass")}</h1>
             </div>
-            <p className="text-gray-700 text-center text-base max-w-sm mb-6">Boost your XP gain and unlock rewards faster!</p>
+            <p className="text-gray-700 text-center text-base max-w-sm mb-6">{t("xp_pass.boost_text", "Boost your XP gain and unlock rewards faster!")}</p>
             
             {/* Main Benefits */}
             <div className="grid grid-cols-2 gap-4 w-full max-w-md mb-8">
               {benefitList.map((b, i) => (
                 <div key={b.title} className="flex flex-col items-center p-4 rounded-xl shadow-lg bg-gradient-to-br from-blue-400 to-blue-600 text-white transition-transform hover:scale-105 hover:shadow-2xl animate-fade-in" style={{animationDelay:`${i*0.1}s`}}>
                   <div className="mb-2">{b.icon}</div>
-                  <div className="font-bold text-sm mb-1 drop-shadow">{b.title === 'Double XP' ? 'Double XP' : 'Faster Rewards'}</div>
-                  <div className="text-xs opacity-90 text-center drop-shadow">{b.desc === '7 days' ? '7 days' : 'Unlock quicker'}</div>
+                  <div className="font-bold text-sm mb-1 drop-shadow">{b.title === 'Double XP' ? t("xp_pass.double_xp", "Double XP") : t("xp_pass.faster_rewards", "Faster Rewards")}</div>
+                  <div className="text-xs opacity-90 text-center drop-shadow">{b.desc === '7 days' ? t("xp_pass.seven_days", "7 days") : t("xp_pass.unlock_quicker", "Unlock quicker")}</div>
                 </div>
               ))}
             </div>
@@ -216,23 +216,23 @@ export default function XpBoosterPage() {
 
           {/* Features Grid */}
           <div className="w-full mb-8">
-            <h2 className="text-xl font-semibold text-gray-800 text-center mb-6">Boost your XP!</h2>
+            <h2 className="text-xl font-semibold text-gray-800 text-center mb-6">{t("xp_pass.boost_your_xp", "Boost your XP!")}</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {featureList.map((feature, index) => (
                 <div key={feature.title} className="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-blue-200 hover:bg-white/80 transition-all duration-200 hover:scale-105">
                   <div className="flex flex-col items-center text-center">
                     <div className="mb-2">{feature.icon}</div>
                     <h3 className="font-semibold text-sm text-gray-800 mb-1">
-                      {feature.title === 'Level Up Faster' ? 'Level Up Faster' :
-                       feature.title === 'Better Progress' ? 'Better Progress' :
-                       feature.title === 'Achieve Goals' ? 'Achieve Goals' :
-                       'Exclusive Benefits'}
+                      {feature.title === 'Level Up Faster' ? t("xp_pass.level_up_faster", "Level Up Faster") :
+                       feature.title === 'Better Progress' ? t("xp_pass.better_progress", "Better Progress") :
+                       feature.title === 'Achieve Goals' ? t("xp_pass.achieve_goals", "Achieve Goals") :
+                       t("xp_pass.exclusive_benefits", "Exclusive Benefits")}
                     </h3>
                     <p className="text-xs text-gray-600">
-                      {feature.desc === 'Gain experience twice as fast' ? 'Gain experience twice as fast' :
-                       feature.desc === 'Unlock rewards quicker' ? 'Unlock rewards quicker' :
-                       feature.desc === 'Reach milestones faster' ? 'Reach milestones faster' :
-                       'Access premium features'}
+                      {feature.desc === 'Gain experience twice as fast' ? t("xp_pass.gain_twice_fast", "Gain experience twice as fast") :
+                       feature.desc === 'Unlock rewards quicker' ? t("xp_pass.unlock_rewards_quicker", "Unlock rewards quicker") :
+                       feature.desc === 'Reach milestones faster' ? t("xp_pass.reach_milestones", "Reach milestones faster") :
+                       t("xp_pass.access_premium", "Access premium features")}
                     </p>
                   </div>
                 </div>
@@ -245,17 +245,17 @@ export default function XpBoosterPage() {
             {loading ? (
               <div className="flex flex-col items-center gap-2 mt-2">
                 <div className="animate-spin h-8 w-8 border-2 border-t-transparent border-blue-500 rounded-full"></div>
-                <div className="text-gray-600">Loading XP Pass status...</div>
+                <div className="text-gray-600">{t("xp_pass.loading_status", "Loading XP Pass status...")}</div>
               </div>
             ) : hasXpPass ? (
               <div className="flex flex-col items-center gap-4 mt-2">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-8 w-8 text-green-500" />
-                  <div className="text-green-700 font-bold text-xl">XP Pass Active!</div>
+                  <div className="text-green-700 font-bold text-xl">{t("xp_pass.active_status", "XP Pass Active!")}</div>
                 </div>
                 {xpPassExpiryDate && (
                   <div className="text-center">
-                    <div className="text-gray-600 text-sm">Expires on</div>
+                    <div className="text-gray-600 text-sm">{t("xp_pass.expires_on", "Expires on")}</div>
                     <div className="text-blue-700 font-semibold">
                       {xpPassExpiryDate.toLocaleDateString('en-US', {
                         year: 'numeric',
@@ -267,7 +267,7 @@ export default function XpBoosterPage() {
                       })}
                     </div>
                     <div className="text-gray-500 text-xs mt-1">
-                      {Math.ceil((xpPassExpiryDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days remaining
+                      {t("xp_pass.days_remaining", "{days} days remaining", { days: Math.ceil((xpPassExpiryDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) })}
                     </div>
                   </div>
                 )}
@@ -290,10 +290,10 @@ export default function XpBoosterPage() {
                   {buying ? (
                     <span className="flex items-center gap-2">
                       <span className="animate-spin h-5 w-5 border-2 border-t-transparent border-white rounded-full"></span> 
-Processing...
+{t("common.processing", "Processing...")}
                     </span>
                   ) : (
-                    <span>Purchase XP Pass</span>
+                    <span>{t("xp_pass.buy_xp_pass", "Purchase XP Pass")}</span>
                   )}
                 </Button>
               </div>

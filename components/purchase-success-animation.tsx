@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { CheckCircle } from "lucide-react"
 import confetti from "canvas-confetti"
 import { useEffect, useRef } from "react"
+import { useI18n } from "@/contexts/i18n-context"
 
 interface PurchaseSuccessAnimationProps {
   show: boolean
@@ -19,6 +20,7 @@ export default function PurchaseSuccessAnimation({
   cardImageUrl,
   cardName,
 }: PurchaseSuccessAnimationProps) {
+  const { t } = useI18n()
   const confettiRef = useRef<HTMLDivElement>(null)
 
   const getCloudflareImageUrl = (imagePath?: string) => {
@@ -111,7 +113,7 @@ export default function PurchaseSuccessAnimation({
                 transition={{ delay: 0.7 }}
                 className="text-xl font-bold mb-2"
               >
-                Purchase Successful!
+                {t("trade.purchase_successful_title", "Purchase Successful!")}
               </motion.h2>
 
               <motion.p
@@ -120,7 +122,7 @@ export default function PurchaseSuccessAnimation({
                 transition={{ delay: 0.9 }}
                 className="text-gray-600 mb-6"
               >
-                {cardName} has been added to your collection.
+                {t("trade.purchase_successful_desc", "{cardName} has been added to your collection.", { cardName })}
               </motion.p>
 
               <motion.div
@@ -153,7 +155,7 @@ export default function PurchaseSuccessAnimation({
                 onClick={onComplete}
                 className="bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white px-6 py-2 rounded-full font-medium hover:opacity-90 transition-opacity"
               >
-                Continue
+                {t("common.continue", "Continue")}
               </motion.button>
             </div>
           </motion.div>

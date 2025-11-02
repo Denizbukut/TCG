@@ -1,0 +1,30 @@
+[1mdiff --git a/package-lock.json b/package-lock.json[m
+[1mindex a891197..cf363bc 100644[m
+[1m--- a/package-lock.json[m
+[1m+++ b/package-lock.json[m
+[36m@@ -989,9 +989,9 @@[m
+       }[m
+     },[m
+     "node_modules/@babel/runtime": {[m
+[31m-      "version": "7.27.1",[m
+[31m-      "resolved": "https://registry.npmjs.org/@babel/runtime/-/runtime-7.27.1.tgz",[m
+[31m-      "integrity": "sha512-1x3D2xEk2fRo3PAhwQwu5UubzgiVWSXTBfWpVd2Mx2AzRqJuDJCsgaDVZ7HB5iGzDW1Hl1sWN2mFyKjmR9uAog==",[m
+[32m+[m[32m      "version": "7.28.4",[m
+[32m+[m[32m      "resolved": "https://registry.npmjs.org/@babel/runtime/-/runtime-7.28.4.tgz",[m
+[32m+[m[32m      "integrity": "sha512-Q/N6JNWvIvPnLDvjlE1OUBLPQHH6l3CltCEsHIujp45zQUSSh8K+gHnaEX45yAT1nyngnINhvWtzN+Nb9D8RAQ==",[m
+       "license": "MIT",[m
+       "engines": {[m
+         "node": ">=6.9.0"[m
+[36m@@ -12123,9 +12123,9 @@[m
+       }[m
+     },[m
+     "node_modules/use-sync-external-store": {[m
+[31m-      "version": "1.5.0",[m
+[31m-      "resolved": "https://registry.npmjs.org/use-sync-external-store/-/use-sync-external-store-1.5.0.tgz",[m
+[31m-      "integrity": "sha512-Rb46I4cGGVBmjamjphe8L/UnvJD+uPPtTkNvX5mZgqdbavhI4EbgIWJiIHXJ8bc/i9EQGPRh4DwEURJ552Do0A==",[m
+[32m+[m[32m      "version": "1.6.0",[m
+[32m+[m[32m      "resolved": "https://registry.npmjs.org/use-sync-external-store/-/use-sync-external-store-1.6.0.tgz",[m
+[32m+[m[32m      "integrity": "sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w==",[m
+       "license": "MIT",[m
+       "peerDependencies": {[m
+         "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"[m

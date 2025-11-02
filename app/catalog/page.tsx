@@ -15,10 +15,12 @@ import Link from "next/link"
 import MobileNav from "@/components/mobile-nav"
 import { useRouter } from "next/navigation"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useI18n } from "@/contexts/i18n-context"
 
 export default function CatalogPage() {
   const router = useRouter()
   const { user } = useAuth()
+  const { t } = useI18n()
   const [allCards, setAllCards] = useState<any[]>([])
   const [userCards, setUserCards] = useState<Record<string, { owned: boolean; level: number }>>({})
   const [loading, setLoading] = useState(true)
@@ -152,6 +154,17 @@ export default function CatalogPage() {
     (category) => cardsByRarity[category] && cardsByRarity[category].length > 0,
   )
 
+  const getDisplayRarity = (rarity: string) => {
+    const rarityMap: Record<string, string> = {
+      common: t("rarity.common", "Common"),
+      rare: t("rarity.rare", "Rare"),
+      epic: t("rarity.epic", "Epic"),
+      legendary: t("rarity.legendary", "Legendary"),
+      goat: t("rarity.goat", "GOAT"),
+    };
+    return rarityMap[rarity.toLowerCase()] || rarity;
+  };
+
   // Handle card click to navigate to card detail page
   const handleCardClick = (cardId: string) => {
     router.push(`/cards/${cardId}`)
@@ -167,7 +180,7 @@ export default function CatalogPage() {
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
-            <h1 className="text-2xl font-bold text-yellow-300">Card Catalog</h1>
+            <h1 className="text-2xl font-bold text-yellow-300">{t("catalog.title", "Card Catalog")}</h1>
           </div>
 
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
@@ -192,14 +205,14 @@ export default function CatalogPage() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <h1 className="text-2xl font-bold text-yellow-300">Card Catalog</h1>
+          <h1 className="text-2xl font-bold text-yellow-300">{t("catalog.title", "Card Catalog")}</h1>
         </div>
 
         <div className="space-y-4 mb-6">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-yellow-500" />
             <Input
-              placeholder="Search cards by name or anime..."
+              placeholder={t("catalog.search_placeholder", "Search cards by name or anime...")}
               className="pl-10 bg-black/80 border-yellow-500 text-yellow-300 placeholder-yellow-400 focus:ring-yellow-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -215,13 +228,13 @@ export default function CatalogPage() {
                 onValueChange={(value) => setSelectedEpoch(value === "all" ? "all" : Number.parseInt(value))}
               >
                 <SelectTrigger className="w-40 bg-black/80 border-yellow-500 text-yellow-300">
-                  <SelectValue placeholder="Select Epoch" />
+                  <SelectValue placeholder={t("catalog.select_epoch", "Select Epoch")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Epochs</SelectItem>
+                  <SelectItem value="all">{t("catalog.all_epochs", "All Epochs")}</SelectItem>
                   {availableEpochs.map((epoch) => (
                     <SelectItem key={epoch} value={epoch.toString()}>
-                      Epoch {epoch}
+                      {t("catalog.epoch", "Epoch")} {epoch}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -234,11 +247,11 @@ export default function CatalogPage() {
 
       <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
         <TabsList className="flex overflow-x-auto whitespace-nowrap no-scrollbar bg-black/80 border-yellow-500">
-          <TabsTrigger value="all" className="text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">All</TabsTrigger>
-          <TabsTrigger value="legendary" className="text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">Legendary</TabsTrigger>
-          <TabsTrigger value="epic" className="text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">Epic</TabsTrigger>
-          <TabsTrigger value="rare" className="text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">Rare</TabsTrigger>
-          <TabsTrigger value="common" className="text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">Common</TabsTrigger>
+          <TabsTrigger value="all" className="text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">{t("catalog.all", "All")}</TabsTrigger>
+          <TabsTrigger value="legendary" className="text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">{t("rarity.legendary", "Legendary")}</TabsTrigger>
+          <TabsTrigger value="epic" className="text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">{t("rarity.epic", "Epic")}</TabsTrigger>
+          <TabsTrigger value="rare" className="text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">{t("rarity.rare", "Rare")}</TabsTrigger>
+          <TabsTrigger value="common" className="text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">{t("rarity.common", "Common")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="mt-4">
@@ -246,9 +259,9 @@ export default function CatalogPage() {
             <div key={category} className="mb-8">
               <div className="flex items-center mb-3">
                 <Badge variant="outline" className="mr-2 font-bold border-yellow-400 text-yellow-200">
-                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                  {getDisplayRarity(category)}
                 </Badge>
-                <span className="text-sm text-yellow-200">({cardsByRarity[category].length} cards)</span>
+                <span className="text-sm text-yellow-200">({cardsByRarity[category].length} {t("catalog.cards", "cards")})</span>
               </div>
 
               <motion.div

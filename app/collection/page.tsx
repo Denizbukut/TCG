@@ -20,10 +20,12 @@ import { LevelSystemInfoDialog } from "@/components/level-system-info-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 // Removed Next.js Image import - using regular img tags
 import SquadCardMenu from "@/components/squad-card-menu"
+import { useI18n } from "@/contexts/i18n-context"
 
 export default function CollectionPage() {
   const { user } = useAuth()
   const router = useRouter()
+  const { t } = useI18n()
   const [userCards, setUserCards] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("all")
@@ -340,14 +342,14 @@ export default function CollectionPage() {
       }
       
       toast({
-        title: "Success",
-        description: "Card removed from squad",
+        title: t("common.success", "Success"),
+        description: t("collection.card_removed", "Card removed from squad"),
       });
     } catch (error) {
       console.error("Error removing card:", error);
       toast({
-        title: "Error",
-        description: "Failed to remove card from squad",
+        title: t("common.error", "Error"),
+        description: t("collection.error_remove_failed", "Failed to remove card from squad"),
         variant: "destructive",
       });
     }
@@ -366,7 +368,7 @@ export default function CollectionPage() {
         <header className="sticky top-0 z-10 backdrop-blur-md bg-black/80 border-b border-yellow-500">
           <div className="max-w-lg mx-auto px-4 py-3">
             <div className="flex justify-between items-center">
-              <h1 className="text-lg font-medium text-yellow-300">My Collection</h1>
+              <h1 className="text-lg font-medium text-yellow-300">{t("collection.title", "My Collection")}</h1>
             </div>
           </div>
         </header>
@@ -399,7 +401,7 @@ export default function CollectionPage() {
         <header className="sticky top-0 z-10 backdrop-blur-md bg-black/80 border-b border-yellow-500">
           <div className="max-w-lg mx-auto px-4 py-3">
             <div className="flex justify-between items-center">
-              <h1 className="text-lg font-medium text-yellow-300">My Collection</h1>
+              <h1 className="text-lg font-medium text-yellow-300">{t("collection.title", "My Collection")}</h1>
             </div>
           </div>
         </header>
@@ -408,15 +410,15 @@ export default function CollectionPage() {
             <div className="w-16 h-16 rounded-full bg-yellow-500/20 flex items-center justify-center mx-auto mb-4">
               <AlertCircle className="h-8 w-8 text-yellow-500" />
             </div>
-            <h2 className="text-xl font-medium mb-2 text-yellow-300">No Cards Yet</h2>
+            <h2 className="text-xl font-medium mb-2 text-yellow-300">{t("collection.no_cards_yet", "No Cards Yet")}</h2>
             <p className="text-yellow-400 mb-6 max-w-xs mx-auto">
-              You don't have any cards in your collection yet. Open some packs to get started!
+              {t("collection.no_cards_desc", "You don't have any cards in your collection yet. Open some packs to get started!")}
             </p>
             <Button
               onClick={() => router.push("/draw")}
               className="bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600 rounded-full"
             >
-              Open Card Packs
+              {t("collection.open_card_packs", "Open Card Packs")}
             </Button>
           </div>
         </div>
@@ -440,7 +442,7 @@ export default function CollectionPage() {
             <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-green-400 to-green-700 bg-clip-text text-transparent drop-shadow-md">
               4-4-2
             </h1>
-            <button onClick={() => setShowSquad(false)} className="text-sm text-gray-600 underline">Back</button>
+            <button onClick={() => setShowSquad(false)} className="text-sm text-gray-600 underline">{t("collection.back", "Back")}</button>
           </div>
         </header>
         {/* Spielfeld und Formation */}
@@ -510,7 +512,7 @@ export default function CollectionPage() {
               const cardIds = Object.values(squadToSave).filter(Boolean);
               const hasDuplicates = new Set(cardIds).size !== cardIds.length;
               if (hasDuplicates) {
-                toast({ title: "Fehler", description: "Du hast dieselbe Karte mehrfach im Team!", variant: "destructive" });
+                toast({ title: t("common.error", "Error"), description: t("collection.error_duplicate", "You have the same card multiple times in the squad!"), variant: "destructive" });
                 setSavingSquad(false);
                 return;
               }
@@ -525,21 +527,21 @@ export default function CollectionPage() {
               setSavingSquad(false);
               console.log("Save Squad Response:", data);
               if (res.ok && data.success) {
-                toast({ title: "Squad gespeichert!", description: JSON.stringify(data) });
+                toast({ title: t("collection.squad_saved", "Squad Saved!"), description: JSON.stringify(data) });
               } else {
-                toast({ title: "Fehler", description: JSON.stringify(data), variant: "destructive" });
+                toast({ title: t("common.error", "Error"), description: JSON.stringify(data), variant: "destructive" });
               }
             }}
             disabled={savingSquad}
           >
-            {savingSquad ? "Speichern..." : "Save Squad"}
+            {savingSquad ? t("collection.saving", "Saving...") : t("collection.save_squad", "Save Squad")}
           </button>
 
           {/* Auswahlmenü für Karten */}
           {selectingPosition && (
             <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
               <div className="bg-black/90 border border-yellow-500 rounded-xl p-6 max-w-sm w-full shadow-lg text-white">
-                <h2 className="text-lg font-bold mb-4 text-yellow-300">Select Card for {selectingPosition}</h2>
+                <h2 className="text-lg font-bold mb-4 text-yellow-300">{t("collection.select_card_for", "Select Card for")} {selectingPosition}</h2>
                 <div className="max-h-64 overflow-y-auto space-y-2">
                   {sortedUserCards.map((card, index) => {
                     // Prüfen, ob die Karte schon in einer anderen Position ist
@@ -581,7 +583,7 @@ export default function CollectionPage() {
                         <span className="flex items-center text-xs text-yellow-500 ml-2">
                           ★ {card.level}
                         </span>
-                        {alreadyInSquad && <span className="ml-2 text-xs text-red-400 font-semibold">Bereits im Team</span>}
+                        {alreadyInSquad && <span className="ml-2 text-xs text-red-400 font-semibold">{t("collection.already_in_squad", "Already in Squad")}</span>}
                       </button>
                     );
                   })}
@@ -593,13 +595,13 @@ export default function CollectionPage() {
                     setSelectingPosition(null);
                   }}
                 >
-                  Remove Card
+                  {t("collection.remove_card", "Remove Card")}
                 </button>
                 <button 
                   className="mt-2 w-full py-2 bg-gray-500/20 text-gray-300 border border-gray-500/50 rounded-lg hover:bg-gray-500/30 transition-colors" 
                   onClick={() => setSelectingPosition(null)}
                 >
-                  Cancel
+                  {t("collection.cancel", "Cancel")}
                 </button>
               </div>
             </div>
@@ -635,24 +637,24 @@ export default function CollectionPage() {
         >
           <div className="p-4">
             <div className="flex justify-between items-center mb-3">
-              <h2 className="text-sm font-medium text-yellow-300">Collection Stats</h2>
+              <h2 className="text-sm font-medium text-yellow-300">{t("collection.stats", "Collection Stats")}</h2>
               <Link href="/catalog">
                 <Button
                   size="sm"
                   className="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white h-7 px-3 shadow-sm"
                 >
                   <BookOpen className="h-3.5 w-3.5 mr-1" />
-                  <span className="text-xs font-medium">Cards Gallery</span>
+                  <span className="text-xs font-medium">{t("collection.cards_gallery", "Cards Gallery")}</span>
                 </Button>
               </Link>
             </div>
             <div className="grid grid-cols-3 gap-2 text-center">
               {[
-                { label: "Total", value: collectionStats.total, color: "text-yellow-300" },
-                { label: "Common", value: collectionStats.common, color: "text-yellow-300" },
-                { label: "Rare", value: collectionStats.rare, color: "text-blue-400" },
-                { label: "Epic", value: collectionStats.epic, color: "text-purple-400" },
-                { label: "Legendary", value: collectionStats.legendary, color: "text-amber-400" },
+                { label: t("collection.total", "Total"), value: collectionStats.total, color: "text-yellow-300" },
+                { label: t("rarity.common", "Common"), value: collectionStats.common, color: "text-yellow-300" },
+                { label: t("rarity.rare", "Rare"), value: collectionStats.rare, color: "text-blue-400" },
+                { label: t("rarity.epic", "Epic"), value: collectionStats.epic, color: "text-purple-400" },
+                { label: t("rarity.legendary", "Legendary"), value: collectionStats.legendary, color: "text-amber-400" },
               ].map((stat) => (
                 <div key={stat.label} className="bg-black/60 rounded-lg p-2 border border-yellow-500/50">
                   <div className={`text-lg font-semibold ${stat.color}`}>{stat.value}</div>
@@ -678,7 +680,7 @@ export default function CollectionPage() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-yellow-500" />
             <Input
-              placeholder="Search cards..."
+              placeholder={t("collection.search_placeholder", "Search cards...")}
               className="pl-10 bg-black/80 border-yellow-500 text-yellow-300 placeholder-yellow-400 focus:ring-yellow-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -694,13 +696,13 @@ export default function CollectionPage() {
                 onValueChange={(value) => setSelectedEpoch(value === "all" ? "all" : Number.parseInt(value))}
               >
                 <SelectTrigger className="w-32 bg-black/80 border-yellow-500 text-yellow-300">
-                  <SelectValue placeholder="Epoch" />
+                  <SelectValue placeholder={t("collection.epoch", "Epoch")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Epochs</SelectItem>
+                  <SelectItem value="all">{t("collection.all_epochs", "All Epochs")}</SelectItem>
                   {availableEpochs.map((epoch) => (
                     <SelectItem key={epoch} value={epoch.toString()}>
-                      Epoch {epoch}
+                      {t("collection.epoch", "Epoch")} {epoch}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -711,19 +713,19 @@ export default function CollectionPage() {
           <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-5 bg-black/80 border-yellow-500 h-9">
               <TabsTrigger value="all" className="text-xs h-7 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">
-                All
+                {t("collection.all", "All")}
               </TabsTrigger>
               <TabsTrigger value="legendary" className="text-xs h-7 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">
-                Legendary
+                {t("rarity.legendary", "Legendary")}
               </TabsTrigger>
               <TabsTrigger value="epic" className="text-xs h-7 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">
-                Epic
+                {t("rarity.epic", "Epic")}
               </TabsTrigger>
               <TabsTrigger value="rare" className="text-xs h-7 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">
-                Rare
+                {t("rarity.rare", "Rare")}
               </TabsTrigger>
               <TabsTrigger value="common" className="text-xs h-7 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">
-                Common
+                {t("rarity.common", "Common")}
               </TabsTrigger>
               {/* <TabsTrigger value="wbc" className="text-xs h-7 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">
                 WBC
@@ -744,11 +746,11 @@ export default function CollectionPage() {
             >
               <div className="flex items-center mb-3">
                 <Badge variant="outline" className="mr-2 font-bold border-yellow-400 text-yellow-200">
-                  Level {level}
+                  {t("collection.level", "Level")} {level}
                 </Badge>
                 <div className="flex">{renderStars(level, "xs")}</div>
                 <span className="ml-2 text-sm text-yellow-200">
-                  ({cardsByLevel[level].length} {cardsByLevel[level].length === 1 ? "card" : "cards"})
+                  ({cardsByLevel[level].length} {cardsByLevel[level].length === 1 ? t("collection.card", "card") : t("collection.cards", "cards")})
                 </span>
               </div>
 
@@ -794,9 +796,9 @@ export default function CollectionPage() {
             <div className="w-12 h-12 rounded-full bg-yellow-400/20 flex items-center justify-center mx-auto mb-4">
               <Search className="h-6 w-6 text-yellow-400" />
             </div>
-            <h2 className="text-lg font-medium mb-2 text-yellow-200">No Results</h2>
+            <h2 className="text-lg font-medium mb-2 text-yellow-200">{t("collection.no_results", "No Results")}</h2>
             <p className="text-yellow-300 mb-4">
-              No cards match your search criteria. Try different keywords or filters.
+              {t("collection.no_results_desc", "No cards match your search criteria. Try different keywords or filters.")}
             </p>
             <Button
               variant="outline"
@@ -807,7 +809,7 @@ export default function CollectionPage() {
                 setSelectedEpoch("all")
               }}
             >
-              Clear Filters
+              {t("collection.clear_filters", "Clear Filters")}
             </Button>
           </div>
         )}

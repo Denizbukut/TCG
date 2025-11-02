@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { toast } from "@/components/ui/use-toast"
 import { motion, AnimatePresence } from "framer-motion"
+import { useI18n } from "@/contexts/i18n-context"
 import {
   Crown,
   Ticket,
@@ -41,6 +42,19 @@ interface LevelReward {
 
 export default function PremiumPassPage() {
   const { user, updateUserTickets } = useAuth()
+  const { t } = useI18n()
+  
+  // Helper function to translate rarity
+  const getDisplayRarity = (rarity: string) => {
+    const rarityMap: Record<string, string> = {
+      common: t("rarity.common", "Common"),
+      rare: t("rarity.rare", "Rare"),
+      epic: t("rarity.epic", "Epic"),
+      legendary: t("rarity.legendary", "Legendary"),
+    }
+    return rarityMap[rarity.toLowerCase()] || rarity
+  }
+  
   const [hasPremium, setHasPremium] = useState(false)
   const [premiumExpiryDate, setPremiumExpiryDate] = useState<Date | null>(null)
   const [lastLegendaryClaim, setLastLegendaryClaim] = useState<Date | null>(null)
@@ -901,13 +915,13 @@ const handlePurchaseXpPass = async () => {
       <div className="mt-3 bg-white rounded-lg p-3">
         <div className="grid grid-cols-3 gap-2 mb-3">
           <div className="text-xs font-medium text-center">Rarity</div>
-          <div className="text-xs font-medium text-center">Regular</div>
-          <div className="text-xs font-medium text-center">With Pass</div>
+          <div className="text-xs font-medium text-center">{t("game_pass.regular", "Regular")}</div>
+          <div className="text-xs font-medium text-center">{t("game_pass.with_pass", "With Pass")}</div>
         </div>
 
         {regularRates.map((item, index) => (
           <div key={item.rarity} className="grid grid-cols-3 gap-2 items-center mb-2">
-            <div className="text-xs font-medium">{item.rarity}</div>
+            <div className="text-xs font-medium">{getDisplayRarity(item.rarity)}</div>
 
             {/* Regular rate */}
             <div className="flex items-center justify-center">
@@ -931,7 +945,7 @@ const handlePurchaseXpPass = async () => {
         ))}
 
         <p className="text-xs text-gray-500 mt-3 italic text-center">
-          Premium Pass significantly increases your chances of getting rare, epic, and legendary cards in regular packs!
+          {t("game_pass.pass_significantly_increases", "Premium Pass significantly increases your chances of getting rare, epic, and legendary cards in regular packs!")}
         </p>
       </div>
     )
@@ -1031,13 +1045,13 @@ const handlePurchaseXpPass = async () => {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-medium text-lg">Premium Pass</h3>
+                      <h3 className="font-medium text-lg">{t("game_pass.premium_pass", "Premium Pass")}</h3>
                       {hasPremium && (
-                        <Badge className="bg-gradient-to-r from-orange-400 to-orange-600 text-white">Active</Badge>
+                        <Badge className="bg-gradient-to-r from-orange-400 to-orange-600 text-white">{t("game_pass.active", "Active")}</Badge>
                       )}
                     </div>
                     <p className="text-sm text-gray-500">
-                      {hasPremium ? "Enjoy exclusive rewards and benefits!" : "Unlock exclusive rewards and benefits!"}
+                      {hasPremium ? t("game_pass.enjoy_rewards", "Enjoy exclusive rewards!") : t("game_pass.unlock_rewards", "Unlock exclusive rewards!")}
                     </p>
                     {hasPremium && premiumExpiryDate && (
                       <div className="flex items-center gap-1 mt-1 text-xs text-orange-600">
@@ -1053,7 +1067,7 @@ const handlePurchaseXpPass = async () => {
                     className="bg-gradient-to-r from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white rounded-full"
                   >
                     <Crown className="h-4 w-4 mr-2" />
-                    Get Premium
+                    {t("game_pass.get_premium", "Get Premium")}
                   </Button>
                 )}
               </div>
@@ -1066,9 +1080,9 @@ const handlePurchaseXpPass = async () => {
                       <Sparkles className="h-5 w-5 text-blue-500" />
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-bold text-gray-900 text-sm">Support the Game</h4>
+                      <h4 className="font-bold text-gray-900 text-sm">{t("game_pass.support_game", "Support the Game")}</h4>
                       <p className="text-gray-700 text-sm">
-                        Get <b>Premium Pass</b> for only <b>$5.00</b> and enjoy full benefits!
+                        {t("game_pass.support_game_desc", "Get Premium Pass for only $5.00 and enjoy full benefits!")}
                       </p>
                     </div>
                   </div>
@@ -1083,7 +1097,7 @@ const handlePurchaseXpPass = async () => {
                 >
                   <div className="flex items-center">
                     <Sparkles className="h-4 w-4 mr-2 text-orange-500" />
-                    Premium Pass Benefits
+                    {t("game_pass.benefits", "Benefits")}
                     {hasPremium && (
                       <div className="ml-2 bg-green-500 rounded-full p-0.5">
                         <Check className="h-3 w-3 text-white" />
@@ -1119,11 +1133,11 @@ const handlePurchaseXpPass = async () => {
                         <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mr-2">
                           <Gift className="h-3 w-3 text-orange-600" />
                         </div>
-                        <span className="text-sm">Premium Level Rewards</span>
+                        <span className="text-sm">{t("game_pass.premium_level_rewards_title", "Premium Level Rewards")}</span>
                       </div>
 
                       <p className="text-xs text-gray-600 mt-2 pl-7">
-                        Get <b>1 legendary ticket</b> for each <b>level up</b> (2 tickets every 5 levels)
+                        {t("game_pass.premium_level_rewards_desc", "Get 1 legendary ticket for each level up (2 tickets every 5 levels)")}
                       </p>
                     </div>
 
@@ -1134,7 +1148,7 @@ const handlePurchaseXpPass = async () => {
                           <BarChart3 className="h-3 w-3 text-blue-600" />
                         </div>
                         <span className="text-sm">
-                          Improved <b>Regular Pack</b> Drop Rates
+                          {t("game_pass.improved_drop_rates", "Improved Regular Pack Drop Rates")}
                         </span>
                       </div>
 
@@ -1147,11 +1161,11 @@ const handlePurchaseXpPass = async () => {
                         <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mr-2">
                           <Calendar className="h-3 w-3 text-orange-600" />
                         </div>
-                        <span className="text-sm">7 Days Duration</span>
+                        <span className="text-sm">{t("game_pass.seven_days_duration", "7 Days Duration")}</span>
                       </div>
 
                       <p className="text-xs text-gray-600 mt-2 pl-7">
-                        Premium Pass is valid for <b>7 days</b> from purchase
+                        {t("game_pass.pass_valid_desc", "Premium Pass is valid for 7 days from purchase")}
                       </p>
                     </div>
                   </div>
@@ -1165,8 +1179,8 @@ const handlePurchaseXpPass = async () => {
                     <Ticket className="h-4 w-4 text-blue-600" />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-medium text-sm">Daily Legendary Ticket</h4>
-                    <p className="text-xs text-gray-500">Claim 1 legendary ticket every 24 hours</p>
+                    <h4 className="font-medium text-sm">{t("game_pass.daily_legendary", "Daily Legendary Ticket")}</h4>
+                    <p className="text-xs text-gray-500">{t("game_pass.claim_legendary_daily", "Claim 1 legendary ticket every 24 hours")}</p>
                   </div>
                   <Button
                     onClick={handleClaimLegendaryTicket}
@@ -1199,10 +1213,10 @@ const handlePurchaseXpPass = async () => {
                 <Alert className="bg-white border-gray-200 mb-2">
                   <AlertTitle className="text-gray-800 flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-blue-500" />
-                    Get {calculatePotentialEliteTickets()} Legendary Tickets Now!
+                    {t("game_pass.get_tickets_now", "Get {count} Legendary Tickets Now!", { count: calculatePotentialEliteTickets() })}
                   </AlertTitle>
                   <AlertDescription className="text-gray-600 text-sm">
-                    Purchase Premium Pass now and claim legendary tickets for all your previous level ups!
+                    {t("game_pass.get_tickets_now_desc", "Purchase Premium Pass now and claim legendary tickets for all your previous level ups!")}
                   </AlertDescription>
                 </Alert>
               )}
@@ -1219,7 +1233,7 @@ const handlePurchaseXpPass = async () => {
           className="bg-white rounded-2xl shadow-sm p-4"
         >
           <div className="flex justify-between items-center mb-4">
-            <h3 className="font-medium text-lg">Pass Rewards</h3>
+            <h3 className="font-medium text-lg">{t("game_pass.pass_rewards_title", "Pass Rewards")}</h3>
             {unclaimedRewards > 0 && (
               <Button
                 onClick={handleClaimAllRewards}
@@ -1235,7 +1249,7 @@ const handlePurchaseXpPass = async () => {
                 ) : (
                   <>
                     <Gift className="h-3.5 w-3.5 mr-1.5" />
-                    Claim All ({unclaimedRewards})
+                    {t("game_pass.claim_all_count", "Claim All ({count})", { count: unclaimedRewards })}
                   </>
                 )}
               </Button>
@@ -1269,7 +1283,7 @@ const handlePurchaseXpPass = async () => {
                       `}
                       >
                         <Ticket className="h-5 w-5 text-violet-500 mb-1" />
-                        <span className="text-xs font-medium">{reward.isSpecialLevel ? "3" : "1"} Tickets</span>
+                        <span className="text-xs font-medium">{t("game_pass.tickets_count", "{count} Tickets", { count: reward.isSpecialLevel ? 3 : 1 })}</span>
                         {reward.isSpecialLevel && !reward.standardClaimed && reward.level <= (user?.level || 1) && (
                           <span className="absolute -top-2 -right-2 bg-violet-500 text-white text-[10px] px-1 rounded-full">
                             3x
@@ -1311,7 +1325,7 @@ const handlePurchaseXpPass = async () => {
                     >
                       <span className="text-xs font-medium">{reward.level}</span>
                     </div>
-                    <span className="text-[10px] mt-0.5">Level {reward.level}</span>
+                    <span className="text-[10px] mt-0.5">{t("game_pass.level_number", "Level {level}", { level: reward.level })}</span>
                   </div>
                 ))}
               </div>
@@ -1345,7 +1359,7 @@ const handlePurchaseXpPass = async () => {
                         )}
 
                         <Ticket className="h-5 w-5 text-blue-500 mb-1" />
-                        <span className="text-xs font-medium">{reward.isSpecialLevel ? "2" : "1"} Legendary</span>
+                        <span className="text-xs font-medium">{reward.isSpecialLevel ? "2" : "1"} {t("rarity.legendary", "Legendary")}</span>
                         {reward.isSpecialLevel &&
                           !reward.premiumClaimed &&
                           hasPremium &&

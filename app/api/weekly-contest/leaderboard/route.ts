@@ -7,30 +7,39 @@ export async function GET() {
   const weekStart = WEEKLY_CONTEST_CONFIG.weekStart
 
   try {
-    // Top 20 Weekly
-    const { data, error } = await supabase
+    // Top 20 Weekly - Join mit users-Tabelle um username zu bekommen
+    const { data: entries, error } = await supabase
       .from("weekly_contest_entries")
-      .select("user_id, legendary_count")
+      .select("wallet_address, legendary_count")
       .eq("week_start_date", weekStart)
-      .neq("user_id", "llegaraa2kwdd")
-      .neq("user_id", "nadapersonal")
-      .neq("user_id", "MejaEliana")
-      .neq("user_id", "regresosss")
-      .neq("user_id", "quispelind")
-      .neq("user_id", "berg2020")
-      .neq("user_id", "gruji2020")
-      .neq("user_id", "ytph999")
-      .neq("user_id", "jesus24win1")
-      .neq("user_id", "aranan2020")
       .order("legendary_count", { ascending: false })
       .limit(20)
 
     if (error) {
+      console.error("Leaderboard query error:", error)
       return NextResponse.json({ success: false, error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, data })
+    // Hole usernames für alle wallet_addresses
+    const walletAddresses = entries?.map(e => e.wallet_address) || []
+    const { data: users } = await supabase
+      .from("users")
+      .select("wallet_address, username")
+      .in("wallet_address", walletAddresses)
+
+    // Erstelle eine Map für schnellen Zugriff
+    const usernameMap = new Map(users?.map(u => [u.wallet_address, u.username]) || [])
+
+    // Formatiere die Daten
+    const formattedData = entries?.map(entry => ({
+      user_id: usernameMap.get(entry.wallet_address) || entry.wallet_address.slice(0, 10) + "...",
+      legendary_count: entry.legendary_count,
+      wallet_address: entry.wallet_address
+    })) || []
+
+    return NextResponse.json({ success: true, data: formattedData })
   } catch (error) {
+    console.error("Leaderboard error:", error)
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 })
   }
 }

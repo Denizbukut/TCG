@@ -251,13 +251,46 @@ export async function buyCard(walletAddress: string, listingId: string) {
     }
 
     // 3. Add card to buyer's collection (user_card_instances)
-    await supabase.from("user_card_instances").insert({
-      wallet_address: walletAddress,
-      card_id: listing.card_id,
-      level: listing.card_level || 1,
-      favorite: false,
-      obtained_at: new Date().toISOString().split("T")[0],
-    })
+    const { data: newCard, error: insertCardError } = await supabase
+      .from("user_card_instances")
+      .insert({
+        wallet_address: walletAddress,
+        card_id: listing.card_id,
+        level: listing.card_level || 1,
+        favorite: false,
+        obtained_at: new Date().toISOString().split("T")[0],
+      })
+      .select()
+      .single()
+
+    if (insertCardError || !newCard) {
+      console.error("Error adding card to buyer's collection:", insertCardError)
+      // Rollback: Give coins back to buyer
+      await supabase
+        .from("users")
+        .update({ coins: buyer.coins })
+        .eq("wallet_address", walletAddress)
+      
+      // Rollback: Remove coins from seller
+      if (seller) {
+        await supabase
+          .from("users")
+          .update({ coins: seller.coins - listing.price })
+          .eq("wallet_address", listing.seller_wallet_address)
+      }
+      
+      // Rollback: Mark listing as active again
+      await supabase
+        .from("market_listings")
+        .update({ 
+          status: "active",
+          buyer_wallet_address: null,
+          sold_at: null
+        })
+        .eq("id", listingId)
+      
+      return { success: false, error: "Failed to add card to your collection" }
+    }
 
     // 4. Remove card from seller's collection (delete one instance)
     const { data: sellerCard, error: sellerCardError } = await supabase
@@ -270,7 +303,15 @@ export async function buyCard(walletAddress: string, listingId: string) {
       .single()
 
     if (!sellerCardError && sellerCard) {
-      await supabase.from("user_card_instances").delete().eq("id", sellerCard.id)
+      const { error: deleteError } = await supabase
+        .from("user_card_instances")
+        .delete()
+        .eq("id", sellerCard.id)
+      
+      if (deleteError) {
+        console.error("Error removing card from seller's collection:", deleteError)
+        // This is not critical enough to rollback the entire transaction
+      }
     }
 
     revalidatePath("/trades")

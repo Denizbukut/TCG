@@ -4,9 +4,11 @@ import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Info, Star, ArrowRight } from "lucide-react"
+import { useI18n } from "@/contexts/i18n-context"
 
 export function LevelSystemInfoDialog() {
   const [isOpen, setIsOpen] = useState(false)
+  const { t } = useI18n()
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -17,18 +19,18 @@ export function LevelSystemInfoDialog() {
           className="flex items-center text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded-full px-2.5 py-1"
         >
           <Info className="h-3.5 w-3.5 mr-1" />
-          <span>Card Level System</span>
+          <span>{t("level_system.button", "Card Level System")}</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-center">Card Level System</DialogTitle>
+          <DialogTitle className="text-center">{t("level_system.title", "Card Level System")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <p className="text-sm text-center text-gray-700">
-            Combine two identical cards of the same level to level up your card!
+            {t("level_system.description", "Combine two identical cards of the same level to level up your card!")}
             <br />
-            <span className="font-medium">Maximum level is 15.</span>
+            <span className="font-medium">{t("level_system.max_level", "Maximum level is 15.")}</span>
           </p>
 
           {/* Static Card Combination Visual - Horizontal Layout */}
@@ -86,8 +88,8 @@ export function LevelSystemInfoDialog() {
                   <Star key={i} className="h-3.5 w-3.5 fill-red-500 text-red-500 -ml-0.5" />
                 ))}
               </div>
-              <div className="text-xs font-medium text-gray-700">Levels 1-5</div>
-              <div className="text-xs text-gray-500">Red Stars</div>
+              <div className="text-xs font-medium text-gray-700">{t("level_system.levels_1_5", "Levels 1-5")}</div>
+              <div className="text-xs text-gray-500">{t("level_system.red_stars", "Red Stars")}</div>
             </div>
             <div className="bg-white/80 rounded-lg p-2 text-center border border-gray-100">
               <div className="flex justify-center mb-1">
@@ -95,8 +97,8 @@ export function LevelSystemInfoDialog() {
                   <Star key={i} className="h-3.5 w-3.5 fill-blue-500 text-blue-500 -ml-0.5" />
                 ))}
               </div>
-              <div className="text-xs font-medium text-gray-700">Levels 6-10</div>
-              <div className="text-xs text-gray-500">Blue Stars</div>
+              <div className="text-xs font-medium text-gray-700">{t("level_system.levels_6_10", "Levels 6-10")}</div>
+              <div className="text-xs text-gray-500">{t("level_system.blue_stars", "Blue Stars")}</div>
             </div>
             <div className="bg-white/80 rounded-lg p-2 text-center border border-gray-100">
               <div className="flex justify-center mb-1">
@@ -104,8 +106,8 @@ export function LevelSystemInfoDialog() {
                   <Star key={i} className="h-3.5 w-3.5 fill-amber-400 text-amber-400 -ml-0.5" />
                 ))}
               </div>
-              <div className="text-xs font-medium text-gray-700">Levels 11-15</div>
-              <div className="text-xs text-gray-500">Gold Stars</div>
+              <div className="text-xs font-medium text-gray-700">{t("level_system.levels_11_15", "Levels 11-15")}</div>
+              <div className="text-xs text-gray-500">{t("level_system.gold_stars", "Gold Stars")}</div>
             </div>
           </div>
         </div>

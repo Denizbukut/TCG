@@ -8,6 +8,7 @@ import { Inter } from "next/font/google"
 import { AppProvider } from "@/contexts/auth-context"
 import { WldPriceProvider } from "@/contexts/WldPriceContext"
 import { Poppins } from "next/font/google"
+import { I18nProvider } from "@/contexts/i18n-context"
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -28,7 +29,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <MiniKitProvider>
         <body className={poppins.className}>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-            <AppProvider><WldPriceProvider>{children}</WldPriceProvider></AppProvider>
+            <I18nProvider>
+              <AppProvider>
+                <WldPriceProvider>
+                  {children}
+                </WldPriceProvider>
+              </AppProvider>
+            </I18nProvider>
           </ThemeProvider>
           
           

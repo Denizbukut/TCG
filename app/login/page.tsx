@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input"
 import { useEffect } from "react"
 import { MiniKit } from "@worldcoin/minikit-js"
 import { incrementLegendaryDraw } from "../actions/weekly-contest"
-// import { useTranslation } from "@/hooks/use-translation"
 
 
 export default function LoginPage() {
@@ -21,7 +20,6 @@ export default function LoginPage() {
   const [referralCode, setReferralCode] = useState("")
   const router = useRouter()
   const { login } = useAuth()
-  // const { t } = useTranslation()
   const t = (key: string) => key // Fallback function
   
   useEffect(() => {

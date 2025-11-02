@@ -15,6 +15,7 @@ import TiltableCard from "@/components/tiltable-card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { renderStars, getStarInfo } from "@/utils/card-stars"
 import SellCardDialog from "@/components/sell-card-dialog"
+import { useI18n } from "@/contexts/i18n-context"
 
 // Define types for our data
 interface UserCard {
@@ -149,6 +150,7 @@ export default function CardDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { user } = useAuth()
+  const { t } = useI18n()
   const [card, setCard] = useState<Card | null>(null)
   const [userCard, setUserCard] = useState<UserCard | null>(null)
   const [loading, setLoading] = useState(true)
@@ -156,6 +158,22 @@ export default function CardDetailPage() {
   const [favorite, setFavorite] = useState(false)
   const [favoriteLoading, setFavoriteLoading] = useState(false)
   const [levelUpLoading, setLevelUpLoading] = useState(false)
+
+  const getDisplayRarity = (rarity: string) => {
+    const rarityMap: Record<string, string> = {
+      common: t("rarity.common", "Common"),
+      rare: t("rarity.rare", "Rare"),
+      epic: t("rarity.epic", "Epic"),
+      legendary: t("rarity.legendary", "Legendary"),
+      goat: t("rarity.goat", "GOAT"),
+      godlike: t("rarity.goat", "GOAT"),
+      basic: t("rarity.common", "Common"),
+      elite: t("rarity.epic", "Epic"),
+      ultima: t("rarity.legendary", "Legendary"),
+      ultimate: t("rarity.legendary", "Legendary"),
+    };
+    return rarityMap[rarity.toLowerCase()] || rarity;
+  };
   const [showLevelUpAnimation, setShowLevelUpAnimation] = useState(false)
   const [newLevel, setNewLevel] = useState(1)
   const [allUserCards, setAllUserCards] = useState<UserCard[]>([])
@@ -930,7 +948,7 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.3, duration: 0.5 }}
                   >
-                    <h2 className="text-white text-2xl font-bold mb-2 anime-text">LEVEL UP!</h2>
+                    <h2 className="text-white text-2xl font-bold mb-2 anime-text">{t("card_details.level_up", "LEVEL UP!")}</h2>
                     <div className="flex justify-center mb-4">{renderStars(newLevel, "lg")}</div>
                   </motion.div>
 
@@ -981,7 +999,7 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
                 }`}
               >
                 <div className="flex justify-between items-center mb-2">
-                  <h3 className="font-bold text-lg">Card Details</h3>
+                  <h3 className="font-bold text-lg">{t("card_details.title", "Card Details")}</h3>
                   <Badge
                     variant="outline"
                     className={`
@@ -997,13 +1015,13 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
                       }
                     `}
                   >
-                    {card.rarity.charAt(0).toUpperCase() + card.rarity.slice(1)}
+                    {getDisplayRarity(card.rarity)}
                   </Badge>
                 </div>
 
                 {card.description && (
                   <div className="text-sm mt-2">
-                    <span className="text-gray-500">Description:</span>
+                    <span className="text-gray-500">{t("card_details.description", "Description:")}</span>
                     <p className="mt-1">{card.description}</p>
                   </div>
                 )}
@@ -1011,11 +1029,11 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
                 {/* Zeige alle Levels an, die der User besitzt */}
                 {owned && allUserCards.length > 0 && (
                   <div className="mt-4 pt-3 border-t border-gray-100">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Your Collection:</h4>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">{t("card_details.your_collection", "Your Collection:")}</h4>
                     <div className="space-y-4">
                       {allUserCards.map((userCardItem) => {
                         const { color } = getStarInfo(userCardItem.level || 1)
-                        const tierName = color === "red" ? "Red Tier" : color === "blue" ? "Blue Tier" : "Gold Tier"
+                        const tierName = color === "red" ? t("card_details.red_tier", "Red Tier") : color === "blue" ? t("card_details.blue_tier", "Blue Tier") : t("card_details.gold_tier", "Gold Tier")
 
                         return (
                           <div key={userCardItem.id} className="flex justify-between items-center">
@@ -1048,7 +1066,7 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
                                   onClick={() => handleSellCard(userCardItem)}
                                 >
                                   <Tag className="h-3 w-3 mr-1" />
-                                  Sell
+                                  {t("card_details.sell", "Sell")}
                                 </Button>
                               )}
                             </div>
@@ -1063,7 +1081,7 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
 {/* Fallback: zeige aktuelle userCard, wenn allUserCards leer */}
 {owned && userCard && allUserCards.length === 0 && (
   <div className="mt-4 pt-3 border-t border-gray-100">
-    <h4 className="text-sm font-medium text-gray-700 mb-2">Your Card:</h4>
+    <h4 className="text-sm font-medium text-gray-700 mb-2">{t("card_details.your_card", "Your Card:")}</h4>
     <div className="flex justify-between items-center">
       <div className="flex flex-col">
         <div className="flex items-center">
@@ -1084,7 +1102,7 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
             onClick={() => handleSellCard(userCard)}
           >
             <Tag className="h-3 w-3 mr-1" />
-            Sell
+            {t("card_details.sell", "Sell")}
           </Button>
         )}
       </div>
@@ -1107,14 +1125,14 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
                           : "border-gray-200"
                   }`}
                 >
-                  <h3 className="font-bold text-lg mb-3">Level Up Card</h3>
+                  <h3 className="font-bold text-lg mb-3">{t("card_details.level_up_card", "Level Up Card")}</h3>
 
                   <div className="flex flex-col items-center justify-between mb-4 space-y-4">
                     <div className="flex justify-between w-full">
                       <div>
-                        <div className="text-sm text-gray-500 mb-1">Current Level</div>
+                        <div className="text-sm text-gray-500 mb-1">{t("collection.level", "Level")}</div>
                         <div className="flex items-center">
-                          <span className="mr-2 font-medium">Level {userCard?.level || 1}</span>
+                          <span className="mr-2 font-medium">{t("collection.level", "Level")} {userCard?.level || 1}</span>
                           <span
                             className={`text-xs px-2 py-0.5 rounded-full ${
                               currentStarInfo.color === "red"
@@ -1125,19 +1143,19 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
                             }`}
                           >
                             {currentStarInfo.color === "red"
-                              ? "Red Tier"
+                              ? t("card_details.red_tier", "Red Tier")
                               : currentStarInfo.color === "blue"
-                                ? "Blue Tier"
-                                : "Gold Tier"}
+                                ? t("card_details.blue_tier", "Blue Tier")
+                                : t("card_details.gold_tier", "Gold Tier")}
                           </span>
                         </div>
                       </div>
 
                       {(userCard?.level || 1) < MAX_CARD_LEVEL && (
                         <div>
-                          <div className="text-sm text-gray-500 mb-1">Next Level</div>
+                          <div className="text-sm text-gray-500 mb-1">{t("collection.level", "Level")}</div>
                           <div className="flex items-center justify-end">
-                            <span className="mr-2 font-medium">Level {(userCard?.level || 1) + 1}</span>
+                            <span className="mr-2 font-medium">{t("collection.level", "Level")} {(userCard?.level || 1) + 1}</span>
                             <span
                               className={`text-xs px-2 py-0.5 rounded-full ${
                                 nextStarInfo.color === "red"
@@ -1148,10 +1166,10 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
                               }`}
                             >
                               {nextStarInfo.color === "red"
-                                ? "Red Tier"
+                                ? t("card_details.red_tier", "Red Tier")
                                 : nextStarInfo.color === "blue"
-                                  ? "Blue Tier"
-                                  : "Gold Tier"}
+                                  ? t("card_details.blue_tier", "Blue Tier")
+                                  : t("card_details.gold_tier", "Gold Tier")}
                             </span>
                           </div>
                         </div>
@@ -1168,21 +1186,21 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
 
                   {(userCard?.level || 1) >= MAX_CARD_LEVEL ? (
                     <Alert className="bg-green-50 border-green-200">
-                      <AlertTitle className="text-green-800">Maximum Level Reached</AlertTitle>
+                      <AlertTitle className="text-green-800">{t("card_details.max_level_reached_title", "Maximum Level Reached")}</AlertTitle>
                       <AlertDescription className="text-green-700">
-                        This card has reached its maximum level. It cannot be leveled up further.
+                        {t("card_details.max_level_reached_desc", "This card has reached its maximum level. It cannot be leveled up further.")}
                       </AlertDescription>
                     </Alert>
                   ) : (userCard?.quantity || 0) >= 2 ? (
                     <>
                       <Alert className="mb-4 bg-amber-50 border-amber-200">
-                        <AlertTitle className="text-amber-800">Requirements</AlertTitle>
+                        <AlertTitle className="text-amber-800">{t("card_details.requirements", "Requirements")}</AlertTitle>
                         <AlertDescription className="text-amber-700">
                           <ul className="list-disc list-inside text-sm">
                             <li>
-                              2 cards of {card.name} at level {userCard?.level || 1}
+                              2 {t("card_details.cards_of", "cards of")} {card.name} {t("card_details.at_level", "at level")} {userCard?.level || 1}
                             </li>
-                            <li>You have {userCard?.quantity || 0} cards available</li>
+                            <li>{t("card_details.you_have", "You have")} {userCard?.quantity || 0} {t("card_details.cards_available", "cards available")}</li>
                           </ul>
                         </AlertDescription>
                       </Alert>
@@ -1204,21 +1222,21 @@ const [cardFromParams, setCardFromParams] = useState<Card | null>(null)
                         {levelUpLoading ? (
                           <div className="flex items-center">
                             <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
-                            <span>Processing...</span>
+                            <span>{t("card_details.processing", "Processing...")}</span>
                           </div>
                         ) : (
                           <>
                             <ArrowUp className="mr-2 h-4 w-4" />
-                            Level Up Card
+                            {t("card_details.level_up_card", "Level Up Card")}
                           </>
                         )}
                       </Button>
                     </>
                   ) : (
                     <Alert className="bg-gray-100 border-gray-200">
-                      <AlertTitle>Cannot Level Up</AlertTitle>
+                      <AlertTitle>{t("card_details.cannot_level_up", "Cannot Level Up")}</AlertTitle>
                       <AlertDescription className="text-sm">
-                        You need at least 2 cards of the same type and level to perform a level up.
+                        {t("card_details.need_two_cards", "You need at least 2 cards of the same type and level to perform a level up.")}
                       </AlertDescription>
                     </Alert>
                   )}

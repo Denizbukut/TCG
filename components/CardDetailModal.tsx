@@ -1,9 +1,10 @@
-"usfreinds rasasu me client";
+"use client";
 
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { renderStars } from "@/utils/card-stars";
 // Removed Next.js Image import - using regular img tags
 import { Badge } from "@/components/ui/badge";
+import { useI18n } from "@/contexts/i18n-context";
 
 interface CardDetailModalProps {
   open: boolean;
@@ -21,6 +22,19 @@ interface CardDetailModalProps {
 
 export default function CardDetailModal({ open, onClose, card }: CardDetailModalProps) {
   const { name, character, imageUrl, rarity, level, quantity } = card;
+  const { t } = useI18n();
+
+  const getDisplayRarity = (rarity: string) => {
+    const rarityMap: Record<string, string> = {
+      common: t("rarity.common", "Common"),
+      rare: t("rarity.rare", "Rare"),
+      epic: t("rarity.epic", "Epic"),
+      legendary: t("rarity.legendary", "Legendary"),
+      goat: t("rarity.goat", "GOAT"),
+      godlike: t("rarity.goat", "GOAT"),
+    };
+    return rarityMap[rarity.toLowerCase()] || rarity;
+  };
 
   const rarityBadge = {
     common: "bg-gray-100 text-gray-700",
@@ -28,6 +42,7 @@ export default function CardDetailModal({ open, onClose, card }: CardDetailModal
     epic: "bg-purple-100 text-purple-700",
     legendary: "bg-yellow-100 text-yellow-700",
     godlike: "bg-red-100 text-red-700",
+    goat: "bg-red-100 text-red-700",
   }[rarity] || "bg-gray-100 text-gray-700";
 
   return (
@@ -51,7 +66,7 @@ export default function CardDetailModal({ open, onClose, card }: CardDetailModal
           </div>
           <h2 className="text-lg font-bold mb-1">{name}</h2>
           <p className="text-gray-500 text-sm mb-2">{character}</p>
-          <Badge className={rarityBadge}>{rarity}</Badge>
+          <Badge className={rarityBadge}>{getDisplayRarity(rarity)}</Badge>
         </div>
       </DialogContent>
     </Dialog>

@@ -56,6 +56,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase"
 // Deal of the Day removed from Trade page
 // import DealOfTheDayDialog from "@/components/deal-of-the-day-dialog"
 // import { getDailyDeal } from "@/app/actions/deals"
+import { useI18n } from "@/contexts/i18n-context"
 
 // ABI für die transfer-Funktion des ERC20-Tokens
 const ERC20_ABI = ["function transfer(address to, uint256 amount) public returns (bool)"]
@@ -161,8 +162,21 @@ const getCardImageUrl = (imageUrl?: string) => {
 
 export default function TradePage() {
   const { user } = useAuth()
+  const { t } = useI18n()
   const [activeTab, setActiveTab] = useState("marketplace")
   const [historyType, setHistoryType] = useState<"my" | "all">("my")
+
+  // Helper function to translate rarity
+  const getDisplayRarity = (rarity: string) => {
+    const rarityMap: Record<string, string> = {
+      common: t("rarity.common", "Common"),
+      rare: t("rarity.rare", "Rare"),
+      epic: t("rarity.epic", "Epic"),
+      legendary: t("rarity.legendary", "Legendary"),
+      goat: t("rarity.goat", "GOAT"),
+    }
+    return rarityMap[rarity.toLowerCase()] || rarity
+  }
   const [marketListings, setMarketListings] = useState<MarketListing[]>([])
   const [userListings, setUserListings] = useState<MarketListing[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -860,8 +874,8 @@ export default function TradePage() {
         // Aktualisiere die Listings
         loadMarketListings()
         toast({
-          title: "Success!",
-          description: "Card purchased successfully!",
+          title: t("common.success", "Success!"),
+          description: t("trade.purchase_success", "Card purchased successfully!"),
         })
         setPurchaseLoading(false)
         return true
@@ -1023,7 +1037,7 @@ export default function TradePage() {
                 <span className="inline-block bg-gradient-to-r from-yellow-400 to-yellow-600 text-black px-2 py-1 rounded mr-2">
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="10" fill="#FFD700"/></svg>
                 </span>
-                Trade Market
+                {t("trade.title", "Trade Market")}
               </h1>
               <div className="flex items-center gap-2">
                 <div className="relative w-12 h-12">
@@ -1068,13 +1082,13 @@ export default function TradePage() {
             <div className={`flex items-center gap-2 ${soldCount === 3 ? "text-red-700" : "text-amber-700"}`}>
               <AlertTriangle className="w-4 h-4" />
               <span className="font-medium">
-                {soldCount === 3 ? "Selling limit reached" : "Approaching selling limit"}
+                {soldCount === 3 ? t("trade.selling_limit.banner_reached", "Selling limit reached") : t("trade.selling_limit.banner_approaching", "Approaching selling limit")}
               </span>
             </div>
             <p className={`text-sm mt-1 ${soldCount === 3 ? "text-red-600" : "text-amber-600"}`}>
               {soldCount === 3
-                ? "You must buy a card from the marketplace before you can sell more cards."
-                : `You can sell ${3 - soldCount} more card${3 - soldCount !== 1 ? "s" : ""} before reaching the limit.`}
+                ? t("trade.selling_limit.reached_desc", "You must buy a card from the marketplace before you can sell more cards.")
+                : t("trade.selling_limit.remaining_desc", "You can sell {count} more card{plural} before reaching the limit.", { count: 3 - soldCount, plural: 3 - soldCount !== 1 ? "s" : "" })}
             </p>
           </div>
         )}
@@ -1085,19 +1099,19 @@ export default function TradePage() {
               <TabsTrigger value="marketplace" className="h-10 text-yellow-400 font-bold">
                 <div className="flex items-center justify-center gap-2">
                   <Users className="h-4 w-4" />
-                  <span>Market</span>
+                  <span>{t("trade.tabs.marketplace", "Market")}</span>
                 </div>
               </TabsTrigger>
               <TabsTrigger value="sell" className="h-10 text-yellow-400 font-bold">
                 <div className="flex items-center justify-center gap-2">
                   <ShoppingBag className="h-4 w-4" />
-                  <span>List</span>
+                  <span>{t("trade.tabs.sell", "List")}</span>
                 </div>
               </TabsTrigger>
               <TabsTrigger value="sales-history" className="h-10 text-yellow-400 font-bold">
                 <div className="flex items-center justify-center gap-2">
                   <History className="h-4 w-4" />
-                  <span>History</span>
+                  <span>{t("trade.tabs.sales_history", "History")}</span>
                 </div>
               </TabsTrigger>
             </TabsList>
@@ -1111,7 +1125,7 @@ export default function TradePage() {
                     <div className="relative flex-1">
                       <Search className="absolute left-2 top-2.5 h-4 w-4 text-yellow-400" />
                       <Input
-                        placeholder="Search cards or sellers..."
+                        placeholder={t("trade.search_placeholder", "Search cards or sellers...")}
                         className="pl-8 pr-8 bg-black/80 text-white border border-yellow-400 placeholder-yellow-300 focus:ring-yellow-400"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -1130,34 +1144,36 @@ export default function TradePage() {
                     <Select value={rarityFilter} onValueChange={setRarityFilter}>
                       <SelectTrigger className="w-[130px] bg-black/80 text-yellow-300 border border-yellow-400">
                         <Filter className="h-4 w-4 mr-2 text-yellow-400" />
-                        <SelectValue placeholder="Rarity" />
+                        <SelectValue placeholder={t("trade.rarity_filter", "Rarity")} />
                       </SelectTrigger>
                       <SelectContent className="bg-black/90 text-yellow-300 border border-yellow-400">
-                                                    <SelectItem value="all">All Rarities</SelectItem>
-                            <SelectItem value="common">Common</SelectItem>
-                            <SelectItem value="rare">Rare</SelectItem>
-                            <SelectItem value="epic">Epic</SelectItem>
-                            <SelectItem value="legendary">Legendary</SelectItem>
-                            {/* <SelectItem value="wbc">WBC</SelectItem> */}
+                        <SelectItem value="all">{t("trade.all_rarities", "All Rarities")}</SelectItem>
+                        <SelectItem value="common">{t("rarity.common", "Common")}</SelectItem>
+                        <SelectItem value="rare">{t("rarity.rare", "Rare")}</SelectItem>
+                        <SelectItem value="epic">{t("rarity.epic", "Epic")}</SelectItem>
+                        <SelectItem value="legendary">{t("rarity.legendary", "Legendary")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="flex justify-between items-center">
                     <div className="text-sm text-yellow-200">
-                      {marketPagination.total} {marketPagination.total === 1 ? "card" : "cards"} available
+                      {t("trade.available_count", "{count} {label} available", { 
+                        count: marketPagination.total, 
+                        label: marketPagination.total === 1 ? t("common.card", "card") : t("common.cards", "cards")
+                      })}
                     </div>
                     <Select value={sortOption} onValueChange={setSortOption}>
                       <SelectTrigger className="w-[130px] h-8 text-xs bg-black/80 text-yellow-300 border border-yellow-400">
                         <ArrowUpDown className="h-3 w-3 mr-1 text-yellow-400" />
-                        <SelectValue placeholder="Sort by" />
+                        <SelectValue placeholder={t("trade.sort_by", "Sort by")} />
                       </SelectTrigger>
                       <SelectContent className="bg-black/90 text-yellow-300 border border-yellow-400">
-                        <SelectItem value="newest">Newest First</SelectItem>
-                        <SelectItem value="oldest">Oldest First</SelectItem>
-                        <SelectItem value="price_low">Price: Low to High</SelectItem>
-                        <SelectItem value="price_high">Price: High to Low</SelectItem>
-                        <SelectItem value="level_high">Level: High to Low</SelectItem>
-                        <SelectItem value="level_low">Level: Low to High</SelectItem>
+                        <SelectItem value="newest">{t("trade.sort.newest", "Newest First")}</SelectItem>
+                        <SelectItem value="oldest">{t("trade.sort.oldest", "Oldest First")}</SelectItem>
+                        <SelectItem value="price_low">{t("trade.sort.price_low", "Price: Low to High")}</SelectItem>
+                        <SelectItem value="price_high">{t("trade.sort.price_high", "Price: High to Low")}</SelectItem>
+                        <SelectItem value="level_high">{t("trade.sort.level_high", "Level: High to Low")}</SelectItem>
+                        <SelectItem value="level_low">{t("trade.sort.level_low", "Level: Low to High")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1238,15 +1254,15 @@ export default function TradePage() {
                         if (listingLimitReached) {
                           e.preventDefault()
                           toast({
-                            title: "Listing Limit Reached",
-                            description: `You can only list a maximum of ${maxListings} cards at a time. Please remove some listings before adding more.`,
+                            title: t("trade.limit_reached", "Limit reached"),
+                            description: t("trade.limit_reached_desc", "You can only list a maximum of {max} cards at a time. Please remove some listings before adding more.", { max: maxListings }),
                             variant: "destructive",
                           })
                         }
                       }}
                     >
                       <Plus className="h-4 w-4 mr-1" />
-                      Sell Card
+                      {t("trade.sell_card", "Sell Card")}
                     </Button>
                   </Link>
                 </div>
@@ -1255,11 +1271,11 @@ export default function TradePage() {
                 <div className="bg-black/70 rounded-xl p-4 shadow-sm border border-yellow-400 mb-4">
                   <div className="flex justify-between items-center mb-2">
                     <div className="flex items-center">
-                      <span className="font-medium text-yellow-200">Listing Limit</span>
+                      <span className="font-medium text-yellow-200">{t("trade.listing_limit", "Listing Limit")}</span>
                       {listingLimitReached && (
                         <div className="ml-2 flex items-center text-red-400">
                           <AlertCircle className="h-4 w-4 mr-1" />
-                          <span className="text-sm">Limit reached</span>
+                          <span className="text-sm">{t("trade.limit_reached", "Limit reached")}</span>
                         </div>
                       )}
                     </div>
@@ -1274,8 +1290,11 @@ export default function TradePage() {
                   />
                   <p className="text-xs text-yellow-200 mt-2">
                     {listingLimitReached
-                      ? "You've reached the maximum number of cards you can list. Cancel some listings to add more."
-                      : `You can list ${maxListings - listingCount} more card${maxListings - listingCount !== 1 ? "s" : ""}.`}
+                      ? t("trade.limit_reached_text", "You've reached the maximum number of cards you can list. Cancel some listings to add more.")
+                      : t("trade.you_can_list_more", "You can list {count} more {label}.", { 
+                          count: maxListings - listingCount, 
+                          label: maxListings - listingCount !== 1 ? t("common.cards", "cards") : t("common.card", "card")
+                        })}
                   </p>
                 </div>
 
@@ -1317,12 +1336,12 @@ export default function TradePage() {
                       <div className="w-16 h-16 rounded-full bg-yellow-900/50 flex items-center justify-center mb-3 border border-yellow-400">
                         <Tag className="h-8 w-8 text-yellow-400" />
                       </div>
-                      <h3 className="text-lg font-medium mb-1 text-yellow-200">No Listed Cards</h3>
-                      <p className="text-yellow-300 text-sm mb-4">You haven't listed any cards for sale yet</p>
+                      <h3 className="text-lg font-medium mb-1 text-yellow-200">{t("trade.no_listed_title", "No Listed Cards")}</h3>
+                      <p className="text-yellow-300 text-sm mb-4">{t("trade.no_listed_desc", "You haven't listed any cards for sale yet")}</p>
                       <Link href="/collection">
                         <Button className="rounded-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-black hover:from-yellow-500 hover:to-yellow-700">
                           <Plus className="h-4 w-4 mr-1" />
-                          Sell Your First Card
+                          {t("trade.sell_first_card", "Sell Your First Card")}
                         </Button>
                       </Link>
                     </div>
@@ -1343,7 +1362,7 @@ export default function TradePage() {
                       onClick={() => setHistoryType("all")}
                     >
                       <Globe className="h-4 w-4 mr-2 text-yellow-400" />
-                      Market History
+                      {t("trade.market_history", "Market History")}
                     </Button>
                     <Button
                       variant={historyType === "my" ? "default" : "outline"}
@@ -1351,7 +1370,7 @@ export default function TradePage() {
                       onClick={() => setHistoryType("my")}
                     >
                       <User className="h-4 w-4 mr-2 text-black" />
-                      My History
+                      {t("trade.my_history", "My History")}
                     </Button>
                   </div>
                 </div>
@@ -1360,10 +1379,10 @@ export default function TradePage() {
                 {historyType === "my" && (
                   <>
                     <div className="flex justify-between items-center text-white font-bold">
-                      <h2 className="text-lg font-medium">My Transaction History</h2>
+                      <h2 className="text-lg font-medium">{t("trade.my_tx_title", "My Transaction History")}</h2>
                       <Badge variant="outline" className="bg-white">
                         <Clock className="h-3 w-3 mr-1 text-blue-500" />
-                        Personal
+                        {t("trade.badge_personal", "Personal")}
                       </Badge>
                     </div>
 
@@ -1399,8 +1418,8 @@ export default function TradePage() {
                           <div className="w-16 h-16 rounded-full bg-yellow-900/50 flex items-center justify-center mb-3 border border-yellow-400">
                             <Clock className="h-8 w-8 text-yellow-400" />
                           </div>
-                          <h3 className="text-lg font-medium mb-1 text-yellow-200">No Transaction History</h3>
-                          <p className="text-yellow-300 text-sm mb-4">You haven't bought or sold any cards yet</p>
+                          <h3 className="text-lg font-medium mb-1 text-yellow-200">{t("trade.no_tx_title", "No Transaction History")}</h3>
+                          <p className="text-yellow-300 text-sm mb-4">{t("trade.no_tx_desc", "You haven't bought or sold any cards yet")}</p>
                           <Button 
                             variant="outline" 
                             size="sm" 
@@ -1408,7 +1427,7 @@ export default function TradePage() {
                             onClick={() => setActiveTab("marketplace")}
                           >
                             <Tag className="h-4 w-4 mr-1" />
-                            Browse Marketplace
+                            {t("trade.browse_market", "Browse Marketplace")}
                           </Button>
                         </div>
                       </div>
@@ -1420,10 +1439,10 @@ export default function TradePage() {
                 {historyType === "all" && (
                   <>
                     <div className="flex justify-between items-center">
-                      <h2 className="text-lg font-medium">Market Sales History</h2>
+                      <h2 className="text-lg font-medium">{t("trade.recent_sales_title", "Market Sales History")}</h2>
                       <Badge variant="outline" className="bg-white">
                         <DollarSign className="h-3 w-3 mr-1 text-green-500" />
-                        Global
+                        {t("trade.badge_global", "Global")}
                       </Badge>
                     </div>
 
@@ -1432,7 +1451,7 @@ export default function TradePage() {
                       <div className="relative">
                         <Search className="absolute left-2 top-2.5 h-4 w-4 text-yellow-400" />
                         <Input
-                          placeholder="Search cards, buyers or sellers..."
+                          placeholder={t("trade.recent_sales_search_placeholder", "Search cards, buyers or sellers...")}
                           className="pl-8 pr-8 bg-black/80 text-white border border-yellow-400 placeholder-yellow-300 focus:ring-yellow-400"
                           value={salesSearchTerm}
                           onChange={(e) => setSalesSearchTerm(e.target.value)}
@@ -1450,7 +1469,10 @@ export default function TradePage() {
                       </div>
                       <div className="flex justify-between items-center mt-2">
                         <div className="text-sm text-yellow-200">
-                          {recentSalesPagination.total} {recentSalesPagination.total === 1 ? "sale" : "sales"} found
+                          {t("trade.recent_sales_count", "{count} {label} found", { 
+                            count: recentSalesPagination.total, 
+                            label: recentSalesPagination.total === 1 ? t("trade.sale", "sale") : t("trade.sales", "sales")
+                          })}
                         </div>
                         <Button
                           variant="ghost"
@@ -1463,7 +1485,7 @@ export default function TradePage() {
                           disabled={!salesSearchTerm}
                         >
                           <X className="h-3 w-3 mr-1" />
-                          Clear
+                          {t("common.clear", "Clear")}
                         </Button>
                       </div>
                     </div>
@@ -1471,8 +1493,7 @@ export default function TradePage() {
                     {/* Market Activity Info */}
                     <div className="bg-black/70 rounded-xl p-4 shadow-sm border border-yellow-400">
                       <p className="text-sm text-yellow-300">
-                        View all recent card sales in the marketplace. This helps you understand current market trends
-                        and card values.
+                        {t("trade.recent_sales_info", "View all recent card sales in the marketplace. This helps you understand current market trends and card values.")}
                       </p>
                     </div>
 
@@ -1537,7 +1558,7 @@ export default function TradePage() {
         <Dialog open={showCardDetailsDialog} onOpenChange={setShowCardDetailsDialog}>
           <DialogContent className="sm:max-w-md bg-black/80 border-none [&>button]:text-white [&>button]:hover:text-yellow-400">
             <DialogHeader>
-              <DialogTitle className="text-white">Card Details</DialogTitle>
+              <DialogTitle className="text-white">{t("card_details.title", "Card Details")}</DialogTitle>
             </DialogHeader>
             {selectedListing && (
               <div className="space-y-6">
@@ -1557,7 +1578,7 @@ export default function TradePage() {
                   {/* Verkäufer und Preis */}
                   <div className="bg-white/10 backdrop-blur-md p-4 rounded-lg w-full text-white">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-gray-300">Seller:</span>
+                      <span className="text-gray-300">{t("trade.card_dialog.seller", "Seller:")}</span>
                       <span className="font-medium">
                         {selectedListing.seller_username.length > 9
                           ? `${selectedListing.seller_username.substring(0, 9)}...`
@@ -1565,7 +1586,7 @@ export default function TradePage() {
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-300">Price:</span>
+                      <span className="text-gray-300">{t("trade.card_dialog.price", "Price:")}</span>
                       <div className="flex items-center">
                         <span className="font-bold text-lg">{selectedListing.price} WLD</span>
                       </div>
@@ -1576,14 +1597,14 @@ export default function TradePage() {
                   {selectedListing.seller_wallet_address !== user?.wallet_address && (
                     <Button
                       onClick={() => {
-                        if (selectedListing.status === "blocked") {
-                          toast({
-                            title: "Card Being Purchased",
-                            description: "This card is currently being purchased by another user. Please try again in a few seconds.",
-                            variant: "destructive",
-                          })
-                          return
-                        }
+        if (selectedListing.status === "blocked") {
+          toast({
+            title: t("trade.purchase_dialog.being_purchased_alert", "Card Being Purchased"),
+            description: t("trade.purchase_dialog.being_purchased_desc", "This card is currently being purchased by another user. Please try again in a few seconds."),
+            variant: "destructive",
+          })
+          return
+        }
                         setShowCardDetailsDialog(false)
                         handleBlockForPurchase()
                       }}
@@ -1597,17 +1618,17 @@ export default function TradePage() {
                       {selectedListing.status === "blocked" ? (
                         <>
                           <AlertCircle className="h-4 w-4 mr-2" />
-                          Being Purchased
+                          {t("trade.card_dialog.being_purchased", "Being Purchased")}
                         </>
                       ) : purchaseLoading ? (
                         <>
                           <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
-                          Processing...
+                          {t("trade.card_dialog.processing", "Processing...")}
                         </>
                       ) : (
                         <>
                           <ShoppingCart className="h-4 w-4 mr-2" />
-                          Buy Now
+                          {t("trade.card_dialog.buy_now", "Buy Now")}
                         </>
                       )}
                     </Button>
@@ -1622,8 +1643,8 @@ export default function TradePage() {
         <Dialog open={showPurchaseDialog} onOpenChange={setShowPurchaseDialog}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Confirm Purchase</DialogTitle>
-              <DialogDescription>You are about to purchase this card. This action cannot be undone.</DialogDescription>
+              <DialogTitle>{t("trade.purchase_dialog.title", "Confirm Purchase")}</DialogTitle>
+              <DialogDescription>{t("trade.purchase_dialog.desc", "You are about to purchase this card. This action cannot be undone.")}</DialogDescription>
             </DialogHeader>
             {selectedListing && (
               <div className="space-y-4">
@@ -1661,7 +1682,7 @@ export default function TradePage() {
                         ${selectedListing.card.rarity === "legendary" ? "bg-amber-500" : ""}
                       `}
                       >
-                        {selectedListing.card.rarity}
+                        {getDisplayRarity(selectedListing.card.rarity)}
                       </Badge>
                       <div className="ml-2 flex items-center">
                         <span className="text-xs mr-1">Level {selectedListing.card_level}</span>
@@ -1674,35 +1695,35 @@ export default function TradePage() {
                 </div>
                 <div className="bg-amber-50 p-3 rounded-lg text-sm">
                   <p className="text-amber-800">
-                    <span className="font-medium">Seller:</span>{" "}
+                    <span className="font-medium">{t("common.seller", "Seller")}:</span>{" "}
                     {selectedListing.seller_username.length > 9
                       ? `${selectedListing.seller_username.substring(0, 9)}...`
                       : selectedListing.seller_username}
                   </p>
                   <p className="text-amber-800 mt-1">
-                    <span className="font-medium">Market Fee:</span> {(selectedListing.price * 0.1).toFixed(2)} WLD (10%)
+                    <span className="font-medium">{t("trade.purchase_dialog.market_fee", "Market Fee")}:</span> {(selectedListing.price * 0.1).toFixed(2)} WLD (10%)
                   </p>
                   <p className="text-amber-800 mt-1">
-                    <span className="font-medium">Seller Receives:</span> {(selectedListing.price * 0.9).toFixed(2)} WLD
+                    <span className="font-medium">{t("trade.purchase_dialog.seller_receives", "Seller Receives")}:</span> {(selectedListing.price * 0.9).toFixed(2)} WLD
                   </p>
 
                   {(user?.coins || 0) < selectedListing.price && (
-                    <p className="text-red-500 mt-1 font-medium">You don't have enough WLD for this purchase!</p>
+                    <p className="text-red-500 mt-1 font-medium">{t("trade.purchase_dialog.not_enough_wld", "You don't have enough WLD for this purchase!")}</p>
                   )}
                   {selectedListing.seller_wallet_address === user?.wallet_address && (
-                    <p className="text-red-500 mt-1 font-medium">You cannot buy your own card!</p>
+                    <p className="text-red-500 mt-1 font-medium">{t("trade.purchase_dialog.cannot_buy_own", "You cannot buy your own card!")}</p>
                   )}
                 </div>
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" onClick={() => setShowPurchaseDialog(false)}>
-                    Cancel
+                    {t("trade.purchase_dialog.cancel", "Cancel")}
                   </Button>
                   <Button
                     onClick={() => {
                       if (selectedListing.status === "blocked") {
                         toast({
-                          title: "Card Being Purchased",
-                          description: "This card is currently being purchased by another user. Please try again in a few seconds.",
+                          title: t("trade.purchase_dialog.being_purchased_alert", "Card Being Purchased"),
+                          description: t("trade.purchase_dialog.being_purchased_desc", "This card is currently being purchased by another user. Please try again in a few seconds."),
                           variant: "destructive",
                         })
                         return
@@ -1725,17 +1746,17 @@ export default function TradePage() {
                     {selectedListing.status === "blocked" ? (
                       <>
                         <AlertCircle className="h-4 w-4 mr-2" />
-                        Being Purchased
+                        {t("trade.card_dialog.being_purchased", "Being Purchased")}
                       </>
                     ) : purchaseLoading ? (
                       <>
                         <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
-                        Processing...
+                        {t("trade.card_dialog.processing", "Processing...")}
                       </>
                     ) : (
                       <>
                         <ShoppingCart className="h-4 w-4 mr-2" />
-                        Buy Now
+                        {t("trade.purchase_dialog.buy_now", "Buy Now")}
                       </>
                     )}
                   </Button>
@@ -1776,32 +1797,32 @@ export default function TradePage() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <AlertCircle className="h-5 w-5 text-blue-500" />
-                Selling Limit
+                {t("trade.selling_limit.dialog_title", "Selling Limit")}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
               <p className="text-sm text-gray-600">
-                This indicator shows how many cards you've sold since your last purchase from the marketplace.
+                {t("trade.selling_limit.dialog_desc", "This indicator shows how many cards you've sold since your last purchase from the marketplace.")}
               </p>
               <div className="bg-blue-50 p-3 rounded-lg">
-                <h4 className="font-medium text-blue-900 mb-2">How it works:</h4>
+                <h4 className="font-medium text-blue-900 mb-2">{t("trade.selling_limit.dialog_how_it_works", "How it works:")}</h4>
                 <ul className="text-sm text-blue-800 space-y-1">
-                  <li>• You can sell up to 3 cards before needing to buy one</li>
-                  <li>• After selling 3 cards, you must purchase from the marketplace</li>
-                  <li>• Purchasing a card resets your counter to 0</li>
-                  <li>• This encourages marketplace activity and trading</li>
+                  <li>{t("trade.selling_limit.rule_1", "• You can sell up to 3 cards before needing to buy one")}</li>
+                  <li>{t("trade.selling_limit.rule_2", "• After selling 3 cards, you must purchase from the marketplace")}</li>
+                  <li>{t("trade.selling_limit.rule_3", "• Purchasing a card resets your counter to 0")}</li>
+                  <li>{t("trade.selling_limit.rule_4", "• This encourages marketplace activity and trading")}</li>
                 </ul>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Current status:</span>
+                <span className="text-gray-600">{t("trade.selling_limit.current_status", "Current status:")}</span>
                 <span
                   className={`font-medium ${soldCount === 3 ? "text-red-600" : soldCount === 2 ? "text-amber-600" : "text-green-600"}`}
                 >
                   {soldCount === 3
-                    ? "Limit reached"
+                    ? t("trade.selling_limit.status_reached", "Limit reached")
                     : soldCount === 2
-                      ? "One more sale allowed"
-                      : `${3 - (soldCount || 0)} sales remaining`}
+                      ? t("trade.selling_limit.status_one_more", "One more sale allowed")
+                      : t("trade.selling_limit.status_remaining", "{count} sales remaining", { count: 3 - (soldCount || 0) })}
                 </span>
               </div>
             </div>
@@ -1847,7 +1868,19 @@ function MarketplaceCard({
   purchaseLoading?: boolean
 }) {
   const { user } = useAuth()
+  const { t } = useI18n()
   const isOwnListing = listing.seller_wallet_address === user?.wallet_address
+
+  const getDisplayRarity = (rarity: string) => {
+    const rarityMap: Record<string, string> = {
+      common: t("rarity.common", "Common"),
+      rare: t("rarity.rare", "Rare"),
+      epic: t("rarity.epic", "Epic"),
+      legendary: t("rarity.legendary", "Legendary"),
+      goat: t("rarity.goat", "GOAT"),
+    }
+    return rarityMap[rarity.toLowerCase()] || rarity
+  }
 
   // Map rarity to color styles
   const rarityStyles = {
@@ -1902,8 +1935,8 @@ function MarketplaceCard({
         if (listing.status === "blocked") {
           // Zeige eine Nachricht dass die Karte gerade gekauft wird
           toast({
-            title: "Card Being Purchased",
-            description: "This card is currently being purchased by another user. Please try again in a few seconds.",
+            title: t("trade.purchase_dialog.being_purchased_alert", "Card Being Purchased"),
+            description: t("trade.purchase_dialog.being_purchased_desc", "This card is currently being purchased by another user. Please try again in a few seconds."),
             variant: "destructive",
           })
           return
@@ -1941,11 +1974,11 @@ function MarketplaceCard({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-lg font-bold text-white truncate">{listing.card.name}</span>
-          <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-gray-800 text-yellow-400 uppercase">{listing.card.rarity}</span>
+          <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-gray-800 text-yellow-400 uppercase">{getDisplayRarity(listing.card.rarity)}</span>
           <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-yellow-500 text-black">Level {listing.card_level}</span>
         </div>
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-sm text-yellow-200 truncate">Seller: <span className="font-bold text-yellow-400">
+          <span className="text-sm text-yellow-200 truncate">{t("common.seller", "Seller")}: <span className="font-bold text-yellow-400">
             {listing.seller_username.length > 9
               ? `${listing.seller_username.substring(0, 9)}...`
               : listing.seller_username}
@@ -1956,7 +1989,7 @@ function MarketplaceCard({
           <span className="text-xl font-bold text-yellow-400">{listing.price} WLD</span>
           {listing.status === "blocked" && (
             <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-orange-500 text-white">
-              Being Purchased
+              {t("trade.card_dialog.being_purchased", "Being Purchased")}
             </span>
           )}
           {purchaseLoading && (
@@ -1985,6 +2018,19 @@ function MyListingCard({
   onUpdatePrice: () => void
   cancelLoading: boolean
 }) {
+  const { t } = useI18n()
+
+  const getDisplayRarity = (rarity: string) => {
+    const rarityMap: Record<string, string> = {
+      common: t("rarity.common", "Common"),
+      rare: t("rarity.rare", "Rare"),
+      epic: t("rarity.epic", "Epic"),
+      legendary: t("rarity.legendary", "Legendary"),
+      goat: t("rarity.goat", "GOAT"),
+    }
+    return rarityMap[rarity.toLowerCase()] || rarity
+  }
+
   // Map rarity to color styles
   const rarityStyles = {
     basic: {
@@ -2072,7 +2118,7 @@ function MyListingCard({
                 <p className="text-xs text-yellow-200">{listing.card.character}</p>
               </div>
               <div className="flex flex-col items-end">
-                <Badge className={rarityStyle.badge}>{listing.card.rarity}</Badge>
+                <Badge className={rarityStyle.badge}>{getDisplayRarity(listing.card.rarity)}</Badge>
                 <Badge variant="outline" className="mt-1 text-xs text-yellow-300 border-yellow-400">
                   Level {listing.card_level}
                 </Badge>
@@ -2244,6 +2290,19 @@ function TransactionCard({ transaction }: { transaction: Transaction }) {
 
 // Recent Sale Card Component
 function RecentSaleCard({ sale }: { sale: RecentSale }) {
+  const { t } = useI18n()
+
+  const getDisplayRarity = (rarity: string) => {
+    const rarityMap: Record<string, string> = {
+      common: t("rarity.common", "Common"),
+      rare: t("rarity.rare", "Rare"),
+      epic: t("rarity.epic", "Epic"),
+      legendary: t("rarity.legendary", "Legendary"),
+      goat: t("rarity.goat", "GOAT"),
+    }
+    return rarityMap[rarity.toLowerCase()] || rarity
+  }
+
   // Map rarity to color styles
   const rarityStyles = {
     basic: {
@@ -2353,7 +2412,7 @@ function RecentSaleCard({ sale }: { sale: RecentSale }) {
                 <p className="text-xs text-yellow-200">{sale.card.character}</p>
               </div>
               <div className="flex flex-col items-end">
-                <Badge className={rarityStyle.badge}>{sale.card.rarity}</Badge>
+                <Badge className={rarityStyle.badge}>{getDisplayRarity(sale.card.rarity)}</Badge>
                 <Badge variant="outline" className="mt-1 text-xs text-yellow-300 border-yellow-400">
                   Level {sale.card_level}
                 </Badge>
@@ -2362,10 +2421,10 @@ function RecentSaleCard({ sale }: { sale: RecentSale }) {
 
             <div className="flex items-center mt-1 text-xs text-yellow-200">
               <span>
-                Seller: <span className="font-medium text-yellow-400">{(sale.seller_username && sale.seller_username.length > 9 ? `${sale.seller_username.substring(0, 9)}...` : sale.seller_username) || (sale.seller_wallet_address ? sale.seller_wallet_address.substring(0, 4) : 'Unknown')}</span>
+                {t("common.seller", "Seller")}: <span className="font-medium text-yellow-400">{(sale.seller_username && sale.seller_username.length > 9 ? `${sale.seller_username.substring(0, 9)}...` : sale.seller_username) || (sale.seller_wallet_address ? sale.seller_wallet_address.substring(0, 4) : 'Unknown')}</span>
               </span>
               <span className="mx-1 text-yellow-300">•</span>
-              <span>Buyer: <span className="font-medium text-yellow-400">{(sale.buyer_username && sale.buyer_username.length > 9 ? `${sale.buyer_username.substring(0, 9)}...` : sale.buyer_username) || (sale.buyer_wallet_address ? sale.buyer_wallet_address.substring(0, 4) : 'Unknown')}</span></span>
+              <span>{t("common.buyer", "Buyer")}: <span className="font-medium text-yellow-400">{(sale.buyer_username && sale.buyer_username.length > 9 ? `${sale.buyer_username.substring(0, 9)}...` : sale.buyer_username) || (sale.buyer_wallet_address ? sale.buyer_wallet_address.substring(0, 4) : 'Unknown')}</span></span>
             </div>
 
             <div className="flex justify-between items-center mt-2">

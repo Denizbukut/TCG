@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from "react"
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { useAuth } from "@/contexts/auth-context"
+import { useI18n } from "@/contexts/i18n-context"
 import { claimDailyBonus } from "@/app/actions"
 import { getReferredUsers } from "@/app/actions/referrals"
 import { getDailyDeal, getSpecialDeal, purchaseDeal, markDealAsSeen } from "@/app/actions/deals" // Import getSpecialDeal, purchaseDeal and markDealAsSeen
@@ -11,9 +12,9 @@ import { getSBCChallenges, getUserSBCProgress, type SBCChallenge, type SBCUserPr
 import ProtectedRoute from "@/components/protected-route"
 import MobileNav from "@/components/mobile-nav"
 import { Button } from "@/components/ui/button"
+import LanguageSwitcher from "@/components/language-switcher"
 import CardCatalog from "@/components/card-catalog"
 import { useRouter } from "next/navigation"
-// import LanguageSwitcher from "@/components/language-switcher"
 import { getTimeUntilContestEnd, isContestActive } from "@/lib/weekly-contest-config"
 
 // Add ChatOverlay component at the bottom of the file
@@ -150,19 +151,22 @@ const xpPassBenefits = [
 
 export default function Home() {
   const { user, updateUserTickets, refreshUserData } = useAuth()
-  // const { tSync, locale, changeLanguage, isInitialized } = useTranslation()
-  // const t = (key: string) => {
-  //   if (!isInitialized) {
-  //     return key // Return key if not initialized yet
-  //   }
-  //   const translation = tSync(key, key)
-  //   // If translation is the same as key, it means translation failed
-  //   if (translation === key) {
-  //     console.warn(`Translation not found for key: ${key}`)
-  //   }
-  //   return translation
-  // }
-  const t = (key: string) => key // Fallback: return key as-is
+  const { t } = useI18n()
+  
+  // Helper function to translate rarity
+  const getDisplayRarity = (rarity: string) => {
+    const rarityMap: Record<string, string> = {
+      common: t("rarity.common", "Common"),
+      uncommon: t("rarity.uncommon", "Uncommon"),
+      rare: t("rarity.rare", "Rare"),
+      epic: t("rarity.epic", "Epic"),
+      legendary: t("rarity.legendary", "Legendary"),
+      mythic: t("rarity.mythic", "Mythic"),
+      goat: t("rarity.goat", "GOAT"),
+    }
+    return rarityMap[rarity.toLowerCase()] || rarity
+  }
+  
   const [claimLoading, setClaimLoading] = useState(false)
   const [referralLoading, setReferralLoading] = useState(false)
   const [alreadyClaimed, setAlreadyClaimed] = useState(false)
@@ -227,7 +231,7 @@ export default function Home() {
   const referralSbcSlides = [
     {
       key: 'referrals',
-      title: "Referrals",
+      title: t("referrals.title", "Referrals"),
       icon: <Gift className="h-8 w-8 text-yellow-600" />,
       bg: 'from-[#232526] to-[#414345]',
       border: 'border-yellow-400',
@@ -1109,22 +1113,22 @@ const [copied, setCopied] = useState(false)
   const passSlides = [
     {
       key: 'gamepass',
-      title: "Game Pass",
+      title: t("game_pass.title", "Game Pass"),
       icon: <Crown className="h-8 w-8 text-amber-800" />, 
       bg: 'from-amber-400 to-amber-600',
       border: 'border-yellow-100',
-      text: "Claim rewards",
+      text: t("game_pass.claim_text", "Claim rewards"),
       href: '/pass',
       color: 'text-yellow-700',
       dot: 'bg-yellow-500',
     },
     {
       key: 'xppass',
-      title: "XP Pass",
+      title: t("xp_pass.title", "XP Pass"),
       icon: <Sparkles className="h-8 w-8 text-blue-800" />, 
       bg: 'from-blue-400 to-blue-600',
       border: 'border-blue-100',
-      text: "Boost your XP gain", // Nur kurzer Text, keine Benefits und kein Kaufen-Button
+      text: t("xp_pass.boost_text", "Boost your XP gain"), // Nur kurzer Text, keine Benefits und kein Kaufen-Button
       href: '/xp-booster',
       color: 'text-blue-700',
       dot: 'bg-blue-500',
@@ -1257,7 +1261,7 @@ const [copied, setCopied] = useState(false)
       const result = await purchaseDeal(user.wallet_address, dailyDeal.id);
       
       if (result.success) {
-        toast({ title: 'Deal purchased!', description: 'Your deal was successfully purchased.' });
+        toast({ title: t("common.success", "Success"), description: t("deals.deal_purchased", "Your deal was successfully purchased.") });
         // Close the dialog
         setShowDailyDealDialog(false);
         setHasShownDailyDeal(true);
@@ -1268,11 +1272,11 @@ const [copied, setCopied] = useState(false)
         // Refresh user data
         await refreshUserData?.();
       } else {
-        toast({ title: 'Error', description: result.error || 'Purchase failed', variant: 'destructive' });
+        toast({ title: t("common.error", "Error"), description: result.error || t("deals.purchase_failed", "Purchase failed"), variant: 'destructive' });
       }
     } catch (e) {
       console.error('Error purchasing daily deal:', e);
-      toast({ title: 'Error', description: 'Purchase failed', variant: 'destructive' });
+      toast({ title: t("common.error", "Error"), description: t("deals.purchase_failed", "Purchase failed"), variant: 'destructive' });
     } finally {
       setBuyingDailyDeal(false);
     }
@@ -1456,53 +1460,48 @@ const [copied, setCopied] = useState(false)
       >
         {/* Header with glass effect */}
         <header className="sticky top-0 z-30 backdrop-blur-md bg-gradient-to-br from-[#232526]/90 to-[#414345]/90 border-b-2 border-yellow-400 shadow-sm">
-          <div className="w-full px-4 py-3 flex items-center justify-between">
+          <div className="w-full px-4 py-2 flex items-center justify-between">
+            {/* Left: App Name */}
+            <h1 className="text-base font-bold tracking-tight bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">
+              CRYPTO TCG
+            </h1>
+            
+            {/* Right: Icons and Tickets */}
             <div className="flex items-center gap-3">
-              <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">
-                CRYPTO TCG
-              </h1>
-              
-              {/* Social Icon Buttons */}
-              <div className="flex gap-2 items-center">
-                <a
-                  href="https://x.com/ani_labs_world"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-full bg-black flex items-center justify-center transition-transform hover:scale-105 shadow border-2 border-white"
-                  aria-label="Twitter"
-                >
-                  <span className="sr-only">Twitter</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-4 h-4 text-white">
-                    <path d="M17.53 3H21.5L14.36 10.66L22.75 21H16.28L11.22 14.73L5.52 21H1.54L9.04 12.76L1 3H7.6L12.18 8.67L17.53 3ZM16.4 19.13H18.18L7.45 4.76H5.54L16.4 19.13Z" fill="currentColor"/>
-                  </svg>
-                </a>
-              
-                {/* Info Icon */}
-                <button
-                  onClick={() => setShowInfoDialog(true)}
-                  className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center transition-transform hover:scale-105 shadow border-2 border-yellow-300"
-                  aria-label="Info"
-                >
-                  <Info className="h-4 w-4 text-black" />
-                </button>
-              </div>
+              {/* X Icon */}
+              <a
+                href="https://x.com/ani_labs_world"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-7 h-7 rounded-full bg-black flex items-center justify-center transition-transform hover:scale-105 shadow border border-white"
+                aria-label="Twitter"
+              >
+                <span className="sr-only">Twitter</span>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 text-white">
+                  <path d="M17.53 3H21.5L14.36 10.66L22.75 21H16.28L11.22 14.73L5.52 21H1.54L9.04 12.76L1 3H7.6L12.18 8.67L17.53 3ZM16.4 19.13H18.18L7.45 4.76H5.54L16.4 19.13Z" fill="currentColor"/>
+                </svg>
+              </a>
+            
+              {/* Info Icon */}
+              <button
+                onClick={() => setShowInfoDialog(true)}
+                className="w-7 h-7 rounded-full bg-yellow-400 flex items-center justify-center transition-transform hover:scale-105 shadow border border-yellow-300"
+                aria-label="Info"
+              >
+                <Info className="h-3.5 w-3.5 text-black" />
+              </button>
               
               {/* Tickets Display */}
               <div className="flex items-center gap-2">
-                <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#232526] to-[#414345] px-2 py-1 rounded-full shadow-sm border-2 border-blue-400 min-w-[54px]">
-                  <Ticket className="h-4 w-4 text-blue-400 mx-auto" />
+                <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#232526] to-[#414345] px-1.5 py-0.5 rounded-full shadow-sm border border-blue-400 min-w-[48px]">
+                  <Ticket className="h-3.5 w-3.5 text-blue-400 mx-auto" />
                   <span className="font-medium text-xs text-center text-blue-100">{tickets}</span>
                 </div>
-                <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#232526] to-[#414345] px-2 py-1 rounded-full shadow-sm border-2 border-purple-400 min-w-[54px]">
-                  <Ticket className="h-4 w-4 text-purple-400 mx-auto" />
+                <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#232526] to-[#414345] px-1.5 py-0.5 rounded-full shadow-sm border border-purple-400 min-w-[48px]">
+                  <Ticket className="h-3.5 w-3.5 text-purple-400 mx-auto" />
                   <span className="font-medium text-xs text-center text-purple-100">{eliteTickets}</span>
                 </div>
               </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              {/* Language Switcher */}
-              {/* <LanguageSwitcher /> */}
             </div>
           </div>
         </header>
@@ -1517,54 +1516,41 @@ const [copied, setCopied] = useState(false)
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
-                className="bg-gradient-to-br from-[#232526] to-[#414345] rounded-xl shadow-lg p-2 flex flex-col items-center justify-center min-h-[80px] h-full border-2 border-yellow-400 relative"
+                className="bg-gradient-to-br from-[#232526] to-[#414345] rounded-xl shadow-lg p-3 flex flex-col justify-between min-h-[80px] h-full border-2 border-yellow-400 relative"
               >
-                {/* XP Progress Circle with Username and Level */}
-                <div className="relative w-32 h-32 flex items-center justify-center">
-                  {/* XP Progress Ring */}
-                  <div className="absolute inset-0 rounded-full pointer-events-none">
-                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 128 128">
-                      {/* Background circle */}
-                      <circle
-                        cx="64"
-                        cy="64"
-                        r="56"
-                        stroke="rgb(156 163 175)"
-                        strokeWidth="4"
-                        fill="none"
-                        opacity="0.8"
-                      />
-                      {/* Progress circle */}
-                      <circle
-                        cx="64"
-                        cy="64"
-                        r="56"
-                        stroke="url(#gradient)"
-                        strokeWidth="4"
-                        fill="none"
-                        strokeLinecap="round"
-                        strokeDasharray={`${2 * Math.PI * 56}`}
-                        strokeDashoffset={`${2 * Math.PI * 56 * (1 - ((user?.experience || 0) / (user?.nextLevelExp || 500)))}`}
-                        className="transition-all duration-300"
-                        style={{ filter: 'drop-shadow(0 0 3px rgba(239, 68, 68, 0.5))' }}
-                      />
-                      <defs>
-                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                          <stop offset="0%" stopColor={XP_COLORS[currentXpColor as keyof typeof XP_COLORS]?.start || XP_COLORS.pink.start} />
-                          <stop offset="100%" stopColor={XP_COLORS[currentXpColor as keyof typeof XP_COLORS]?.end || XP_COLORS.pink.end} />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                  </div>
-                  
-                  {/* Username und Level in der Mitte */}
-                  <div className="flex flex-col items-center justify-center text-center">
-                    <p className="text-sm font-semibold text-yellow-100 leading-tight">
-                      {user?.username ? (user.username.length > 10 ? user.username.slice(0, 10) + '…' : user.username) : ''}
+                {/* Username and Level */}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-yellow-100 truncate">
+                      {user?.username || 'User'}
                     </p>
-                    <span className="bg-yellow-400 text-white text-sm px-2 py-1 rounded-full whitespace-nowrap font-bold mt-1">
-                      Lvl {user?.level || 1}
-                    </span>
+                  </div>
+                  <span className="bg-yellow-400 text-black text-xs px-2 py-0.5 rounded-full font-bold ml-2 whitespace-nowrap">
+                    Lvl {user?.level || 1}
+                  </span>
+                </div>
+
+                {/* XP Progress Bar */}
+                <div className="mb-2">
+                  <div className="flex justify-between text-[10px] text-gray-400 mb-1">
+                    <span>XP</span>
+                    <span>{user?.experience || 0}/{user?.nextLevelExp || 500}</span>
+                  </div>
+                  <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r transition-all duration-300"
+                      style={{ 
+                        width: `${Math.min(((user?.experience || 0) / (user?.nextLevelExp || 500)) * 100, 100)}%`,
+                        backgroundImage: `linear-gradient(to right, ${XP_COLORS[currentXpColor as keyof typeof XP_COLORS]?.start || XP_COLORS.pink.start}, ${XP_COLORS[currentXpColor as keyof typeof XP_COLORS]?.end || XP_COLORS.pink.end})`
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Language Switcher - Centered */}
+                <div className="flex justify-center">
+                  <div className="w-full">
+                    <LanguageSwitcher />
                   </div>
                 </div>
               </motion.div>
@@ -1620,8 +1606,8 @@ const [copied, setCopied] = useState(false)
                 </div>
               </div>
             </div>
-            {/* Weekly Contest (volle Breite) - COMMENTED OUT */}
-            {/* <div className="col-span-6">
+            {/* Weekly Contest (volle Breite) */}
+            <div className="col-span-6">
 <motion.div
   initial={{ opacity: 0, y: 20, scale: 0.95 }}
   animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -1641,7 +1627,7 @@ const [copied, setCopied] = useState(false)
       animate={{ left: ['-40%', '120%'] }}
       transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
     />
-  </motion.div>
+  </motion.div> */}
   <div className="flex items-center gap-4 z-10">
     <motion.div
       animate={{ y: [0, -12, 0] }}
@@ -1652,10 +1638,10 @@ const [copied, setCopied] = useState(false)
     </motion.div>
     <div>
       <div className="text-lg font-bold text-yellow-300 mb-1" style={{ letterSpacing: 1 }}>
-        Win $200 in WLD!
+        {t("contest.prize_home", "Win $100 in WLD!")}
       </div>
-      <h3 className="text-xl font-bold text-yellow-100 mb-1">Weekly Contest</h3>
-      <p className="text-sm text-white/80 font-medium">Compete for the top spot!</p>
+      <h3 className="text-xl font-bold text-yellow-100 mb-1">{t("contest.title", "Weekly Contest")}</h3>
+      <p className="text-sm text-white/80 font-medium">{t("contest.subtitle", "Compete for the top spot!")}</p>
       {isContestActive() && (() => {
         const timeLeft = formatContestCountdown(contestCountdown)
         return timeLeft ? (
@@ -1705,9 +1691,9 @@ const [copied, setCopied] = useState(false)
       '0 4px 24px 0 rgba(255, 215, 0, 0.10)'
     ] }}
     transition={{ duration: 2.5, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' }}
-  />
+  /> */}
 </motion.div>
-      </div> */}
+      </div>
             {/* $ANI Card (replaces Chat) - COMMENTED OUT */}
             {/* <div className="col-span-2">
               <div
@@ -1723,57 +1709,6 @@ const [copied, setCopied] = useState(false)
                 <div className="text-sm font-bold text-yellow-100">$ANI</div>
               </div>
             </div> */}
-            {/* Ticket Claim - zwischen Profil/Pässe und Card Gallery/Shop/Referrals */}
-            <div className="col-span-6 mb-4">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25, duration: 0.4 }}
-                className="bg-gradient-to-br from-[#232526] to-[#414345] rounded-xl shadow-md border-2 border-yellow-400 overflow-hidden"
-              >
-                <div className="relative">
-                  <div className="relative p-3">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center border border-yellow-300">
-                          <Gift className="h-4 w-4 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium text-sm text-yellow-100">Ticket Claim</h3>
-                          <p className="text-xs text-yellow-200">
-                            Get {ticketClaimAmount} tickets every 24 hours
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        onClick={handleClaimBonus}
-                        disabled={claimLoading || alreadyClaimed}
-                        size="sm"
-                        className={`rounded-full px-4 ${
-                          alreadyClaimed
-                            ? "bg-gray-600 text-gray-300 hover:bg-gray-600"
-                            : "bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white"
-                        }`}
-                      >
-                        {claimLoading ? (
-                          <div className="flex items-center">
-                            <div className="h-3 w-3 border-2 border-t-transparent border-current rounded-full animate-spin mr-2"></div>
-                            <span className="text-xs">Claiming...</span>
-                          </div>
-                        ) : alreadyClaimed ? (
-                          <div className="flex items-center">
-                            <Clock className="h-3 w-3 mr-1" />
-                            <span className="text-xs">{ticketTimerDisplay}</span>
-                          </div>
-                        ) : (
-                          <span className="text-xs">Claim Now</span>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
 
             {/* Shop in der Mitte, Card Gallery daneben, Referrals rechts */}
             <div className="col-span-6 grid grid-cols-3 gap-3">
@@ -1790,8 +1725,8 @@ const [copied, setCopied] = useState(false)
                     <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center mb-1 border border-yellow-300">
                       <BookOpen className="h-5 w-5 text-white drop-shadow-lg" />
                     </div>
-                    <div className="text-sm font-bold text-yellow-100">{/* t('home.cardGallery') */}Card Gallery</div>
-                    <div className="text-xs text-sky-400">{/* t('home.browseCards') */}Browse Cards</div>
+                    <div className="text-sm font-bold text-yellow-100">{t("collection.gallery_btn", "Card Gallery")}</div>
+                    <div className="text-xs text-sky-400">{t("collection.view_cards", "Browse Cards")}</div>
                   </motion.div>
                 </Link>
               </div>
@@ -1824,10 +1759,10 @@ const [copied, setCopied] = useState(false)
                     </div>
                     <div className={`text-sm font-extrabold drop-shadow-sm tracking-wide ${
                       hasActiveDiscount ? 'text-red-100' : 'text-yellow-100'
-                    }`}>{/* t('home.shop') */}Shop</div>
+                    }`}>{t("ticket_shop.title", "Shop")}</div>
                     <div className={`text-xs font-semibold mt-0.5 ${
                       hasActiveDiscount ? 'text-red-200' : 'text-sky-400'
-                    }`}>{/* t('home.exclusivePacks') */}Exclusive Packs</div>
+                    }`}>{t("home.shop_exclusive_packs", "Exclusive Packs")}</div>
                   </motion.div>
                 </Link>
               </div>
@@ -1916,10 +1851,10 @@ const [copied, setCopied] = useState(false)
                         {renderStars(dailyDeal.card_level, "xs")}
                       </div>
                     </div>
-                    <div className="text-lg font-bold text-center mb-0.5">Deal of the Day</div>
+                    <div className="text-lg font-bold text-center mb-0.5">{t("deals.deal_of_the_day", "Deal of the Day")}</div>
                     <div className="text-sm text-white/80 text-center mb-1">
                       {dailyDeal.card_name} <span className="text-white/70">·</span>
-                      <span className="inline-block px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold align-middle ml-1">{dailyDeal.card_rarity}</span>
+                      <span className="inline-block px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold align-middle ml-1">{getDisplayRarity(dailyDeal.card_rarity)}</span>
                     </div>
                     <div className="flex gap-2 mb-1 justify-center">
                       {dailyDeal.classic_tickets > 0 && (
@@ -1936,7 +1871,7 @@ const [copied, setCopied] = useState(false)
                     <div className="text-lg font-bold text-center mb-1">{price ? `${(dailyDeal.price / price).toFixed(2)} WLD` : `$${dailyDeal.price.toFixed(2)} USD`}</div>
                   </>
                 ) : (
-                  <div className="flex flex-1 items-center justify-center h-full text-white/70">No deal available</div>
+                  <div className="flex flex-1 items-center justify-center h-full text-white/70">{t("deals.no_deal", "No deal available")}</div>
                 )}
                 </div>
               </div>
@@ -1976,10 +1911,10 @@ const [copied, setCopied] = useState(false)
                         {renderStars(specialDeal.card_level, "xs")}
                       </div>
                     </div>
-                    <div className="text-lg font-bold text-center mb-0.5">Special Deal</div>
+                    <div className="text-lg font-bold text-center mb-0.5">{t("deals.special_deal", "Special Deal")}</div>
                     <div className="text-sm text-white/80 text-center mb-1">
                       {specialDeal.card_name} <span className="text-white/70">·</span>
-                      <span className="inline-block px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold align-middle ml-1">{specialDeal.card_rarity}</span>
+                      <span className="inline-block px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold align-middle ml-1">{getDisplayRarity(specialDeal.card_rarity)}</span>
                     </div>
                     <div className="flex gap-2 mb-1 justify-center">
                       {specialDeal.classic_tickets > 0 && (
@@ -2019,7 +1954,7 @@ const [copied, setCopied] = useState(false)
                     </div>
                   </>
                 ) : (
-                  <div className="flex flex-1 items-center justify-center h-full text-white/70">No special deal available</div>
+                  <div className="flex flex-1 items-center justify-center h-full text-white/70">{t("deals.no_special_deal", "No special deal available")}</div>
                 )}
                 </div>
               </div>
@@ -2030,7 +1965,7 @@ const [copied, setCopied] = useState(false)
               }}>
                 {specialDeal && (
                   <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-xl border-0 bg-gray-900 text-white">
-                    <DialogTitle className="sr-only">Special Deal</DialogTitle>
+                    <DialogTitle className="sr-only">{t("deals.special_deal", "Special Deal")}</DialogTitle>
                     <AnimatePresence>
                       {showSpecialDealSuccess ? (
                         <motion.div
@@ -2053,7 +1988,7 @@ const [copied, setCopied] = useState(false)
                             transition={{ delay: 0.3 }}
                             className="text-xl font-bold mb-2 text-green-400"
                           >
-                            Purchase Successful!
+                            {t("deals.purchase_successful", "Purchase Successful!")}
                           </motion.h3>
                           <motion.p
                             initial={{ y: 20, opacity: 0 }}
@@ -2061,7 +1996,7 @@ const [copied, setCopied] = useState(false)
                             transition={{ delay: 0.4 }}
                             className="text-gray-400"
                           >
-                            You've claimed the special deal
+                            {t("deals.claimed_special_deal", "You've claimed today's special deal")}
                           </motion.p>
                         </motion.div>
                       ) : (
@@ -2109,7 +2044,7 @@ const [copied, setCopied] = useState(false)
                         </div>
                         <div className="absolute -top-4 -right-4 bg-[#3DAEF5] text-white text-xs font-bold py-1 px-3 rounded-full flex items-center gap-1 shadow-lg">
                           <Sparkles className="h-3 w-3" />
-                          <span>Special Deal</span>
+                          <span>{t("deals.special_deal", "Special Deal")}</span>
                         </div>
                       </div>
                     </div>
@@ -2118,7 +2053,7 @@ const [copied, setCopied] = useState(false)
                       <div className="mb-5">
                         <div className="flex items-center justify-between mb-1">
                           <h3 className="text-xl font-bold text-white">{specialDeal.card_name}</h3>
-                          <span className="bg-blue-900 text-blue-200 px-3 py-1 rounded-full text-xs font-bold">{specialDeal.card_rarity}</span>
+                          <span className="bg-blue-900 text-blue-200 px-3 py-1 rounded-full text-xs font-bold">{getDisplayRarity(specialDeal.card_rarity)}</span>
                         </div>
                         <p className="text-sm text-[#3DAEF5]">{specialDeal.card_character}</p>
                         <p className="text-sm text-gray-400 mt-3">{specialDeal.description}</p>
@@ -2126,7 +2061,7 @@ const [copied, setCopied] = useState(false)
                       {/* What's Included */}
                       <div className="bg-gray-900/50 rounded-xl p-4 mb-5 border border-gray-700/50">
                         <h4 className="text-sm font-medium text-gray-300 mb-3">
-                          What's Included
+                          {t("deals.whats_included", "What's Included")}
                         </h4>
                         <div className="space-y-3">
                           <div className="flex items-center">
@@ -2135,7 +2070,7 @@ const [copied, setCopied] = useState(false)
                             </div>
                             <div>
                               <p className="text-sm font-medium text-white">{specialDeal.card_name}</p>
-                              <p className="text-xs text-gray-400">Level {specialDeal.card_level} {specialDeal.card_rarity}</p>
+                              <p className="text-xs text-gray-400">{t("common.level", "Level")} {specialDeal.card_level} {getDisplayRarity(specialDeal.card_rarity)}</p>
                             </div>
                           </div>
                           {/* Classic Tickets */}
@@ -2144,8 +2079,8 @@ const [copied, setCopied] = useState(false)
                               <Ticket className="h-4 w-4 text-blue-400" />
                             </div>
                             <div>
-                              <p className="text-sm font-medium text-white">{specialDeal.classic_tickets} Regular Tickets</p>
-                              <p className="text-xs text-gray-400">For regular card packs</p>
+                              <p className="text-sm font-medium text-white">{specialDeal.classic_tickets} {t("deals.regular_tickets", "Regular Tickets")}</p>
+                              <p className="text-xs text-gray-400">{t("deals.for_regular_packs", "For regular card packs")}</p>
                             </div>
                           </div>
                           {/* Elite Tickets */}
@@ -2154,8 +2089,8 @@ const [copied, setCopied] = useState(false)
                               <Crown className="h-4 w-4 text-purple-400" />
                             </div>
                             <div>
-                              <p className="text-sm font-medium text-white">{specialDeal.elite_tickets} Legendary Tickets</p>
-                              <p className="text-xs text-gray-400">For legendary card packs</p>
+                              <p className="text-sm font-medium text-white">{specialDeal.elite_tickets} {t("deals.legendary_tickets", "Legendary Tickets")}</p>
+                              <p className="text-xs text-gray-400">{t("deals.for_legendary_packs", "For legendary card packs")}</p>
                             </div>
                           </div>
                           {/* Icon Tickets */}
@@ -2173,7 +2108,7 @@ const [copied, setCopied] = useState(false)
                       {/* Price and Action */}
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm text-gray-400">Price</p>
+                          <p className="text-sm text-gray-400">{t("common.price", "Price")}</p>
                           {specialDeal.discount_percentage && specialDeal.discount_percentage > 0 ? (
                             <div>
                               <p className="text-lg line-through text-gray-500">{price ? `${(specialDeal.price / price).toFixed(2)} WLD` : `$${specialDeal.price.toFixed(2)} USD`}</p>
@@ -2193,12 +2128,12 @@ const [copied, setCopied] = useState(false)
                           {buyingSpecialDeal ? (
                             <>
                               <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
-{/* t('common.processing') */}Processing
+                              {t("common.processing", "Processing...")}
                             </>
                           ) : (
                             <>
                               <ShoppingBag className="h-4 w-4 mr-2" />
-{/* t('home.buyNow') */}Buy Now
+                              {t("deals.buy_now", "Buy Now")}
                             </>
                           )}
                         </Button>
@@ -2210,6 +2145,58 @@ const [copied, setCopied] = useState(false)
                   </DialogContent>
                 )}
               </Dialog>
+            </div>
+
+            {/* Ticket Claim - ganz unten */}
+            <div className="col-span-6 mb-4">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25, duration: 0.4 }}
+                className="bg-gradient-to-br from-[#232526] to-[#414345] rounded-xl shadow-md border-2 border-yellow-400 overflow-hidden"
+              >
+                <div className="relative">
+                  <div className="relative p-3">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center border border-yellow-300">
+                          <Gift className="h-4 w-4 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-sm text-yellow-100">{t("home.ticket_claim_title", "Ticket Claim")}</h3>
+                          <p className="text-xs text-yellow-200">
+                            {t("home.ticket_claim_desc", "Get {count} tickets every 24 hours", { count: ticketClaimAmount as unknown as number })}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={handleClaimBonus}
+                        disabled={claimLoading || alreadyClaimed}
+                        size="sm"
+                        className={`rounded-full px-4 ${
+                          alreadyClaimed
+                            ? "bg-gray-600 text-gray-300 hover:bg-gray-600"
+                            : "bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white"
+                        }`}
+                      >
+                        {claimLoading ? (
+                          <div className="flex items-center">
+                            <div className="h-3 w-3 border-2 border-t-transparent border-current rounded-full animate-spin mr-2"></div>
+                            <span className="text-xs">Claiming...</span>
+                          </div>
+                        ) : alreadyClaimed ? (
+                          <div className="flex items-center">
+                            <Clock className="h-3 w-3 mr-1" />
+                            <span className="text-xs">{ticketTimerDisplay}</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs">{t("common.claim_now", "Claim Now")}</span>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
             </div>
           </div>
 
@@ -2300,16 +2287,16 @@ const [copied, setCopied] = useState(false)
       <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center border border-yellow-300">
         <Gift className="h-5 w-5 text-white" />
       </div>
-      Invite Friends
+      {t("referrals.invite_friends", "Invite Friends")}
     </DialogTitle>
     <DialogDescription className="text-sm text-yellow-200">
-      Share your referral code with friends to earn rewards!<br />
-      <span className="text-xs text-red-400 font-semibold">Note: Only username works as referral code</span><br />
-      <span className="text-xs text-red-400 font-semibold">⚠️ Abuse will result in account suspension</span>
+      {t("referrals.share_code", "Share your referral code with friends to earn rewards!")}<br />
+      <span className="text-xs text-red-400 font-semibold">{t("referrals.username_note", "Note: Only username works as referral code")}</span><br />
+      <span className="text-xs text-red-400 font-semibold">⚠️ {t("referrals.abuse_warning", "Abuse will result in account suspension")}</span>
     </DialogDescription>
     {/* Your referral link */}
     <div className="mt-6">
-      <div className="text-sm font-semibold text-yellow-100 mb-2">Your Referral Code</div>
+      <div className="text-sm font-semibold text-yellow-100 mb-2">{t("referrals.your_code", "Your Referral Code")}</div>
       <div className="flex items-center justify-between bg-gradient-to-r from-[#232526] to-[#414345] border-2 border-yellow-400 rounded-lg px-4 py-3 shadow-lg">
         <span className="truncate text-sm font-mono text-yellow-200 font-bold">{user?.username}</span>
         <Button
@@ -2322,7 +2309,7 @@ const [copied, setCopied] = useState(false)
             setTimeout(() => setCopied(false), 2000)
           }}
         >
-{copied ? "Copied!" : "Copy Code"}
+{copied ? t("referrals.copied", "Copied!") : t("referrals.copy_code", "Copy Code")}
         </Button>
       </div>
     </div>
@@ -2330,20 +2317,20 @@ const [copied, setCopied] = useState(false)
     <div className="mt-6 bg-gradient-to-br from-yellow-400/20 to-yellow-600/20 border-2 border-yellow-400 rounded-lg p-4 shadow-lg">
       <h4 className="text-sm font-bold text-yellow-100 mb-3 flex items-center gap-2">
         <span className="text-yellow-400">🎁</span>
-        What You Get
+        {t("referrals.what_you_get", "What You Get")}
       </h4>
       <ul className="text-sm text-yellow-200 space-y-2">
         <li className="flex items-center gap-2">
           <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
-          <strong className="text-yellow-100">+5</strong> Regular Tickets
+          <strong className="text-yellow-100">+5</strong> {t("referrals.regular_tickets", "Regular Tickets")}
         </li>
         <li className="flex items-center gap-2">
           <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
-          <strong className="text-yellow-100">+3</strong> Legendary Tickets
+          <strong className="text-yellow-100">+3</strong> {t("referrals.legendary_tickets", "Legendary Tickets")}
         </li>
         <li className="flex items-center gap-2">
           <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
-          Once friend reaches <strong className="text-yellow-100">Level 3</strong>
+          {t("referrals.level_requirement", "Once friend reaches Level 3")}
         </li>
       </ul>
     </div>
@@ -2351,11 +2338,11 @@ const [copied, setCopied] = useState(false)
     <div className="mt-6">
       <h4 className="text-sm font-bold text-yellow-100 mb-3 flex items-center gap-2">
         <span className="text-yellow-400">👥</span>
-        Your Referrals
+        {t("referrals.your_referrals", "Your Referrals")}
       </h4>
       {referredUsers.length === 0 ? (
         <div className="bg-gradient-to-r from-[#232526]/50 to-[#414345]/50 border border-yellow-400/30 rounded-lg p-4 text-center">
-          <p className="text-sm text-yellow-200/70">No referrals yet</p>
+          <p className="text-sm text-yellow-200/70">{t("referrals.no_referrals", "No referrals yet")}</p>
         </div>
       ) : (
         <div className="space-y-2 max-h-48 overflow-y-auto bg-gradient-to-r from-[#232526]/30 to-[#414345]/30 border border-yellow-400/30 rounded-lg p-3">
@@ -2390,26 +2377,26 @@ const [copied, setCopied] = useState(false)
                         )
                         setTimeout(() => setShowClaimAnimation(false), 1500)
                         toast({
-                        title: "Success!",
-                        description: "Referral reward claimed!",
+                        title: t("referrals.success", "Success!"),
+                        description: t("referrals.reward_claimed", "Referral reward claimed!"),
                         })
                       } else {
-                        toast({ title: "Error", description: res.error, variant: "destructive" })
+                        toast({ title: t("referrals.error", "Error"), description: res.error, variant: "destructive" })
                       }
                     } catch (error) {
                       console.error("Error claiming referral reward:", error)
                       toast({ 
-                        title: "Error", 
-                        description: "Failed to claim referral reward", 
+                        title: t("referrals.error", "Error"), 
+                        description: t("referrals.failed_to_claim", "Failed to claim referral reward"), 
                         variant: "destructive" 
                       })
                     }
                   }}
                 >
-                  Claim Reward
+                  {t("referrals.claim_reward", "Claim Reward")}
                 </Button>
               ) : (
-                <span className="text-xs text-yellow-400/50">Level up to 5</span>
+                <span className="text-xs text-yellow-400/50">{t("referrals.level_up_to", "Level up to 5")}</span>
               )}
             </div>
           ))}
@@ -2427,19 +2414,19 @@ const [copied, setCopied] = useState(false)
       <Dialog open={showInfoDialog} onOpenChange={setShowInfoDialog}>
         <DialogContent className="bg-gradient-to-br from-[#1a1a1a] via-[#2d2d2d] to-[#1a1a1a] border-2 border-yellow-400 text-white max-w-sm mx-auto max-h-[90vh] overflow-y-auto shadow-2xl backdrop-blur-sm">
           <DialogTitle className="text-lg font-bold text-white mb-1 text-center bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">
-            Card Bonus
+            {t("home.card_bonus_title", "Card Bonus")}
           </DialogTitle>
 
           {/* Description Box */}
           <div className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] p-2 rounded-xl mb-2 border border-gray-700 shadow-lg">
-            <p className="text-sm font-semibold text-white mb-2 leading-relaxed text-center">Use your cards to get bonus tokens when buying on ANI wallet</p>
+            <p className="text-sm font-semibold text-white mb-2 leading-relaxed text-center">{t("home.card_bonus_desc", "Use your cards to get bonus tokens when buying on ANI wallet")}</p>
             <Button 
               className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-bold py-1.5 px-2 rounded-lg text-xs shadow-lg transition-all duration-200 hover:shadow-xl transform hover:scale-105"
               onClick={() => {
                 window.open('https://world.org/mini-app?app_id=app_4593f73390a9843503ec096086b43612&path=', '_blank')
               }}
             >
-Open ANI Wallet
+              {t("home.open_ani_wallet", "Open ANI Wallet")}
             </Button>
           </div>
 
