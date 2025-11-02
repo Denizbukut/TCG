@@ -466,7 +466,8 @@
     "home": "Home",
     "packs": "Packs",
     "collection": "Sammlung",
-    "trade": "Markt"
+    "trade": "Markt",
+    "tokens": "Token"
   },
   "card_details": {
     "title": "Kartendetails",
@@ -511,5 +512,28 @@
     "current_level": "Aktuelles Level",
     "total_score": "Gesamtpunkte",
     "logout": "Abmelden"
+  },
+  "tokens": {
+    "title": "Meine Tokens",
+    "subtitle": "Token, die du bei PUF erstellt hast",
+    "connect_wallet": "Bitte verbinde deine Wallet, um deine Tokens zu sehen.",
+    "connect": "Wallet verbinden",
+    "wallet_address": "Wallet Adresse",
+    "loading": "Lade Tokens...",
+    "no_tokens": "Keine Tokens gefunden",
+    "no_tokens_desc": "Du hast noch keine Tokens bei PUF erstellt.",
+    "created": "Erstellt",
+    "listed": "Gelistet",
+    "not_listed": "Nicht gelistet",
+    "list_now": "Jetzt listen",
+    "list_token": "Token listen",
+    "list_token_desc": "Token-Listing-Funktion kommt bald",
+    "contract": "Contract",
+    "image_url": "Image URL",
+    "image_url_copied": "Image URL wurde kopiert",
+    "x_url_copied": "X URL wurde kopiert",
+    "copied": "Kopiert",
+    "address_copied": "Token-Adresse wurde in die Zwischenablage kopiert",
+    "copy": "Kopieren"
   }
 }

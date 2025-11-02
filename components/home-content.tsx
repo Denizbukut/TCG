@@ -5,10 +5,8 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { useAuth } from "@/contexts/auth-context"
 import { useI18n } from "@/contexts/i18n-context"
 import { claimDailyBonus } from "@/app/actions"
-import { getReferredUsers } from "@/app/actions/referrals"
-import { getDailyDeal, getSpecialDeal, purchaseDeal, markDealAsSeen } from "@/app/actions/deals" // Import getSpecialDeal, purchaseDeal and markDealAsSeen
-import { getActiveTimeDiscount } from "@/app/actions/time-discount" // Import time discount function
-import { getSBCChallenges, getUserSBCProgress, type SBCChallenge, type SBCUserProgress } from "@/app/actions/sbc"
+import { purchaseDeal } from "@/app/actions/deals" // Import purchaseDeal (markDealAsSeen moved to client-side in DealOfTheDayDialog)
+// getActiveTimeDiscount moved to client-side
 import ProtectedRoute from "@/components/protected-route"
 import MobileNav from "@/components/mobile-nav"
 import { Button } from "@/components/ui/button"
@@ -195,38 +193,8 @@ export default function Home() {
   const [currentXpColor, setCurrentXpColor] = useState("pink")
   // const [iconTickets, setIconTickets] = useState(0)
   
-  // SBC State variables
-  const [sbcChallenges, setSbcChallenges] = useState<SBCChallenge[]>([])
-  const [sbcUserProgress, setSbcUserProgress] = useState<SBCUserProgress[]>([])
-  const [sbcLoading, setSbcLoading] = useState(false)
-  
-  // Referrals/SBC Slide system
+  // Referrals Slide system
   const [referralSbcIndex, setReferralSbcIndex] = useState<number>(0)
-  
-  // SBC Helper functions
-  const isChallengeCompleted = (challengeId: number) => {
-    return sbcUserProgress.some(progress => progress.challenge_id === challengeId && progress.is_completed)
-  }
-
-  const getDifficultyColor = (challenge: SBCChallenge) => {
-    if (challenge.requirements_team_rating) {
-      if (challenge.requirements_team_rating >= 90) return 'bg-red-500'
-      if (challenge.requirements_team_rating >= 80) return 'bg-orange-500'
-      if (challenge.requirements_team_rating >= 70) return 'bg-yellow-500'
-      return 'bg-green-500'
-    }
-    return 'bg-blue-500'
-  }
-
-  const getDifficultyText = (challenge: SBCChallenge) => {
-    if (challenge.requirements_team_rating) {
-      if (challenge.requirements_team_rating >= 90) return 'Legendary'
-      if (challenge.requirements_team_rating >= 80) return 'Hard'
-      if (challenge.requirements_team_rating >= 70) return 'Medium'
-      return 'Easy'
-    }
-    return 'Easy'
-  }
   
   const referralSbcSlides = [
     {
@@ -343,12 +311,13 @@ export default function Home() {
   const [chatExpanded, setChatExpanded] = useState(false)
 
   // Refs to track if effects have run
-  const hasCheckedDailyDeal = useRef<Set<string>>(new Set()) // Track which users we checked
-  const currentUserRef = useRef<string | null>(null) // Track current user
   const hasCheckedClaims = useRef(false)
   const hasCheckedRewards = useRef(false)
   const hasCheckedTokens = useRef(false)
   const hasCheckedClan = useRef(false)
+  const dailyDealCheckedRef = useRef<string | null>(null)
+  const referralsCheckedRef = useRef<string | null>(null)
+  const checkDiscountStatusRef = useRef(false)
 const [copied, setCopied] = useState(false)
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false)
 
@@ -556,43 +525,71 @@ const [copied, setCopied] = useState(false)
   }, [user?.username, user])
 
   useEffect(() => {
-    if (user?.username) {
-      const loadReferrals = async () => {
+    if (!user?.username || !user?.wallet_address) return
+    if (referralsCheckedRef.current === user.wallet_address) return
+    
+    referralsCheckedRef.current = user.wallet_address
+    
+    const loadReferrals = async () => {
         try {
-          const referrals = await getReferredUsers(user.wallet_address)
-          setReferredUsers(referrals)
+          const supabase = getSupabaseBrowserClient()
+          if (!supabase) {
+            setReferredUsers([])
+            return
+          }
+
+          // Get referrals for this user
+          const { data: referralsData, error: referralsError } = await supabase
+            .from("referrals")
+            .select("id, referred_wallet_address, rewards_claimed, created_at")
+            .eq("referrer_wallet_address", user.wallet_address)
+
+          if (referralsError || !referralsData || referralsData.length === 0) {
+            setReferredUsers([])
+            return
+          }
+
+          // Get user levels in a single query for better performance
+          const referredWalletAddresses = referralsData.map(ref => ref.referred_wallet_address)
+          const { data: userLevels, error: userLevelsError } = await supabase
+            .from("users")
+            .select("wallet_address, username, level")
+            .in("wallet_address", referredWalletAddresses)
+
+          // Create maps for quick lookup
+          const levelMap = new Map()
+          const usernameMap = new Map()
+          if (userLevels) {
+            userLevels.forEach(user => {
+              levelMap.set(user.wallet_address, user.level)
+              usernameMap.set(user.wallet_address, user.username)
+            })
+          }
+
+          // Create detailed referrals array
+          const detailed = referralsData.map((ref) => {
+            const level = levelMap.get(ref.referred_wallet_address) || 1
+            const username = usernameMap.get(ref.referred_wallet_address)
+            
+            return {
+              id: ref.id,
+              wallet_address: ref.referred_wallet_address,
+              username: username,
+              level: level,
+              reward_claimed: ref.rewards_claimed ?? false,
+              created_at: ref.created_at
+            }
+          })
+
+          setReferredUsers(detailed)
         } catch (error) {
           console.error("Error loading referrals:", error)
           setReferredUsers([])
         }
       }
       loadReferrals()
-    }
-  }, [user?.username])
+  }, [user?.username, user?.wallet_address])
 
-  // Load SBC data
-  useEffect(() => {
-    if (user?.username) {
-      const loadSBCData = async () => {
-        setSbcLoading(true)
-        try {
-          const [challengesData, progressData] = await Promise.all([
-            getSBCChallenges(),
-            getUserSBCProgress(user.wallet_address)
-          ])
-          setSbcChallenges(challengesData)
-          setSbcUserProgress(progressData)
-        } catch (error) {
-          console.error('Error loading SBC data:', error)
-          setSbcChallenges([])
-          setSbcUserProgress([])
-        } finally {
-          setSbcLoading(false)
-        }
-      }
-      loadSBCData()
-    }
-  }, [user?.username])
 
   const updateTicketTimerDisplay = (duration: number | null) => {
     if (duration === null) {
@@ -665,56 +662,122 @@ const [copied, setCopied] = useState(false)
     const userSessionKey = `${user.username}_${user.wallet_address}`
     
     // Check if we've already checked the daily deal for this user session
-    if (currentUserRef.current === userSessionKey) {
-      console.log("Daily deal already checked for this user session:", user.username)
+    if (dailyDealCheckedRef.current === userSessionKey) {
       return
     }
 
-    console.log("Checking daily deal for user:", user.username)
-    currentUserRef.current = userSessionKey
+    dailyDealCheckedRef.current = userSessionKey
     setDailyDealLoading(true)
 
     const checkDailyDeal = async () => {
       try {
-        const result = await getDailyDeal(user.wallet_address)
+        const supabase = getSupabaseBrowserClient()
+        if (!supabase) {
+          setDailyDealLoading(false)
+          return
+        }
 
-        console.log("=== checkDailyDeal DEBUG ===")
-        console.log("Result:", result)
-        
-        if (result.success && result.deal) {
-          console.log("Setting daily deal:", result.deal)
-          setDailyDeal(result.deal)
-          setDailyDealInteraction(result.interaction ?? null)
+        const today = new Date().toISOString().split("T")[0]
 
-          // Check if interaction exists and if deal should be shown
-          const interaction = result.interaction
-          if (interaction && !interaction.seen && !interaction.dismissed && !interaction.purchased) {
-            console.log("Opening daily deal dialog")
-            setShowDailyDealDialog(true)
-            setHasShownDailyDeal(true)
-          } else {
-            console.log("Not opening daily deal dialog:", {
-              hasInteraction: !!interaction,
-              seen: interaction?.seen,
-              dismissed: interaction?.dismissed,
-              purchased: interaction?.purchased
-            })
-            setHasShownDailyDeal(true) // Mark as shown even if not opening
-          }
-        } else if (result.success && !result.deal) {
-          // No deal available
-          console.log("No deal available - result.deal is null")
+        // Get today's deal
+        const { data: deal, error: dealError } = await supabase
+          .from("daily_deals")
+          .select("*")
+          .eq("date", today)
+          .single()
+
+        if (dealError || !deal) {
+          console.log("No deal available for today:", dealError)
           setDailyDeal(null)
           setDailyDealInteraction(null)
           setHasShownDailyDeal(true)
-        } else {
-          console.log("Result not successful:", result)
+          setDailyDealLoading(false)
+          return
+        }
+
+        // Get card information
+        const { data: card, error: cardError } = await supabase
+          .from("cards")
+          .select("*")
+          .eq("id", deal.card_id)
+          .single()
+
+        if (cardError || !card) {
+          console.error("Error fetching card details:", cardError)
           setDailyDeal(null)
           setDailyDealInteraction(null)
+          setHasShownDailyDeal(true)
+          setDailyDealLoading(false)
+          return
+        }
+
+        // Format the deal data to include card information
+        const formattedDeal = {
+          ...deal,
+          card_name: card.name,
+          card_image_url: card.image_url,
+          card_rarity: card.rarity,
+          card_character: card.character,
+        }
+
+        // Check if user has already interacted with this deal
+        const { data: interactions, error: interactionError } = await supabase
+          .from("deal_interactions")
+          .select("*")
+          .eq("wallet_address", user.wallet_address)
+          .eq("deal_id", deal.id)
+          .order("purchased", { ascending: false })
+          .order("interaction_date", { ascending: false })
+          .limit(1)
+
+        let interaction = interactions?.[0]
+
+        // If no interaction record exists, create one
+        if (interactionError || !interaction) {
+          const { error: insertError } = await supabase.from("deal_interactions").insert({
+            wallet_address: user.wallet_address,
+            deal_id: deal.id,
+            seen: false,
+            dismissed: false,
+            purchased: false,
+          })
+
+          if (insertError) {
+            console.error("Error creating deal interaction:", insertError)
+            setDailyDealLoading(false)
+            return
+          }
+
+          interaction = {
+            seen: false,
+            dismissed: false,
+            purchased: false,
+          }
+        }
+
+        console.log("Setting daily deal:", formattedDeal)
+        setDailyDeal(formattedDeal)
+        setDailyDealInteraction(interaction)
+
+        // Check if deal should be shown
+        if (interaction && !interaction.seen && !interaction.dismissed && !interaction.purchased) {
+          console.log("Opening daily deal dialog")
+          setShowDailyDealDialog(true)
+          setHasShownDailyDeal(true)
+        } else {
+          console.log("Not opening daily deal dialog:", {
+            hasInteraction: !!interaction,
+            seen: interaction?.seen,
+            dismissed: interaction?.dismissed,
+            purchased: interaction?.purchased
+          })
           setHasShownDailyDeal(true)
         }
       } catch (error) {
         console.error("Error checking daily deal:", error)
+        setDailyDeal(null)
+        setDailyDealInteraction(null)
+        setHasShownDailyDeal(true)
       } finally {
         setDailyDealLoading(false)
       }
@@ -724,23 +787,53 @@ const [copied, setCopied] = useState(false)
   }, [user?.username, user?.wallet_address]) // Dependencies bleiben, aber mit verbessertem Ref-Check
 
 
-  // Check discount status on page load
+  // Check discount status on page load - client-side
   useEffect(() => {
+    if (checkDiscountStatusRef.current) return
+    checkDiscountStatusRef.current = true
     checkDiscountStatus()
   }, [])
 
-
-
-  // Check discount status
+  // Check discount status - client-side implementation
   const checkDiscountStatus = async () => {
     try {
-      const result = await getActiveTimeDiscount()
-      setHasActiveDiscount(result.success && result.data !== null)
-      if (result.success && result.data) {
-        setDiscountValue(Math.round(result.data.value * 100))
+      const supabase = getSupabaseBrowserClient()
+      if (!supabase) return
+
+      const { data, error } = await supabase
+        .from("discount_configs")
+        .select("*")
+        .eq("name", "time_based_15_percent_4h")
+        .eq("is_active", true)
+        .single()
+
+      if (error || !data) {
+        setHasActiveDiscount(false)
+        return
       }
+
+      // Check if discount is still valid (within time window)
+      if (data.end_time) {
+        const now = new Date()
+        const endTime = new Date(data.end_time)
+        
+        if (now > endTime) {
+          // Discount has expired, deactivate it
+          await supabase
+            .from("discount_configs")
+            .update({ is_active: false })
+            .eq("name", "time_based_15_percent_4h")
+          
+          setHasActiveDiscount(false)
+          return
+        }
+      }
+
+      setHasActiveDiscount(true)
+      setDiscountValue(Math.round((data.value || 0) * 100))
     } catch (error) {
       console.error("Error checking discount status:", error)
+      setHasActiveDiscount(false)
     }
   }
 
@@ -1221,24 +1314,59 @@ const [copied, setCopied] = useState(false)
 
   // useEffect für Special Deal
   useEffect(() => {
-    if (user?.username && !hasCheckedSpecialDeal.current) {
-      hasCheckedSpecialDeal.current = true;
-      (async () => {
-        setSpecialDealLoading(true);
-        try {
-          const result = await getSpecialDeal(user.wallet_address);
-          if (result.success && result.deal) {
-            setSpecialDeal(result.deal);
-            setSpecialDealInteraction(result.interaction ?? null);
-          }
-        } catch (e) {
-          // Fehler ignorieren
-        } finally {
-          setSpecialDealLoading(false);
+    if (!user?.username || !user?.wallet_address) return
+    if (hasCheckedSpecialDeal.current) return
+    
+    hasCheckedSpecialDeal.current = true;
+    (async () => {
+      setSpecialDealLoading(true);
+      try {
+        const supabase = getSupabaseBrowserClient()
+        if (!supabase) {
+          setSpecialDealLoading(false)
+          return
         }
-      })();
-    }
-  }, [user?.username]);
+
+        const today = new Date().toISOString().split("T")[0]
+
+        // Get today's special deal
+        const { data: deal, error: dealError } = await supabase
+          .from("special_offer")
+          .select("*")
+          .eq("date", today)
+          .single()
+
+        if (dealError || !deal) {
+          setSpecialDeal(null)
+          setSpecialDealInteraction(null)
+          setSpecialDealLoading(false)
+          return
+        }
+
+        // Get card information
+        const { data: card } = await supabase
+          .from("cards")
+          .select("*")
+          .eq("id", deal.card_id)
+          .single()
+
+        const formattedDeal = {
+          ...deal,
+          card_name: card?.name,
+          card_image_url: card?.image_url,
+          card_rarity: card?.rarity,
+          card_character: card?.character,
+        }
+
+        setSpecialDeal(formattedDeal)
+        setSpecialDealInteraction({ seen: false, dismissed: false, purchased: false })
+      } catch (e) {
+        console.error("Error fetching special deal:", e)
+      } finally {
+        setSpecialDealLoading(false);
+      }
+    })();
+  }, [user?.username, user?.wallet_address]);
 
   // Test-URL (Cloudflare)
   const testUrl = 'https://fda1523f9dc7558ddc4fcf148e01a03a.r2.cloudflarestorage.com/world-soccer/Za%C3%AFre-Emery-removebg-preview.png';
@@ -2259,19 +2387,10 @@ const [copied, setCopied] = useState(false)
         {dailyDeal && dailyDeal.card_name && (
           <DealOfTheDayDialog
             isOpen={showDailyDealDialog}
-            onClose={async () => {
+            onClose={() => {
               setShowDailyDealDialog(false)
               setHasShownDailyDeal(true) // Mark as shown when closed
-              
-              // Mark deal as seen when dialog is closed
-              if (dailyDeal && user?.wallet_address) {
-                try {
-                  await markDealAsSeen(user.wallet_address, dailyDeal.id)
-                  console.log("Deal marked as seen on close")
-                } catch (error) {
-                  console.error("Error marking deal as seen on close:", error)
-                }
-              }
+              // Note: markDealAsSeen is already called in DealOfTheDayDialog when it opens
             }}
             deal={dailyDeal}
             username={user?.wallet_address || ""}

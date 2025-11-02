@@ -466,7 +466,8 @@
     "home": "Home",
     "packs": "Packs",
     "collection": "Collection",
-    "trade": "Trade"
+    "trade": "Trade",
+    "tokens": "Token"
   },
   "card_details": {
     "title": "Card Details",
@@ -511,5 +512,28 @@
     "current_level": "Current level",
     "total_score": "Total score",
     "logout": "Logout"
+  },
+  "tokens": {
+    "title": "My Tokens",
+    "subtitle": "Tokens you created on PUF",
+    "connect_wallet": "Please connect your wallet to see your tokens.",
+    "connect": "Connect Wallet",
+    "wallet_address": "Wallet Address",
+    "loading": "Loading tokens...",
+    "no_tokens": "No Tokens Found",
+    "no_tokens_desc": "You haven't created any tokens on PUF yet.",
+    "created": "Created",
+    "listed": "Listed",
+    "not_listed": "Not Listed",
+    "list_now": "List Now",
+    "list_token": "List Token",
+    "list_token_desc": "Token listing functionality coming soon",
+    "contract": "Contract",
+    "image_url": "Image URL",
+    "image_url_copied": "Image URL copied to clipboard",
+    "x_url_copied": "X URL copied to clipboard",
+    "copied": "Copied",
+    "address_copied": "Token address copied to clipboard",
+    "copy": "Copy"
   }
 }

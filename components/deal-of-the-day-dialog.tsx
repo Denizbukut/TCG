@@ -7,7 +7,8 @@ import { ShoppingBag, X, Ticket, Sparkles, Crown } from "lucide-react"
 // Removed Next.js Image import - using regular img tags
 import { Badge } from "@/components/ui/badge"
 import { toast } from "@/components/ui/use-toast"
-import { markDealAsDismissed, markDealAsSeen, purchaseDeal } from "@/app/actions/deals"
+import { purchaseDeal } from "@/app/actions/deals"
+import { getSupabaseBrowserClient } from "@/lib/supabase"
 import { renderStars } from "@/utils/card-stars"
 import { motion, AnimatePresence } from "framer-motion"
 import { MiniKit, tokenToDecimals, Tokens, type PayCommandInput } from "@worldcoin/minikit-js"
@@ -147,10 +148,52 @@ export default function DealOfTheDayDialog({
 
   const handleDismiss = async () => {
     try {
-      const result = await markDealAsDismissed(username, deal.id)
+      const supabase = getSupabaseBrowserClient()
+      if (!supabase) {
+        onClose()
+        return
+      }
+
+      // Check if record exists
+      const { data: interactions } = await supabase
+        .from("deal_interactions")
+        .select("*")
+        .eq("wallet_address", username)
+        .eq("deal_id", deal.id)
+        .order("purchased", { ascending: false })
+        .order("interaction_date", { ascending: false })
+        .limit(1)
+
+      const existingData = interactions?.[0]
+
+      if (existingData) {
+        // Update existing record
+        await supabase
+          .from("deal_interactions")
+          .update({
+            seen: false,
+            dismissed: true,
+            purchased: false,
+          })
+          .eq("wallet_address", username)
+          .eq("deal_id", deal.id)
+      } else {
+        // Create new record
+        await supabase
+          .from("deal_interactions")
+          .insert({
+            wallet_address: username,
+            deal_id: deal.id,
+            seen: false,
+            dismissed: true,
+            purchased: false,
+          })
+      }
+      
       onClose()
     } catch (error) {
       console.error("Error dismissing deal:", error)
+      onClose()
     }
   }
   const erc20TransferAbi = [{
@@ -245,15 +288,63 @@ export default function DealOfTheDayDialog({
     }
   }
   
-  // Mark deal as seen when dialog opens
+  // Mark deal as seen when dialog opens - client-side
   useEffect(() => {
-    if (isOpen && deal && !hasMarkedAsSeen.current) {
-      markDealAsSeen(username, deal.id)
-        .catch(error => {
+    if (isOpen && deal && username && !hasMarkedAsSeen.current) {
+      const markAsSeen = async () => {
+        try {
+          const supabase = getSupabaseBrowserClient()
+          if (!supabase) return
+
+          // Check if record already exists and is already seen
+          const { data: interactions } = await supabase
+            .from("deal_interactions")
+            .select("*")
+            .eq("wallet_address", username)
+            .eq("deal_id", deal.id)
+            .order("purchased", { ascending: false })
+            .order("interaction_date", { ascending: false })
+            .limit(1)
+
+          const existingData = interactions?.[0]
+
+          // If record exists and is already seen, don't do anything
+          if (existingData && existingData.seen) {
+            hasMarkedAsSeen.current = true
+            return
+          }
+
+          if (existingData) {
+            // Update existing record
+            await supabase
+              .from("deal_interactions")
+              .update({
+                seen: true,
+                dismissed: false,
+                purchased: false,
+              })
+              .eq("wallet_address", username)
+              .eq("deal_id", deal.id)
+          } else {
+            // Create new record
+            await supabase
+              .from("deal_interactions")
+              .insert({
+                wallet_address: username,
+                deal_id: deal.id,
+                seen: true,
+                dismissed: false,
+                purchased: false,
+              })
+          }
+          
+          hasMarkedAsSeen.current = true
+        } catch (error) {
           console.error("Error marking deal as seen:", error)
-        })
-      
-      hasMarkedAsSeen.current = true
+        }
+      }
+
+      markAsSeen()
     }
   }, [isOpen, deal, username])
 

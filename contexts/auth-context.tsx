@@ -199,6 +199,11 @@ if (!isHumanVerified) {
               localStorage.setItem("animeworld_user", JSON.stringify(freshUserData))
             }
           }
+
+          // Automatically redirect to home if on login page
+          if (typeof window !== "undefined" && window.location.pathname === "/login") {
+            router.push("/")
+          }
         }
       } catch (error) {
         console.error("Error parsing user data:", error)
@@ -208,7 +213,7 @@ if (!isHumanVerified) {
     }
 
     checkUser()
-  }, [])
+  }, [router])
 
   const login = async (walletAddress: string, username?: string, referralCode?: string) => {
     try {

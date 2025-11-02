@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import CardItem from "@/components/card-item"
 import { WEEKLY_CONTEST_CONFIG, getContestEndTimestamp, getTimeUntilContestEnd } from "@/lib/weekly-contest-config"
 import { useI18n } from "@/contexts/i18n-context"
+import { getSupabaseBrowserClient } from "@/lib/supabase"
 
 const WEEKLY_PRIZE_POOL = WEEKLY_CONTEST_CONFIG.prizePool
 
@@ -35,19 +36,70 @@ export default function WeeklyContestPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const leaderboardRes = await fetch("/api/weekly-contest/leaderboard")
-        const leaderboardData = await leaderboardRes.json()
-
-        if (leaderboardData.success) {
-          setLeaderboard(leaderboardData.data)
+        const supabase = getSupabaseBrowserClient()
+        if (!supabase) {
+          setLoading(false)
+          return
         }
 
-        if (user?.username) {
-          const userRes = await fetch(`/api/weekly-contest/user?username=${encodeURIComponent(user.username)}`)
-          const userData = await userRes.json()
+        const weekStart = WEEKLY_CONTEST_CONFIG.weekStart
 
-          if (userData.success) {
-            setUserStats(userData.data)
+        // Fetch leaderboard - Top 20
+        const { data: entries, error: entriesError } = await supabase
+          .from("weekly_contest_entries")
+          .select("wallet_address, legendary_count")
+          .eq("week_start_date", weekStart)
+          .order("legendary_count", { ascending: false })
+          .limit(20)
+
+        if (!entriesError && entries) {
+          // Get usernames for all wallet addresses
+          const walletAddresses = entries.map(e => e.wallet_address)
+          const { data: users } = await supabase
+            .from("users")
+            .select("wallet_address, username")
+            .in("wallet_address", walletAddresses)
+
+          // Create a map for quick lookup
+          const usernameMap = new Map(users?.map(u => [u.wallet_address, u.username]) || [])
+
+          // Format the data
+          const formattedData = entries.map(entry => ({
+            user_id: usernameMap.get(entry.wallet_address) || entry.wallet_address.slice(0, 10) + "...",
+            legendary_count: entry.legendary_count,
+          }))
+
+          setLeaderboard(formattedData)
+        }
+
+        // Fetch user stats
+        if (user?.wallet_address) {
+          const { data: userEntry, error: userError } = await supabase
+            .from("weekly_contest_entries")
+            .select("legendary_count")
+            .eq("week_start_date", weekStart)
+            .eq("wallet_address", user.wallet_address)
+            .maybeSingle()
+
+          if (!userError) {
+            if (userEntry) {
+              // Calculate rank - count how many have more points
+              const { count } = await supabase
+                .from("weekly_contest_entries")
+                .select("*", { count: "exact", head: true })
+                .eq("week_start_date", weekStart)
+                .gt("legendary_count", userEntry.legendary_count)
+
+              setUserStats({
+                legendary_count: userEntry.legendary_count || 0,
+                rank: count !== null ? count + 1 : null,
+              })
+            } else {
+              setUserStats({
+                legendary_count: 0,
+                rank: null,
+              })
+            }
           }
         }
       } catch (error) {
@@ -58,7 +110,7 @@ export default function WeeklyContestPage() {
     }
 
     fetchData()
-  }, [user?.username])
+  }, [user?.wallet_address])
 
   useEffect(() => {
     const interval = setInterval(() => {

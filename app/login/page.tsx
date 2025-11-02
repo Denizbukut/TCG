@@ -31,11 +31,14 @@ export default function LoginPage() {
   }, [])
 
 
+  const { user } = useAuth()
+
   useEffect(() => {
-    // Entferne evtl. alte Tokens
-    localStorage.removeItem("worldId_userId")
-    localStorage.removeItem("animeworld_user")
-  }, [])
+    // Check if user is already logged in - if yes, redirect to home
+    if (user) {
+      router.push("/")
+    }
+  }, [user, router])
 
 
   const signInWithWallet = async () => {
@@ -66,6 +69,8 @@ export default function LoginPage() {
 
         // Store the World ID username in localStorage for future reference
         localStorage.setItem("worldId_userId", userIdentifier)
+        // Mark user as verified as human (for persistent login)
+        localStorage.setItem("isVerifiedAsHuman", "true")
 
         // Check if user exists in database and create if not
         try {

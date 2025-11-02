@@ -5,7 +5,7 @@ import type React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Home, CreditCard, Package, Repeat, ShoppingCart, Trophy } from "lucide-react"
+import { Home, CreditCard, Package, Repeat, ShoppingCart, Trophy, Coins } from "lucide-react"
 import { motion } from "framer-motion"
 import { useI18n } from "@/contexts/i18n-context"
 // import LanguageSwitcher from "./language-switcher"
@@ -22,6 +22,7 @@ export default function MobileNav() {
         {/* <NavItem href="/ani" icon={<Trophy className="h-5 w-5" />} label="Kick Off" isActive={pathname === "/ani"} /> */}
         <NavItem href="/collection" icon={<CreditCard />} label={t("nav.collection", "Collection")} isActive={pathname === "/collection"} />
         <NavItem href="/trade" icon={<Repeat />} label={t("nav.trade", "Trade")} isActive={pathname === "/trade"} />
+        {/* <NavItem href="/tokens" icon={<Coins />} label={t("nav.tokens", "Token")} isActive={pathname === "/tokens"} /> */}
         {/* <div className="flex items-center justify-center">
           <LanguageSwitcher />
         </div> */}

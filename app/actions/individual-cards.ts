@@ -82,20 +82,14 @@ async function addCardInstance(
 // Main function to draw cards with individual instances
 export async function drawCardsIndividual(walletAddress: string, packType: string, count = 1, hasPremiumPass = false) {
   try {
-    console.log("=== drawCardsIndividual START ===")
-    console.log("Parameters:", { walletAddress, packType, count, hasPremiumPass })
-    
     let supabase
     try {
       supabase = getSupabaseServerClient()
-      console.log("Supabase client created successfully")
     } catch (error) {
-      console.error("Failed to create Supabase client:", error)
       return { success: false, error: "Database connection failed" }
     }
     
     if (!supabase) {
-      console.error("Supabase client is null!")
       return { success: false, error: "Database connection failed" }
     }
 
@@ -105,51 +99,33 @@ export async function drawCardsIndividual(walletAddress: string, packType: strin
     }
 
     // Get user data
-    console.log("Fetching user data for walletAddress:", walletAddress)
     let { data: userData, error: userError } = await supabase
       .from("users")
       .select("tickets, elite_tickets, score, clan_id, wallet_address")
       .eq("wallet_address", walletAddress)
       .maybeSingle()
-    
-    console.log("User query result:", { userData, userError })
-    
-    console.log("User data result:", { userData, userError })
 
     if (userError) {
-      console.error("Error fetching user data:", userError)
-      console.error("Error details:", JSON.stringify(userError, null, 2))
       return { success: false, error: `Failed to fetch user data: ${userError.message || 'Unknown error'}` }
     }
     
     if (!userData) {
-      console.log("No user data found for walletAddress:", walletAddress)
-      console.log("This might be because the user doesn't exist in the database or the wallet_address doesn't match")
-      
       // Try to find the user by username instead
-      console.log("Trying to find user by username...")
       const { data: userByUsername, error: usernameError } = await supabase
         .from("users")
         .select("tickets, elite_tickets, score, clan_id, wallet_address")
         .eq("username", walletAddress)
         .maybeSingle()
       
-      console.log("Username query result:", { userByUsername, usernameError })
-      
       if (userByUsername) {
-        console.log("Found user by username, using that data")
-        // Use the data found by username
         userData = userByUsername
       } else {
         return { success: false, error: "User not found" }
       }
     }
-
-    console.log("User data found:", userData)
     
     // Get the correct wallet_address from the database
     const correctWalletAddress = userData.wallet_address || walletAddress
-    console.log("Using wallet_address:", correctWalletAddress)
 
     const isLegendary = packType === "legendary"
     const requiredTickets = isLegendary ? userData.elite_tickets : userData.tickets
@@ -162,25 +138,17 @@ export async function drawCardsIndividual(walletAddress: string, packType: strin
     }
 
     // Get available cards (optimized - only fetch what we need)
-    console.log("Fetching available cards...")
     const { data: availableCards, error: cardsError } = await supabase
       .from("cards")
       .select("id, name, character, image_url, rarity")
 
-    console.log("Cards result:", { availableCards, cardsError })
-
     if (cardsError) {
-      console.error("Error fetching cards:", cardsError)
       return { success: false, error: `Failed to fetch available cards: ${cardsError.message}` }
     }
     
     if (!availableCards || availableCards.length === 0) {
-      console.log("No cards found in database")
       return { success: false, error: "No cards available in database" }
     }
-
-    console.log(`Found ${availableCards.length} cards in database`)
-    console.log("First few cards:", availableCards.slice(0, 3))
 
     // Pre-group cards by rarity for faster access
     const cardsByRarity = {
@@ -212,7 +180,6 @@ export async function drawCardsIndividual(walletAddress: string, packType: strin
 
       // Fallback: if no cards of the determined rarity, use all available cards
       if (!cardPool || cardPool.length === 0) {
-        console.log(`No cards found for rarity ${rarity}, using all available cards`)
         cardPool = availableCards
       }
 
@@ -234,16 +201,12 @@ export async function drawCardsIndividual(walletAddress: string, packType: strin
     }
 
     // Batch insert all card instances at once
-    console.log("Inserting card instances:", cardInstancesToInsert.length, "instances")
     const { data: insertedInstances, error: batchInsertError } = await supabase
       .from("user_card_instances")
       .insert(cardInstancesToInsert)
       .select("id, card_id")
 
-    console.log("Batch insert result:", { insertedInstances, batchInsertError })
-
     if (batchInsertError) {
-      console.error("Error batch inserting card instances:", batchInsertError)
       return { success: false, error: `Failed to add card instances: ${batchInsertError.message}` }
     }
 
@@ -260,42 +223,19 @@ export async function drawCardsIndividual(walletAddress: string, packType: strin
       : userData.tickets - count
     const newScore = userData.score + totalScoreToAdd
 
-    console.log("=== TICKET DEDUCTION DEBUG ===")
-    console.log("Before update:", {
-      isLegendary,
-      originalTickets: userData.tickets,
-      originalEliteTickets: userData.elite_tickets,
-      count,
-      newTicketCount
-    })
-
     const { error: updateError } = await supabase
       .from("users")
       .update({
         [isLegendary ? "elite_tickets" : "tickets"]: newTicketCount,
         score: newScore
       })
-      .eq("wallet_address", walletAddress)
+      .eq("wallet_address", correctWalletAddress)
 
     if (updateError) {
-      console.error("Error updating user data:", updateError)
       return { success: false, error: "Failed to update user data" }
     }
 
-    console.log("Tickets successfully updated in database")
-
     revalidatePath("/leaderboard")
-
-    console.log("=== drawCardsIndividual SUCCESS ===")
-    console.log("Returning:", { success: true, cards: drawnCards, scoreAdded: totalScoreToAdd })
-    
-    console.log("=== drawCardsIndividual RETURNING ===")
-    console.log("Ticket data:", {
-      isLegendary,
-      newTicketCount,
-      originalTickets: userData.tickets,
-      originalEliteTickets: userData.elite_tickets
-    })
 
     return {
       success: true,
@@ -307,9 +247,6 @@ export async function drawCardsIndividual(walletAddress: string, packType: strin
       scoreAdded: totalScoreToAdd
     }
   } catch (error) {
-    console.error("=== drawCardsIndividual ERROR ===")
-    console.error("Error drawing cards:", error)
-    console.error("Error stack:", error instanceof Error ? error.stack : String(error))
     return { success: false, error: `Failed to draw cards: ${error instanceof Error ? error.message : String(error)}` }
   }
 }

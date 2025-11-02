@@ -12,17 +12,14 @@ import { Ticket, Crown, Star, Sword, Zap, X, ArrowUp } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 import { motion, AnimatePresence, useAnimation, useMotionValue, useTransform } from "framer-motion"
 // Removed Next.js Image import - using regular img tags
-import { incrementMission } from "@/app/actions/missions"
-import { incrementLegendaryDraw } from "@/app/actions/weekly-contest"
 import { getSupabaseBrowserClient } from "@/lib/supabase"
-import { incrementClanMission } from "@/app/actions/clan-missions"
+import { WEEKLY_CONTEST_CONFIG, getContestEndDate } from "@/lib/weekly-contest-config"
 import { MiniKit, Tokens, type PayCommandInput, tokenToDecimals } from "@worldcoin/minikit-js"
 import { useWldPrice } from "@/contexts/WldPriceContext"
 import { Info } from "lucide-react"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { useI18n } from "@/contexts/i18n-context"
 // import { isUserBanned } from "@/lib/banned-users" // Lokale Version verwendet
-import { getActiveGodPackDiscount } from "@/app/actions/god-pack-discount"
 
 // Gebannte Benutzernamen - diese können keine Packs ziehen
 const BANNED_USERNAMES = [
@@ -273,19 +270,49 @@ const [showInfo, setShowInfo] = useState(false)
     }
   }
 
-  // Fetch God Pack Discount
+  // Fetch God Pack Discount (client-side)
   const fetchGodPackDiscount = async () => {
     try {
-      const result = await getActiveGodPackDiscount()
-      if (result.success && result.data) {
-        setGodPackDiscount({
-          isActive: true,
-          value: result.data.value,
-          endTime: result.data.end_time
-        })
-      } else {
+      const supabase = getSupabaseBrowserClient()
+      if (!supabase) {
         setGodPackDiscount(null)
+        return
       }
+
+      // Query god_pack_discounts table directly
+      const { data, error } = await supabase
+        .from("god_pack_discounts")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single()
+
+      if (error || !data || typeof data !== 'object' || !('end_time' in data)) {
+        console.log("No active god pack discount found")
+        setGodPackDiscount(null)
+        return
+      }
+
+      // Check if discount is still valid (not expired)
+      const now = new Date()
+      const endTime = data.end_time && typeof data.end_time === 'string' ? new Date(data.end_time) : null
+      
+      if (endTime && now > endTime) {
+        console.log("God pack discount expired")
+        setGodPackDiscount(null)
+        return
+      }
+
+      // Convert discount_percent to decimal value
+      const discountPercent = typeof data.discount_percent === 'number' ? data.discount_percent : 0
+      const discountValue = discountPercent / 100
+
+      setGodPackDiscount({
+        isActive: true,
+        value: discountValue,
+        endTime: typeof data.end_time === 'string' ? data.end_time : undefined
+      })
     } catch (error) {
       console.error("Error fetching god pack discount:", error)
       setGodPackDiscount(null)
@@ -648,11 +675,8 @@ const [showInfo, setShowInfo] = useState(false)
         return
       }
 
-      console.log("looking for pack")
-
       // God pack doesn't require tickets, only payment
       if (cardType !== "god") {
-        console.log("not god")
         const requiredTickets = count
         const availableTickets = cardType === "legendary" ? eliteTickets : tickets
 
@@ -702,72 +726,59 @@ const [showInfo, setShowInfo] = useState(false)
 
         const result = await response.json()
 
-        console.log("User object:", user)
-        console.log("User username:", user?.username)
-        console.log("User wallet_address:", user?.wallet_address)
+        // Weekly Contest: Punkte für Rare, Epic und Legendary Cards - client-side
+        if (result.success && result.cards && Array.isArray(result.cards) && result.cards.length > 0 && user?.wallet_address) {
+          try {
+            const supabase = getSupabaseBrowserClient()
+            if (supabase) {
+              // Calculate points: Rare = 2, Epic = 4, Legendary = 15
+              const rareCards = result.cards.filter((card: any) => card.rarity === "rare")
+              const epicCards = result.cards.filter((card: any) => card.rarity === "epic")
+              const legendaryCards = result.cards.filter((card: any) => card.rarity === "legendary")
+              
+              let totalPoints = 0
+              totalPoints += rareCards.length * 2
+              totalPoints += epicCards.length * 4
+              totalPoints += legendaryCards.length * 15
+              
+              if (totalPoints > 0) {
+                // Check if contest is active
+                const weekStart = WEEKLY_CONTEST_CONFIG.weekStart
+                const contestEnd = getContestEndDate()
+                const now = new Date()
 
-        // Mission tracking für legendary cards
-        const legendaryCards = result.cards?.filter((card: any) => card.rarity === "legendary") || []
-        const epicCards = result.cards?.filter((card: any) => card.rarity === "epic") || []
-        const rareCards = result.cards?.filter((card: any) => card.rarity === "rare") || []
-        
-        if (legendaryCards.length > 0 && user?.wallet_address) {
-          await incrementMission(user.wallet_address, "draw_legendary_card", legendaryCards.length)
-        }
-        
-        // Weekly Contest: Punkte für Rare, Epic und Legendary Cards
-        if (user?.wallet_address) {
-          let totalPoints = 0
-          totalPoints += rareCards.length * 2      // 2 Punkte pro Rare
-          totalPoints += epicCards.length * 4      // 4 Punkte pro Epic
-          totalPoints += legendaryCards.length * 15 // 15 Punkte pro Legendary
-          
-          if (totalPoints > 0) {
-            await incrementLegendaryDraw(user.wallet_address, totalPoints)
-          }
-        }
+                if (now <= contestEnd) {
+                  // Check if entry exists
+                  const { data: existingEntry, error: fetchError } = await supabase
+                    .from("weekly_contest_entries")
+                    .select("legendary_count")
+                    .eq("wallet_address", user.wallet_address)
+                    .eq("week_start_date", weekStart)
+                    .maybeSingle()
 
-        /* const premierLeagueCards = result.cards?.filter((card: any) => card.league_id === "3cd1fa22-d6fd-466a-8fe2-ca5c661d015d") || []
-        if (premierLeagueCards.length > 0 && user?.username) {
-          await incrementLegendaryDraw(user.username, premierLeagueCards.length * 1)
-        }
-
-        const bundesligaCards = result.cards?.filter((card: any) => card.league_id === "cba80327-d67e-400d-81b7-9689ab27224c") || []
-        if (bundesligaCards.length > 0 && user?.username) {
-          await incrementLegendaryDraw(user.username, bundesligaCards.length * 1)
-        }
-
-        const goatPacks = cardType === "god" ? count : 0;
-        
-        if (goatPacks > 0 && user?.username) {
-          await incrementLegendaryDraw(user.username, goatPacks * 15);
-        } */
-        
-
-
-        // Mission tracking for godlike cards
-        const godlikeCards = result.cards?.filter((card: any) => card.rarity === "godlike") || []
-        if (godlikeCards.length > 0 && user?.wallet_address) {
-          await incrementMission(user.wallet_address, "draw_godlike_card", godlikeCards.length)
-        }
-
-        if (cardType === "legendary" && user?.wallet_address) {
-          await incrementMission(user.wallet_address, "open_legendary_pack", count)
-          await incrementMission(user.wallet_address, "open_3_legendary_packs", count)
-          if (user.clan_id !== undefined) {
-            await incrementClanMission(user.clan_id, "legendary_packs", count)
-          }
-        } else if (user?.wallet_address) {
-          await incrementMission(user.wallet_address, "open_regular_pack", count)
-          if (user.clan_id !== undefined) {
-            await incrementClanMission(user.clan_id, "regular_packs", count)
-          }
-        }
-
-        const legendary_cards = result.cards?.filter((card: any) => card.rarity === "legendary") || []
-        if (legendary_cards.length > 0) {
-          if (user.clan_id !== undefined) {
-            await incrementClanMission(user.clan_id, "legendary_cards", legendary_cards.length)
+                  if (!existingEntry || (fetchError && (fetchError as any).code === "PGRST116")) {
+                    // No entry exists - create new one
+                    await supabase.from("weekly_contest_entries").insert({
+                      wallet_address: user.wallet_address,
+                      week_start_date: weekStart,
+                      legendary_count: totalPoints,
+                    })
+                  } else {
+                    // Entry exists - add points to existing count
+                    const currentCount = Number(existingEntry.legendary_count) || 0
+                    const newCount = currentCount + totalPoints
+                    await supabase
+                      .from("weekly_contest_entries")
+                      .update({ legendary_count: newCount })
+                      .eq("wallet_address", user.wallet_address)
+                      .eq("week_start_date", weekStart)
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            // Silently fail - contest update is not critical
+            console.error("Error updating weekly contest:", error)
           }
         }
 
