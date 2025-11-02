@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { ShoppingBag, X, Ticket, Sparkles, Crown } from "lucide-react"
+import { ShoppingBag, X, Ticket, Sparkles, Crown, Users } from "lucide-react"
 // Removed Next.js Image import - using regular img tags
 import { Badge } from "@/components/ui/badge"
 import { toast } from "@/components/ui/use-toast"
@@ -28,7 +28,8 @@ interface DailyDeal {
   card_image_url: string
   card_rarity: string
   card_character: string
-  obtainable?: boolean // 👈 hinzufügen
+  creator_address?: string
+  obtainable?: boolean
 }
 
 
@@ -59,6 +60,19 @@ export default function DealOfTheDayDialog({
   const hasMarkedAsSeen = useRef(false)
   const [hasOpened, setHasOpened] = useState(false)
   const [shouldMarkAsSeen, setShouldMarkAsSeen] = useState(false)
+  const [creatorPercentage, setCreatorPercentage] = useState<number | null>(null)
+  
+  // Calculate creator percentage when deal changes
+  useEffect(() => {
+    if (deal.card_rarity) {
+      import("@/lib/creator-revenue").then((module) => {
+        const split = module.getDealRevenueSplit(deal.card_rarity as any)
+        setCreatorPercentage(Math.round(split.creatorShare * 100))
+      })
+    } else {
+      setCreatorPercentage(null)
+    }
+  }, [deal.card_rarity])
   
   // Log when dialog opens (only once per open)
   useEffect(() => {
@@ -216,15 +230,55 @@ export default function DealOfTheDayDialog({
     const wldAmount = price ? dollarAmount / price : fallbackWldAmount
     
     try {
-      const {commandPayload, finalPayload} = await MiniKit.commandsAsync.sendTransaction({
-        transaction: [
+      // Check if card has a creator that needs payment
+      const hasCreator = deal.creator_address && deal.creator_address.trim() !== ""
+      
+      let transactions: any[] = []
+      
+      if (hasCreator && deal.card_rarity) {
+        // Calculate split payment for dev and creator
+        const { getDealRevenueSplit } = await import("@/lib/creator-revenue")
+        const split = getDealRevenueSplit(deal.card_rarity as any)
+        
+        const devAmount = wldAmount * split.devShare
+        const creatorAmount = wldAmount * split.creatorShare
+        
+        console.log('Split payment:', {
+          total: wldAmount,
+          devShare: `${(split.devShare * 100).toFixed(1)}% = ${devAmount.toFixed(4)} WLD`,
+          creatorShare: `${(split.creatorShare * 100).toFixed(1)}% = ${creatorAmount.toFixed(4)} WLD`,
+          creatorAddress: deal.creator_address
+        })
+        
+        // Two transfers: one to dev, one to creator
+        transactions = [
+          {
+            address: WLD_TOKEN,
+            abi: erc20TransferAbi,
+            functionName: "transfer",
+            args: ["0xDb4D9195EAcE195440fbBf6f80cA954bf782468E", tokenToDecimals(parseFloat(devAmount.toFixed(2)), Tokens.WLD).toString()],
+          },
+          {
+            address: WLD_TOKEN,
+            abi: erc20TransferAbi,
+            functionName: "transfer",
+            args: [deal.creator_address, tokenToDecimals(parseFloat(creatorAmount.toFixed(2)), Tokens.WLD).toString()],
+          },
+        ]
+      } else {
+        // Single transfer to dev wallet only
+        transactions = [
           {
             address: WLD_TOKEN,
             abi: erc20TransferAbi,
             functionName: "transfer",
             args: ["0xDb4D9195EAcE195440fbBf6f80cA954bf782468E", tokenToDecimals(parseFloat(wldAmount.toFixed(2)), Tokens.WLD).toString()],
           },
-        ],
+        ]
+      }
+      
+      const {commandPayload, finalPayload} = await MiniKit.commandsAsync.sendTransaction({
+        transaction: transactions,
       })
      
       if (finalPayload.status == "success") {
@@ -497,6 +551,20 @@ export default function DealOfTheDayDialog({
                     )}
                   </div>
                 </div>
+
+                {/* Creator Info */}
+                {deal.creator_address && creatorPercentage !== null && (
+                  <div className="bg-green-900/20 rounded-lg p-3 mb-5 border border-green-700/30">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-green-400" />
+                      <div>
+                        <p className="text-xs text-green-300 font-medium">
+                          {t("deals.creator_receives_percent", "Card Creator receives {percent}% of purchase", { percent: creatorPercentage })}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Price and Action */}
                 <div className="flex items-center justify-between">

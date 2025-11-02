@@ -19,10 +19,9 @@ export default function MobileNav() {
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-4">
         <NavItem href="/" icon={<Home />} label={t("nav.home", "Home")} isActive={pathname === "/"} />
         <NavItem href="/draw" icon={<Package />} label={t("nav.packs", "Packs")} isActive={pathname === "/draw"} />
-        {/* <NavItem href="/ani" icon={<Trophy className="h-5 w-5" />} label="Kick Off" isActive={pathname === "/ani"} /> */}
+        <NavItem href="/tokens" icon={<Coins />} label={t("nav.create", "Create")} isActive={pathname === "/tokens"} />
         <NavItem href="/collection" icon={<CreditCard />} label={t("nav.collection", "Collection")} isActive={pathname === "/collection"} />
-        <NavItem href="/trade" icon={<Repeat />} label={t("nav.trade", "Trade")} isActive={pathname === "/trade"} />
-        {/* <NavItem href="/tokens" icon={<Coins />} label={t("nav.tokens", "Token")} isActive={pathname === "/tokens"} /> */}
+        <NavItem href="/trade" icon={<Repeat />} label={t("nav.trade", "Trade")} isActive={pathname === "/trade"} /> 
         {/* <div className="flex items-center justify-center">
           <LanguageSwitcher />
         </div> */}

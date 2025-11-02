@@ -247,7 +247,8 @@
     "failed_process_payment": "Zahlung konnte nicht verarbeitet werden",
     "purchase_failed": "Kauf fehlgeschlagen",
     "failed_purchase_deal": "Deal konnte nicht gekauft werden",
-    "deal_purchased": "Dein Deal wurde erfolgreich gekauft."
+    "deal_purchased": "Dein Deal wurde erfolgreich gekauft.",
+    "creator_receives_percent": "Karten-Ersteller erhält {percent}% des Kaufpreises"
   },
   "special_day": {
     "title": "Besonderer Tag"
@@ -467,7 +468,8 @@
     "packs": "Packs",
     "collection": "Sammlung",
     "trade": "Markt",
-    "tokens": "Token"
+    "tokens": "Token",
+    "create": "Erstellen"
   },
   "card_details": {
     "title": "Kartendetails",
@@ -515,12 +517,16 @@
   },
   "tokens": {
     "title": "Meine Tokens",
-    "subtitle": "Token, die du bei PUF erstellt hast",
+    "subtitle": "Token, die du erstellt hast",
+    "cta_text": "Erstelle deine eigene Crypto Card, damit sie jeder sammeln kann!",
     "connect_wallet": "Bitte verbinde deine Wallet, um deine Tokens zu sehen.",
     "connect": "Wallet verbinden",
     "wallet_address": "Wallet Adresse",
     "loading": "Lade Tokens...",
     "no_tokens": "Keine Tokens gefunden",
+    "create_first_token": "Erstelle deinen ersten Token",
+    "create_first_token_desc": "Beginne mit der Erstellung deiner eigenen Tokens auf PUF!",
+    "go_to_puf": "Erstelle deinen ersten Token kostenlos auf PUF",
     "no_tokens_desc": "Du hast noch keine Tokens bei PUF erstellt.",
     "created": "Erstellt",
     "listed": "Gelistet",
@@ -528,12 +534,40 @@
     "list_now": "Jetzt listen",
     "list_token": "Token listen",
     "list_token_desc": "Token-Listing-Funktion kommt bald",
+    "create_card": "Card erstellen",
+    "create_card_desc": "Card-Erstellungsfunktion kommt bald",
     "contract": "Contract",
     "image_url": "Image URL",
     "image_url_copied": "Image URL wurde kopiert",
     "x_url_copied": "X URL wurde kopiert",
     "copied": "Kopiert",
     "address_copied": "Token-Adresse wurde in die Zwischenablage kopiert",
-    "copy": "Kopieren"
+    "copy": "Kopieren",
+    "listed_cards": "Gelistete Karten",
+    "create_card_tab": "Karte erstellen",
+    "no_listed_cards": "Noch keine gelisteten Karten.",
+    "create_card_button": "Karte erstellen",
+    "rarity": "Seltenheit",
+    "card_image": "Kartenbild",
+    "click_to_upload": "Klicken zum Hochladen des Bildes",
+    "edit_image": "Bild bearbeiten",
+    "remove": "Entfernen",
+    "creating_card": "Karte wird erstellt...",
+    "cancel": "Abbrechen",
+    "for": "für",
+    "step1": "Erstelle deinen ersten Token kostenlos auf PUF",
+    "step2": "Erstelle deine Crypto Card",
+    "creator_benefits_title": "Karten-Ersteller Vorteile",
+    "creator_benefits_subtitle": "Ersteller verdient bei allen Verkäufen",
+    "deal_benefits": "Daily Deal & Special Deal:",
+    "deal_common": "Common: 5%",
+    "deal_rare": "Rare: 15%",
+    "deal_epic": "Epic: 30%",
+    "deal_legendary": "Legendary: 50%",
+    "market_benefits": "Marktverkäufe:",
+    "market_common": "Common: 1%",
+    "market_rare": "Rare: 2%",
+    "market_epic": "Epic: 3%",
+    "market_legendary": "Legendary: 5%"
   }
 }

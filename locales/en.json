@@ -247,7 +247,8 @@
     "failed_process_payment": "Failed to process payment",
     "purchase_failed": "Purchase Failed",
     "failed_purchase_deal": "Failed to purchase the deal",
-    "deal_purchased": "Your deal was successfully purchased."
+    "deal_purchased": "Your deal was successfully purchased.",
+    "creator_receives_percent": "Card Creator receives {percent}% of purchase"
   },
   "special_day": {
     "title": "Special Day"
@@ -467,7 +468,8 @@
     "packs": "Packs",
     "collection": "Collection",
     "trade": "Trade",
-    "tokens": "Token"
+    "tokens": "Token",
+    "create": "Create"
   },
   "card_details": {
     "title": "Card Details",
@@ -515,12 +517,16 @@
   },
   "tokens": {
     "title": "My Tokens",
-    "subtitle": "Tokens you created on PUF",
+    "subtitle": "Tokens you created on",
+    "cta_text": "Create your own Crypto Card so everyone can Collect it!",
     "connect_wallet": "Please connect your wallet to see your tokens.",
     "connect": "Connect Wallet",
     "wallet_address": "Wallet Address",
     "loading": "Loading tokens...",
     "no_tokens": "No Tokens Found",
+    "create_first_token": "Create your first token",
+    "create_first_token_desc": "Start creating your own tokens on PUF to get started!",
+    "go_to_puf": "Create your first token for Free on PUF",
     "no_tokens_desc": "You haven't created any tokens on PUF yet.",
     "created": "Created",
     "listed": "Listed",
@@ -528,12 +534,40 @@
     "list_now": "List Now",
     "list_token": "List Token",
     "list_token_desc": "Token listing functionality coming soon",
+    "create_card": "Create Card",
+    "create_card_desc": "Card creation functionality coming soon",
     "contract": "Contract",
     "image_url": "Image URL",
     "image_url_copied": "Image URL copied to clipboard",
     "x_url_copied": "X URL copied to clipboard",
     "copied": "Copied",
     "address_copied": "Token address copied to clipboard",
-    "copy": "Copy"
+    "copy": "Copy",
+    "listed_cards": "Listed Cards",
+    "create_card_tab": "Create Card",
+    "no_listed_cards": "No listed cards yet.",
+    "create_card_button": "Create Card",
+    "rarity": "Rarity",
+    "card_image": "Card Image",
+    "click_to_upload": "Click to upload image",
+    "edit_image": "Edit Image",
+    "remove": "Remove",
+    "creating_card": "Creating Card...",
+    "cancel": "Cancel",
+    "for": "for",
+    "step1": "Create your first Token for Free on PUF",
+    "step2": "Create your Crypto Card",
+    "creator_benefits_title": "Card Creator Benefits",
+    "creator_benefits_subtitle": "Creator earns for all Sales",
+    "deal_benefits": "Daily Deal & Special Deal:",
+    "deal_common": "Common: 5%",
+    "deal_rare": "Rare: 15%",
+    "deal_epic": "Epic: 30%",
+    "deal_legendary": "Legendary: 50%",
+    "market_benefits": "Market Sales:",
+    "market_common": "Common: 1%",
+    "market_rare": "Rare: 2%",
+    "market_epic": "Epic: 3%",
+    "market_legendary": "Legendary: 5%"
   }
 }

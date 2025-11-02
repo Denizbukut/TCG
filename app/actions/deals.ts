@@ -300,12 +300,58 @@ export async function purchaseDeal(walletAddress: string, dealId: number) {
       return { success: false, error: "Deal not found" }
     }
 
-    // Get card information
-    const { data: card, error: cardError } = await supabase.from("cards").select("*").eq("id", deal.card_id).single()
+    // Get card information including creator_address
+    const { data: card, error: cardError } = await supabase.from("cards").select("*, creator_address").eq("id", deal.card_id).single()
 
     if (cardError) {
       console.error("Error fetching card details:", cardError)
       return { success: false, error: "Failed to fetch card details" }
+    }
+
+    // Calculate creator revenue if card has creator
+    try {
+      if (card.creator_address) {
+        const { calculateCreatorDealRevenue } = await import("@/lib/creator-revenue")
+        const creatorRevenue = calculateCreatorDealRevenue(Number(deal.price), card.rarity as any)
+        
+        console.log(`Calculating creator revenue for deal purchase:`, {
+          cardId: deal.card_id,
+          creatorAddress: card.creator_address,
+          price: deal.price,
+          rarity: card.rarity,
+          revenue: creatorRevenue
+        })
+        
+        // Update creator's coins (if creator is a user in the system)
+        const { data: creatorData, error: creatorLookupError } = await supabase
+          .from("users")
+          .select("coins")
+          .eq("wallet_address", card.creator_address.toLowerCase())
+          .single()
+        
+        if (creatorLookupError) {
+          console.error("Error fetching creator data:", creatorLookupError)
+        }
+        
+        if (creatorData) {
+          const newCreatorCoins = (creatorData.coins || 0) + creatorRevenue
+          const { error: updateError } = await supabase
+            .from("users")
+            .update({ coins: newCreatorCoins })
+            .eq("wallet_address", card.creator_address.toLowerCase())
+          
+          if (updateError) {
+            console.error("Error updating creator coins:", updateError)
+          } else {
+            console.log(`Successfully paid creator ${creatorRevenue} coins. New total: ${newCreatorCoins}`)
+          }
+        } else {
+          console.log("Creator address not found in users table, skipping payment")
+        }
+      }
+    } catch (creatorError) {
+      // Don't fail the entire purchase if creator payment fails
+      console.error("Error processing creator revenue (non-fatal):", creatorError)
     }
 
     // Start a transaction to ensure all operations succeed or fail together

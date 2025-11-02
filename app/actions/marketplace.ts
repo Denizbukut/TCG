@@ -34,6 +34,7 @@ type Card = {
   character: string
   image_url?: string
   rarity: "common" | "rare" | "epic" | "legendary" | "goat" // | "wbc" // Commented out
+  creator_address?: string
 }
 
 type MarketListingWithDetails = MarketListing & {
@@ -266,7 +267,7 @@ export async function getMarketListings(page = 1, pageSize = DEFAULT_PAGE_SIZE, 
     // 2. Fetch card details in a single query
     const { data: cards, error: cardsError } = await supabase
       .from("cards")
-      .select("id, name, character, image_url, rarity")
+      .select("id, name, character, image_url, rarity, creator_address")
       .in("id", cardIds)
 
     if (cardsError) {
@@ -986,10 +987,10 @@ export async function purchaseCard(walletAddress: string, listingId: string) {
       return { success: false, error: "You cannot buy your own card" }
     }
 
-    // Card-Details mit korrekter card_id holen
+    // Card-Details mit korrekter card_id holen (inkl. creator_address)
     const { data: cardDetails, error: cardError } = await supabase
       .from("cards")
-      .select("rarity")
+      .select("rarity, creator_address")
       .eq("id", listing.card_id)
       .single()
 
@@ -998,6 +999,26 @@ export async function purchaseCard(walletAddress: string, listingId: string) {
     }
 
     const scoreForCard = getScoreForRarity(cardDetails.rarity)
+
+    // Calculate revenue split
+    const { getMarketRevenueSplit, calculateDevMarketRevenue, calculateCreatorMarketRevenue } = await import("@/lib/creator-revenue")
+    const revenueSplit = getMarketRevenueSplit(cardDetails.rarity as any)
+    
+    const sellerRevenue = listing.price * revenueSplit.sellerShare
+    const devRevenue = calculateDevMarketRevenue(listing.price, cardDetails.rarity as any)
+    const creatorRevenue = cardDetails.creator_address 
+      ? calculateCreatorMarketRevenue(listing.price, cardDetails.rarity as any)
+      : devRevenue // If no creator, dev gets the creator's share too
+    
+    console.log(`Calculating marketplace revenue for purchase:`, {
+      listingId,
+      price: listing.price,
+      rarity: cardDetails.rarity,
+      sellerRevenue,
+      devRevenue,
+      creatorRevenue,
+      creatorAddress: cardDetails.creator_address || 'none'
+    })
 
     // Verkäuferdaten parallel holen
     const { data: sellerData, error: sellerError } = await supabase
@@ -1082,7 +1103,81 @@ export async function purchaseCard(walletAddress: string, listingId: string) {
       return { success: false, error: "Card was already purchased by another user" }
     }
     
-    // 7. Trade in der Datenbank speichern
+    // 7. Update seller's coins (seller gets 90%)
+    const { data: currentSeller } = await supabase
+      .from("users")
+      .select("coins")
+      .eq("wallet_address", listing.seller_wallet_address)
+      .single()
+    
+    if (currentSeller) {
+      await supabase
+        .from("users")
+        .update({ coins: (currentSeller.coins || 0) + sellerRevenue })
+        .eq("wallet_address", listing.seller_wallet_address)
+    }
+    
+    // 8. Update creator's coins if card has creator
+    try {
+      if (cardDetails.creator_address) {
+        const { data: currentCreator, error: creatorLookupError } = await supabase
+          .from("users")
+          .select("coins")
+          .eq("wallet_address", cardDetails.creator_address.toLowerCase())
+          .single()
+        
+        if (creatorLookupError) {
+          console.error("Error fetching creator data:", creatorLookupError)
+        }
+        
+        if (currentCreator) {
+          const { error: updateError } = await supabase
+            .from("users")
+            .update({ coins: (currentCreator.coins || 0) + creatorRevenue })
+            .eq("wallet_address", cardDetails.creator_address.toLowerCase())
+          
+          if (updateError) {
+            console.error("Error updating creator coins:", updateError)
+          } else {
+            console.log(`Successfully paid creator ${creatorRevenue} coins. New total: ${(currentCreator.coins || 0) + creatorRevenue}`)
+          }
+        } else {
+          console.log("Creator address not found in users table, skipping payment")
+        }
+      }
+    } catch (creatorError) {
+      // Don't fail the entire purchase if creator payment fails
+      console.error("Error processing creator revenue (non-fatal):", creatorError)
+    }
+    
+    // 8b. Update market_fees with creator and dev split if exists
+    const { data: existingFee } = await supabase
+      .from("market_fees")
+      .select("*")
+      .eq("market_listing_id", listingId)
+      .single()
+    
+    if (existingFee) {
+      await supabase
+        .from("market_fees")
+        .update({
+          dev_fees: devRevenue,
+          creator_fees: cardDetails.creator_address ? creatorRevenue : devRevenue,
+        })
+        .eq("id", existingFee.id)
+    } else {
+      // Create fee record if it doesn't exist
+      await supabase
+        .from("market_fees")
+        .insert({
+          market_listing_id: listingId,
+          fees: devRevenue + (cardDetails.creator_address ? creatorRevenue : devRevenue),
+          dev_fees: devRevenue,
+          creator_fees: cardDetails.creator_address ? creatorRevenue : devRevenue,
+        })
+    }
+    
+    // 9. Trade in der Datenbank speichern
     await supabase.from("trades").insert({
       seller_wallet_address: listing.seller_wallet_address,
       buyer_wallet_address: walletAddress,

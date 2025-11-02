@@ -106,6 +106,7 @@ interface DailyDeal {
   card_image_url: string
   card_rarity: string
   card_character: string
+  creator_address?: string
 }
 
 // New interface for Special Deal
@@ -122,6 +123,7 @@ interface SpecialDeal {
   card_image_url: string
   card_rarity: string
   card_character: string
+  creator_address?: string
   icon_tickets: number
 }
 
@@ -180,6 +182,7 @@ export default function Home() {
   const lastFetchedRef = useRef<number>(0)
   const [contestCountdown, setContestCountdown] = useState(getTimeUntilContestEnd())
   const [userClanInfo, setUserClanInfo] = useState<ClanInfo | null>(null)
+  const [specialDealCreatorPercentage, setSpecialDealCreatorPercentage] = useState<number | null>(null)
   const [referredUsers, setReferredUsers] = useState<
   {
     id: number
@@ -718,6 +721,7 @@ const [copied, setCopied] = useState(false)
           card_image_url: card.image_url,
           card_rarity: card.rarity,
           card_character: card.character,
+          creator_address: card.creator_address,
         }
 
         // Check if user has already interacted with this deal
@@ -1343,10 +1347,10 @@ const [copied, setCopied] = useState(false)
           return
         }
 
-        // Get card information
+        // Get card information including creator_address
         const { data: card } = await supabase
           .from("cards")
-          .select("*")
+          .select("*, creator_address")
           .eq("id", deal.card_id)
           .single()
 
@@ -1356,6 +1360,7 @@ const [copied, setCopied] = useState(false)
           card_image_url: card?.image_url,
           card_rarity: card?.rarity,
           card_character: card?.character,
+          creator_address: card?.creator_address,
         }
 
         setSpecialDeal(formattedDeal)
@@ -1367,6 +1372,18 @@ const [copied, setCopied] = useState(false)
       }
     })();
   }, [user?.username, user?.wallet_address]);
+
+  // Calculate creator percentage for Special Deal
+  useEffect(() => {
+    if (specialDeal?.card_rarity) {
+      import("@/lib/creator-revenue").then((module) => {
+        const split = module.getDealRevenueSplit(specialDeal.card_rarity)
+        setSpecialDealCreatorPercentage(Math.round(split.creatorShare * 100))
+      })
+    } else {
+      setSpecialDealCreatorPercentage(null)
+    }
+  }, [specialDeal?.card_rarity])
 
   // Test-URL (Cloudflare)
   const testUrl = 'https://fda1523f9dc7558ddc4fcf148e01a03a.r2.cloudflarestorage.com/world-soccer/Za%C3%AFre-Emery-removebg-preview.png';
@@ -1435,17 +1452,55 @@ const [copied, setCopied] = useState(false)
       const fallbackWldAmount = discountedPrice;
       const wldAmount = price ? dollarAmount / price : fallbackWldAmount;
       
+      // Check if card has a creator that needs payment
+      const hasCreator = specialDeal.creator_address && specialDeal.creator_address.trim() !== ""
       
-      const {commandPayload, finalPayload} = await MiniKit.commandsAsync.sendTransaction({
-        transaction: [
+      let transactions: any[] = []
+      
+      if (hasCreator && specialDeal.card_rarity) {
+        // Calculate split payment for dev and creator
+        const { getDealRevenueSplit } = await import("@/lib/creator-revenue")
+        const split = getDealRevenueSplit(specialDeal.card_rarity as any)
+        
+        const devAmount = wldAmount * split.devShare
+        const creatorAmount = wldAmount * split.creatorShare
+        
+        console.log('Special Deal Split payment:', {
+          total: wldAmount,
+          devShare: `${(split.devShare * 100).toFixed(1)}% = ${devAmount.toFixed(4)} WLD`,
+          creatorShare: `${(split.creatorShare * 100).toFixed(1)}% = ${creatorAmount.toFixed(4)} WLD`,
+          creatorAddress: specialDeal.creator_address
+        })
+        
+        // Two transfers: one to dev, one to creator
+        transactions = [
+          {
+            address: WLD_TOKEN,
+            abi: erc20TransferAbi,
+            functionName: "transfer",
+            args: ["0xDb4D9195EAcE195440fbBf6f80cA954bf782468E", tokenToDecimals(parseFloat(devAmount.toFixed(2)), Tokens.WLD).toString()],
+          },
+          {
+            address: WLD_TOKEN,
+            abi: erc20TransferAbi,
+            functionName: "transfer",
+            args: [specialDeal.creator_address, tokenToDecimals(parseFloat(creatorAmount.toFixed(2)), Tokens.WLD).toString()],
+          },
+        ]
+      } else {
+        // Single transfer to dev wallet only
+        transactions = [
           {
             address: WLD_TOKEN,
             abi: erc20TransferAbi,
             functionName: "transfer",
             args: ["0xDb4D9195EAcE195440fbBf6f80cA954bf782468E", tokenToDecimals(parseFloat(wldAmount.toFixed(2)), Tokens.WLD).toString()],
           },
-
-        ],
+        ]
+      }
+      
+      const {commandPayload, finalPayload} = await MiniKit.commandsAsync.sendTransaction({
+        transaction: transactions,
       })
      
 
@@ -1495,7 +1550,35 @@ const [copied, setCopied] = useState(false)
             // Trotz Fehler fortfahren, da der Kauf bereits bezahlt wurde
           }
 
-          // 2. Karte zur Sammlung hinzufügen (using user_card_instances)
+          // 2. Get card information including creator_address for revenue calculation
+          const { data: cardData } = await supabase
+            .from("cards")
+            .select("creator_address, rarity")
+            .eq("id", specialDeal.card_id)
+            .single();
+          
+          // Calculate and distribute creator revenue if card has creator
+          if (cardData?.creator_address) {
+            const { calculateCreatorDealRevenue } = await import("@/lib/creator-revenue");
+            const creatorRevenue = calculateCreatorDealRevenue(Number(specialDeal.price || 0), cardData.rarity as any);
+            
+            // Update creator's coins
+            const { data: creatorData } = await supabase
+              .from("users")
+              .select("coins")
+              .eq("wallet_address", cardData.creator_address.toLowerCase())
+              .single();
+            
+            if (creatorData) {
+              const newCreatorCoins = (creatorData.coins || 0) + creatorRevenue;
+              await supabase
+                .from("users")
+                .update({ coins: newCreatorCoins })
+                .eq("wallet_address", cardData.creator_address.toLowerCase());
+            }
+          }
+          
+          // 3. Karte zur Sammlung hinzufügen (using user_card_instances)
           const { error: insertCardError } = await supabase.from("user_card_instances").insert({
             wallet_address: user.wallet_address, // ✅ FIXED: Use wallet_address instead of user_id
             card_id: specialDeal.card_id,
@@ -1515,7 +1598,7 @@ const [copied, setCopied] = useState(false)
             return;
           }
 
-          // 2. Tickets hinzufügen
+          // 4. Tickets hinzufügen
           const { data: userData, error: userError } = await supabase
             .from("users")
             .select("tickets, elite_tickets, icon_tickets")
@@ -2233,6 +2316,19 @@ const [copied, setCopied] = useState(false)
                           </div> */}
                         </div>
                       </div>
+                      {/* Creator Info */}
+                      {specialDeal.creator_address && specialDealCreatorPercentage !== null && (
+                        <div className="bg-green-900/20 rounded-lg p-3 mb-5 border border-green-700/30">
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4 text-green-400" />
+                            <div>
+                              <p className="text-xs text-green-300 font-medium">
+                                {t("deals.creator_receives_percent", "Card Creator receives {percent}% of purchase", { percent: specialDealCreatorPercentage })}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       {/* Price and Action */}
                       <div className="flex items-center justify-between">
                         <div>

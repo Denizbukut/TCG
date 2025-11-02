@@ -57,6 +57,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase"
 // import DealOfTheDayDialog from "@/components/deal-of-the-day-dialog"
 // import { getDailyDeal } from "@/app/actions/deals"
 import { useI18n } from "@/contexts/i18n-context"
+import { getMarketRevenueSplit } from "@/lib/creator-revenue"
 
 // ABI für die transfer-Funktion des ERC20-Tokens
 const ERC20_ABI = ["function transfer(address to, uint256 amount) public returns (bool)"]
@@ -68,6 +69,7 @@ type Card = {
   image_url?: string
   rarity: "common" | "rare" | "epic" | "legendary" // | "wbc" // Commented out
   overall_rating?: number
+  creator_address?: string
 }
 
 type MarketListing = {
@@ -158,6 +160,29 @@ const getCardImageUrl = (imageUrl?: string) => {
   const finalUrl = `https://ani-labs.xyz/${encodeURIComponent(cleaned)}`;
   console.log("Processed image URL:", finalUrl);
   return finalUrl;
+}
+
+// Helper component for market fee breakdown
+function MarketFeeBreakdown({ price, rarity, t }: { price: number; rarity?: string; t: any }) {
+  const rarity_lower = rarity?.toLowerCase() || "common"
+  const split = getMarketRevenueSplit(rarity_lower as any)
+  const totalFees = price * 0.1
+  const devFees = price * split.devShare
+  const creatorFees = price * split.creatorShare
+  
+  return (
+    <>
+      <p className="text-amber-800 mt-1">
+        <span className="font-medium">{t("trade.purchase_dialog.seller_receives", "Seller Receives")}:</span> {(price * split.sellerShare).toFixed(4)} WLD
+      </p>
+      <p className="text-amber-800 mt-1">
+        <span className="font-medium">{t("trade.purchase_dialog.market_fee", "Market Fee")}:</span> {totalFees.toFixed(4)} WLD
+        <span className="text-xs text-amber-700 ml-2">
+          (Dev: {devFees.toFixed(4)} WLD, Creator: {creatorFees.toFixed(4)} WLD)
+        </span>
+      </p>
+    </>
+  )
 }
 
 export default function TradePage() {
@@ -577,17 +602,72 @@ export default function TradePage() {
       }, 20000) // 20 Sekunden
       
       // SCHRITT 2: Jetzt die WLD-Transaktion durchführen
-      const total  = BigInt(toWei(selectedListing?.price ?? 1))
-      const ten    = (total * BigInt("10")) / BigInt("100") // 10%
-      const ninety = total - ten   
-
-      const addrTen = "0xDb4D9195EAcE195440fbBf6f80cA954bf782468E"
-      const addrNinety = sellerAddress
-      console.log("addrNinety", addrNinety)
-      console.log("selectedListing", selectedListing)
-      console.log("addrTen", addrTen)
-      console.log("ten", ten)
-      console.log("ninety", ninety)
+      const price = selectedListing?.price ?? 1
+      
+      // Check if card has a creator that needs payment
+      const hasCreator = selectedListing?.card?.creator_address && selectedListing.card.creator_address.trim() !== ""
+      
+      let transactions: any[] = []
+      
+      if (hasCreator && selectedListing?.card?.rarity) {
+        // Calculate split payment for seller, dev, and creator
+        const { getMarketRevenueSplit } = await import("@/lib/creator-revenue")
+        const split = getMarketRevenueSplit(selectedListing.card.rarity as any)
+        
+        const sellerAmount = price * split.sellerShare
+        const devAmount = price * split.devShare
+        const creatorAmount = price * split.creatorShare
+        
+        console.log('Marketplace Split payment:', {
+          total: price,
+          sellerShare: `${(split.sellerShare * 100).toFixed(1)}%`,
+          devShare: `${(split.devShare * 100).toFixed(1)}%`,
+          creatorShare: `${(split.creatorShare * 100).toFixed(1)}%`,
+          creatorAddress: selectedListing.card.creator_address
+        })
+        
+        // Three transfers: seller, dev, creator
+        transactions = [
+          {
+            address: WLD_TOKEN,
+            abi: erc20TransferAbi,
+            functionName: "transfer",
+            args: [sellerAddress, tokenToDecimals(parseFloat(sellerAmount.toFixed(2)), Tokens.WLD).toString()],
+          },
+          {
+            address: WLD_TOKEN,
+            abi: erc20TransferAbi,
+            functionName: "transfer",
+            args: ["0xDb4D9195EAcE195440fbBf6f80cA954bf782468E", tokenToDecimals(parseFloat(devAmount.toFixed(2)), Tokens.WLD).toString()],
+          },
+          {
+            address: WLD_TOKEN,
+            abi: erc20TransferAbi,
+            functionName: "transfer",
+            args: [selectedListing.card.creator_address, tokenToDecimals(parseFloat(creatorAmount.toFixed(2)), Tokens.WLD).toString()],
+          },
+        ]
+      } else {
+        // Two transfers: seller and dev (90/10 split)
+        const ten = price * 0.1
+        const ninety = price * 0.9
+        
+        transactions = [
+          {
+            address: WLD_TOKEN,
+            abi: erc20TransferAbi,
+            functionName: "transfer",
+            args: ["0xDb4D9195EAcE195440fbBf6f80cA954bf782468E", tokenToDecimals(parseFloat(ten.toFixed(2)), Tokens.WLD).toString()],
+          },
+          {
+            address: WLD_TOKEN,
+            abi: erc20TransferAbi,
+            functionName: "transfer",
+            args: [sellerAddress, tokenToDecimals(parseFloat(ninety.toFixed(2)), Tokens.WLD).toString()],
+          },
+        ]
+      }
+      
       console.log("Attempting MiniKit transaction...")
       
       // Prüfe ob MiniKit verfügbar ist
@@ -596,36 +676,35 @@ export default function TradePage() {
       }
 
       const {commandPayload, finalPayload} = await MiniKit.commandsAsync.sendTransaction({
-        transaction: [
-          {
-            address: WLD_TOKEN,
-            abi: erc20TransferAbi,
-            functionName: "transfer",
-            args: [addrTen, ten.toString()],
-          },
-          {
-            address: WLD_TOKEN,
-            abi: erc20TransferAbi,
-            functionName: "transfer",
-            args: [addrNinety, ninety.toString()],
-          },
-        ],
+        transaction: transactions,
       })
       console.log("MiniKit transaction completed:", { commandPayload, finalPayload })
       
       if (finalPayload.status == "success") {
         console.log("success sending payment")
         
-        // Save market fees directly to database (client-side)
+        // Save market fees directly to database (client-side) - will be updated by backend with creator split
         try {
           const supabase = getSupabaseBrowserClient()
-          if (supabase && selectedListing?.id) {
-            const fees = selectedListing.price * 0.1
+          if (supabase && selectedListing?.id && selectedListing?.card) {
+            // Get card rarity to calculate fees
+            const rarity = selectedListing.card.rarity?.toLowerCase() || "common"
+            const { getMarketRevenueSplit } = await import("@/lib/creator-revenue")
+            const revenueSplit = getMarketRevenueSplit(rarity as any)
+            
+            const totalFees = selectedListing.price * 0.1 // 10% total (seller gets 90%)
+            const devFees = selectedListing.price * revenueSplit.devShare
+            const creatorFees = selectedListing.card.creator_address 
+              ? selectedListing.price * revenueSplit.creatorShare 
+              : totalFees // If no creator, dev gets all fees
+            
             const { error } = await supabase
               .from("market_fees")
               .insert({
                 market_listing_id: selectedListing.id,
-                fees: fees
+                fees: totalFees,
+                dev_fees: devFees,
+                creator_fees: creatorFees
               })
             
             if (error) {
@@ -789,45 +868,51 @@ export default function TradePage() {
       return
     }
 
-    // SOFORTIGE BLOCKIERUNG - keine Toast-Nachricht, direkt blockieren!
-    try {
-      console.log("🔒 SOFORTIGE BLOCKIERUNG - Attempting to block listing:", listingToBlock.id)
-      const result = await blockListingForPurchase(listingToBlock.id)
-      console.log("🔒 Block result:", result)
-      
-      if (result.success) {
-        // Karte erfolgreich blockiert - SOFORT UI aktualisieren!
-        console.log("🔒 Successfully blocked listing - updating UI immediately")
+    // Modal sofort öffnen ohne Statusänderung
+    setSelectedListing(listingToBlock)
+    setShowPurchaseDialog(true)
+    console.log("🔒 Modal opened immediately for better UX")
+    
+    // Blockierung im Hintergrund - kein await!
+    blockListingForPurchase(listingToBlock.id)
+      .then(result => {
+        console.log("🔒 Block result:", result)
         
-        // SOFORTIGE UI-AKTUALISIERUNG für alle User
-        await loadMarketListings()
-        console.log("🔒 UI updated - 'Being Purchased' now visible to ALL users")
+        if (result.success) {
+          console.log("🔒 Successfully blocked listing in database")
+          
+          toast({
+            title: "Card Reserved!",
+            description: "This card is now reserved for you!",
+          })
+        } else {
+          // Karte bereits blockiert oder nicht verfügbar
+          console.error("🔒 Failed to block listing:", result.error)
+          
+          // Modal schließen und Error zeigen
+          setShowPurchaseDialog(false)
+          setSelectedListing(null)
+          
+          toast({
+            title: "Card Not Available",
+            description: result.error,
+            variant: "destructive",
+          })
+        }
+      })
+      .catch(error => {
+        console.error("🔒 Error blocking listing:", error)
         
-        // Jetzt Purchase Dialog zeigen
-        setSelectedListing(listingToBlock)
-        setShowPurchaseDialog(true)
+        // Modal schließen und Error zeigen
+        setShowPurchaseDialog(false)
+        setSelectedListing(null)
         
         toast({
-          title: "Card Reserved!",
-          description: "This card is now reserved for you!",
-        })
-      } else {
-        // Karte bereits blockiert oder nicht verfügbar
-        console.error("🔒 Failed to block listing:", result.error)
-        toast({
-          title: "Card Not Available",
-          description: result.error,
+          title: "Error",
+          description: "Failed to reserve card. Please try again.",
           variant: "destructive",
         })
-      }
-    } catch (error) {
-      console.error("🔒 Error blocking listing:", error)
-      toast({
-        title: "Error",
-        description: "Failed to reserve card. Please try again.",
-        variant: "destructive",
       })
-    }
   }
 
   // Kaufe eine Karte - KARTE IST BEREITS BLOCKIERT
@@ -1700,12 +1785,23 @@ export default function TradePage() {
                       ? `${selectedListing.seller_username.substring(0, 9)}...`
                       : selectedListing.seller_username}
                   </p>
-                  <p className="text-amber-800 mt-1">
-                    <span className="font-medium">{t("trade.purchase_dialog.market_fee", "Market Fee")}:</span> {(selectedListing.price * 0.1).toFixed(2)} WLD (10%)
-                  </p>
-                  <p className="text-amber-800 mt-1">
-                    <span className="font-medium">{t("trade.purchase_dialog.seller_receives", "Seller Receives")}:</span> {(selectedListing.price * 0.9).toFixed(2)} WLD
-                  </p>
+                  
+                  {selectedListing.card.creator_address && selectedListing.card.creator_address.trim() !== "" ? (
+                    <MarketFeeBreakdown 
+                      price={selectedListing.price} 
+                      rarity={selectedListing.card.rarity}
+                      t={t}
+                    />
+                  ) : (
+                    <>
+                      <p className="text-amber-800 mt-1">
+                        <span className="font-medium">{t("trade.purchase_dialog.market_fee", "Market Fee")}:</span> {(selectedListing.price * 0.1).toFixed(2)} WLD (10%)
+                      </p>
+                      <p className="text-amber-800 mt-1">
+                        <span className="font-medium">{t("trade.purchase_dialog.seller_receives", "Seller Receives")}:</span> {(selectedListing.price * 0.9).toFixed(2)} WLD
+                      </p>
+                    </>
+                  )}
 
                   {(user?.coins || 0) < selectedListing.price && (
                     <p className="text-red-500 mt-1 font-medium">{t("trade.purchase_dialog.not_enough_wld", "You don't have enough WLD for this purchase!")}</p>
