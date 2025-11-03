@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Coins, Calendar, Wallet, CheckCircle, XCircle, Copy, Sparkles, Zap, Upload, Image as ImageIcon, X, ChevronDown, ChevronUp } from "lucide-react"
+import { Loader2, Coins, Calendar, Wallet, CheckCircle, XCircle, Copy, Sparkles, Zap, Upload, Image as ImageIcon, X, ChevronDown, ChevronUp, ExternalLink } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -553,25 +553,28 @@ export default function TokensPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 pb-20">
-        {/* Modern Header */}
-        <div className="bg-indigo-600 text-white">
-          <div className="container mx-auto px-4 py-4 max-w-4xl">
+        {/* Professional Header */}
+        <div className="bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-900 border-b border-indigo-800/30">
+          <div className="container mx-auto px-4 py-6 max-w-4xl">
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: 0.4 }}
               className="text-center"
             >
-              <h1 className="text-2xl font-bold">{t("tokens.title", "My Tokens")}</h1>
-              <p className="text-indigo-100 text-xs mt-1 flex items-center justify-center gap-2">
+              <h1 className="text-2xl font-bold text-white tracking-tight mb-2">
+                {t("tokens.title", "My Tokens")}
+              </h1>
+              <p className="text-slate-300 text-sm flex items-center justify-center gap-2">
                 {t("tokens.subtitle", "Tokens you created on")}
                 <a 
                   href="https://world.org/mini-app?app_id=app_15daccf5b7d4ec9b7dbba044a8fdeab5" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="inline-flex items-center px-3 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-white font-semibold text-xs transition-colors border border-white/30"
+                  className="inline-flex items-center px-3 py-1 bg-indigo-600/80 hover:bg-indigo-600 text-white font-medium text-xs rounded-md transition-colors border border-indigo-500/50"
                 >
                   PUF
+                  <ExternalLink className="h-3 w-3 ml-1" />
                 </a>
               </p>
             </motion.div>
@@ -580,11 +583,11 @@ export default function TokensPage() {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="mt-3 flex items-center justify-center gap-2 text-xs bg-white/10 backdrop-blur-sm rounded-lg px-3 py-1.5 mx-auto w-fit"
+                transition={{ delay: 0.15 }}
+                className="mt-4 flex items-center justify-center gap-2 text-xs bg-slate-800/50 border border-slate-700/50 rounded-lg px-4 py-2 mx-auto w-fit"
               >
-                <Wallet className="h-3 w-3" />
-                <span className="font-mono text-xs">{walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</span>
+                <Wallet className="h-3.5 w-3.5 text-indigo-400" />
+                <span className="font-mono text-slate-200">{walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</span>
               </motion.div>
             )}
           </div>
@@ -811,7 +814,7 @@ export default function TokensPage() {
                                   </div>
                                 )}
                                 <div className="flex-1 min-w-0">
-                                  <h3 className="text-xl font-bold text-gray-900 truncate mb-1">{token.name}</h3>
+                                  <h3 className="text-base font-bold text-gray-900 truncate mb-1">{token.name}</h3>
                                   <p className="text-sm font-mono text-indigo-600 truncate mb-0.5">${token.symbol}</p>
                                   <p className="text-xs font-mono text-gray-500">
                                     {token.tokenAddress.slice(0, 6)}...{token.tokenAddress.slice(-4)}
@@ -832,7 +835,7 @@ export default function TokensPage() {
                                     {token.earnedAmount !== undefined && token.earnedAmount > 0 && (
                                       <div className="text-right">
                                         <p className="text-xs text-gray-500 mb-0.5">{t("tokens.earned", "Earned")}</p>
-                                        <p className="text-lg font-bold text-green-600">
+                                        <p className="text-sm font-bold text-green-600">
                                           {token.earnedAmount.toFixed(5)} WLD
                                         </p>
                                       </div>
