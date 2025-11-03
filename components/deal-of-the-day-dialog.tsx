@@ -169,21 +169,21 @@ export default function DealOfTheDayDialog({
       }
 
       // Check if record exists
-      const { data: interactions } = await supabase
+      const { data: interactions } = await (supabase
         .from("deal_interactions")
         .select("*")
         .eq("wallet_address", username)
         .eq("deal_id", deal.id)
         .order("purchased", { ascending: false })
         .order("interaction_date", { ascending: false })
-        .limit(1)
+        .limit(1) as any)
 
-      const existingData = interactions?.[0]
+      const existingData = interactions?.[0] as any
 
       if (existingData) {
         // Update existing record
-        await supabase
-          .from("deal_interactions")
+        await (supabase
+          .from("deal_interactions") as any)
           .update({
             seen: false,
             dismissed: true,
@@ -193,8 +193,8 @@ export default function DealOfTheDayDialog({
           .eq("deal_id", deal.id)
       } else {
         // Create new record
-        await supabase
-          .from("deal_interactions")
+        await (supabase
+          .from("deal_interactions") as any)
           .insert({
             wallet_address: username,
             deal_id: deal.id,
@@ -351,16 +351,16 @@ export default function DealOfTheDayDialog({
           if (!supabase) return
 
           // Check if record already exists and is already seen
-          const { data: interactions } = await supabase
+          const { data: interactions } = await (supabase
             .from("deal_interactions")
             .select("*")
             .eq("wallet_address", username)
             .eq("deal_id", deal.id)
             .order("purchased", { ascending: false })
             .order("interaction_date", { ascending: false })
-            .limit(1)
+            .limit(1) as any)
 
-          const existingData = interactions?.[0]
+          const existingData = interactions?.[0] as any
 
           // If record exists and is already seen, don't do anything
           if (existingData && existingData.seen) {
@@ -370,8 +370,8 @@ export default function DealOfTheDayDialog({
 
           if (existingData) {
             // Update existing record
-            await supabase
-              .from("deal_interactions")
+            await (supabase
+              .from("deal_interactions") as any)
               .update({
                 seen: true,
                 dismissed: false,
@@ -381,8 +381,8 @@ export default function DealOfTheDayDialog({
               .eq("deal_id", deal.id)
           } else {
             // Create new record
-            await supabase
-              .from("deal_interactions")
+            await (supabase
+              .from("deal_interactions") as any)
               .insert({
                 wallet_address: username,
                 deal_id: deal.id,

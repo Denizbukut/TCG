@@ -244,12 +244,6 @@ export default function Home() {
     return { days, hours, minutes }
   }
 
-  useEffect(() => {
-    if (user?.username) {
-      loadUserXpColor()
-    }
-  }, [user?.username])
-
   const [keyboardVisible, setKeyboardVisible] = useState(false)
 
   useEffect(() => {
@@ -266,22 +260,7 @@ export default function Home() {
   }, [])
 
 
-  const loadUserXpColor = async () => {
-    if (!user?.username) return
-
-    const supabase = getSupabaseBrowserClient()
-    if (!supabase) return
-
-    const { data, error } = await supabase
-      .from("users")
-      .select("xp_color")
-      .eq("wallet_address", user.wallet_address)
-      .single()
-
-    if (!error && data?.xp_color) {
-      setCurrentXpColor(String(data.xp_color))
-    }
-  }
+  
 
   const [clanBonusActive, setClanBonusActive] = useState(false)
 
@@ -414,11 +393,11 @@ const [copied, setCopied] = useState(false)
           throw new Error("Database connection failed")
         }
         // Get current ticket counts
-        const { data: userData, error: fetchError } = await supabase
+        const { data: userData, error: fetchError } = await (supabase
           .from("users")
         .select("tickets, legendary_tickets")
           .eq("wallet_address", user.wallet_address)
-          .single()
+          .single() as any)
         if (fetchError) {
           throw new Error('Failed to fetch user data')
         }
@@ -434,8 +413,8 @@ const [copied, setCopied] = useState(false)
           newLegendaryTicketCount += ticketAmount
         }
         // Update tickets in database
-        const { error: updateError } = await supabase
-          .from("users")
+        const { error: updateError } = await (supabase
+          .from("users") as any)
           .update({
             tickets: newTicketCount,
             legendary_tickets: newLegendaryTicketCount,
@@ -474,59 +453,7 @@ const [copied, setCopied] = useState(false)
       type: "function",
     },
   ]
-  // Fetch user's clan info
-  useEffect(() => {
-    if (user?.username && !hasCheckedClan.current) {
-      // User data loaded
-      hasCheckedClan.current = true
-
-      const fetchClanInfo = async () => {
-        const supabase = getSupabaseBrowserClient()
-        if (!supabase) return
-
-        try {
-          // First check if user has a clan_id
-          const { data: userData, error: userError } = await supabase
-            .from("users")
-            .select("clan_id")
-            .eq("wallet_address", user.wallet_address)
-            .single()
-
-          if (userError || !userData || !userData.clan_id) {
-            // User is not in a clan
-            setUserClanInfo(null)
-            return
-          }
-
-          // Get clan details using the clan_id
-          const { data: clanData, error: clanError } = await supabase
-            .from("clans")
-            .select("id, name, level, member_count")
-            .eq("id", userData.clan_id)
-            .single()
-
-          if (clanError || !clanData) {
-            console.error("Error fetching clan data:", clanError)
-            setUserClanInfo(null)
-            return
-          }
-
-          setUserClanInfo({
-            id: String(clanData.id),
-            name: String(clanData.name),
-            level: typeof clanData.level === "number" ? clanData.level : 1,
-            member_count: typeof clanData.member_count === "number" ? clanData.member_count : 1,
-          })
-        } catch (error) {
-          console.error("Error in fetchClanInfo:", error)
-          setUserClanInfo(null)
-        }
-      }
-
-      fetchClanInfo()
-    }
-  }, [user?.username, user])
-
+ 
   useEffect(() => {
     if (!user?.username || !user?.wallet_address) return
     if (referralsCheckedRef.current === user.wallet_address) return
@@ -1550,10 +1477,10 @@ const [copied, setCopied] = useState(false)
             // Trotz Fehler fortfahren, da der Kauf bereits bezahlt wurde
           }
 
-          // 2. Get card information including creator_address for revenue calculation
+          // 2. Get card information including creator_address and contract_address for revenue calculation
           const { data: cardData } = await supabase
             .from("cards")
-            .select("creator_address, rarity")
+            .select("creator_address, rarity, contract_address")
             .eq("id", specialDeal.card_id)
             .single();
           
@@ -1575,6 +1502,52 @@ const [copied, setCopied] = useState(false)
                 .from("users")
                 .update({ coins: newCreatorCoins })
                 .eq("wallet_address", cardData.creator_address.toLowerCase());
+
+              // Update card_creations.earned_amount if contract_address exists
+              if (cardData.contract_address) {
+                console.log(`🔍 [Special Deal] Attempting to update earned_amount for card with contract_address: ${cardData.contract_address.toLowerCase()}`)
+                try {
+                  const { data: existingCreation, error: fetchError } = await (supabase
+                    .from("card_creations")
+                    .select("earned_amount")
+                    .eq("token_address", cardData.contract_address.toLowerCase())
+                    .single() as any);
+                  
+                  console.log(`📊 [Special Deal] Fetch result:`, { existingCreation, fetchError })
+                  
+                  if (fetchError && (fetchError as any).code !== "PGRST116") {
+                    console.error("Error fetching card_creation:", fetchError);
+                  } else if (existingCreation) {
+                    const currentEarned = typeof existingCreation.earned_amount === 'number' 
+                      ? existingCreation.earned_amount 
+                      : parseFloat(existingCreation.earned_amount || '0') || 0;
+                    const newEarnedAmount = Number((currentEarned + creatorRevenue).toFixed(5));
+                    
+                    console.log(`💰 [Special Deal] Earned amount calculation:`, {
+                      currentEarned,
+                      creatorRevenue,
+                      newEarnedAmount
+                    })
+                    
+                    const { error: earnedUpdateError } = await (supabase
+                      .from("card_creations") as any)
+                      .update({ earned_amount: newEarnedAmount })
+                      .eq("token_address", cardData.contract_address.toLowerCase());
+                    
+                    if (earnedUpdateError) {
+                      console.error("Error updating earned_amount:", earnedUpdateError);
+                    } else {
+                      console.log(`✅ [Special Deal] Successfully updated earned_amount to ${newEarnedAmount} for card ${cardData.contract_address}`);
+                    }
+                  } else {
+                    console.log(`⚠️ [Special Deal] No card_creation found for token_address ${cardData.contract_address}`);
+                  }
+                } catch (earnedError) {
+                  console.error("Error updating earned_amount (non-fatal):", earnedError);
+                }
+              } else {
+                console.log(`⚠️ [Special Deal] Card has no contract_address, skipping earned_amount update`)
+              }
             }
           }
           

@@ -987,10 +987,10 @@ export async function purchaseCard(walletAddress: string, listingId: string) {
       return { success: false, error: "You cannot buy your own card" }
     }
 
-    // Card-Details mit korrekter card_id holen (inkl. creator_address)
+    // Card-Details mit korrekter card_id holen (inkl. creator_address und contract_address)
     const { data: cardDetails, error: cardError } = await supabase
       .from("cards")
-      .select("rarity, creator_address")
+      .select("rarity, creator_address, contract_address")
       .eq("id", listing.card_id)
       .single()
 
@@ -1140,6 +1140,52 @@ export async function purchaseCard(walletAddress: string, listingId: string) {
             console.error("Error updating creator coins:", updateError)
           } else {
             console.log(`Successfully paid creator ${creatorRevenue} coins. New total: ${(currentCreator.coins || 0) + creatorRevenue}`)
+          }
+
+          // Update card_creations.earned_amount if contract_address exists
+          if (cardDetails.contract_address) {
+            console.log(`🔍 [Marketplace] Attempting to update earned_amount for card with contract_address: ${cardDetails.contract_address.toLowerCase()}`)
+            try {
+              const { data: existingCreation, error: fetchError } = await (supabase
+                .from("card_creations")
+                .select("earned_amount")
+                .eq("token_address", cardDetails.contract_address.toLowerCase())
+                .single() as any)
+              
+              console.log(`📊 [Marketplace] Fetch result:`, { existingCreation, fetchError })
+              
+              if (fetchError && (fetchError as any).code !== "PGRST116") {
+                console.error("Error fetching card_creation:", fetchError)
+              } else if (existingCreation) {
+                const currentEarned = typeof existingCreation.earned_amount === 'number' 
+                  ? existingCreation.earned_amount 
+                  : parseFloat(existingCreation.earned_amount || '0') || 0
+                const newEarnedAmount = Number((currentEarned + creatorRevenue).toFixed(5))
+                
+                console.log(`💰 [Marketplace] Earned amount calculation:`, {
+                  currentEarned,
+                  creatorRevenue,
+                  newEarnedAmount
+                })
+                
+                const { error: earnedUpdateError } = await (supabase
+                  .from("card_creations") as any)
+                  .update({ earned_amount: newEarnedAmount })
+                  .eq("token_address", cardDetails.contract_address.toLowerCase())
+                
+                if (earnedUpdateError) {
+                  console.error("Error updating earned_amount:", earnedUpdateError)
+                } else {
+                  console.log(`✅ [Marketplace] Successfully updated earned_amount to ${newEarnedAmount} for card ${cardDetails.contract_address}`)
+                }
+              } else {
+                console.log(`⚠️ [Marketplace] No card_creation found for token_address ${cardDetails.contract_address}`)
+              }
+            } catch (earnedError) {
+              console.error("Error updating earned_amount (non-fatal):", earnedError)
+            }
+          } else {
+            console.log(`⚠️ [Marketplace] Card has no contract_address, skipping earned_amount update`)
           }
         } else {
           console.log("Creator address not found in users table, skipping payment")

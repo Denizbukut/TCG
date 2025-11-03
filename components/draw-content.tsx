@@ -280,13 +280,13 @@ const [showInfo, setShowInfo] = useState(false)
       }
 
       // Query god_pack_discounts table directly
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from("god_pack_discounts")
         .select("*")
         .eq("is_active", true)
         .order("created_at", { ascending: false })
         .limit(1)
-        .single()
+        .single() as any)
 
       if (error || !data || typeof data !== 'object' || !('end_time' in data)) {
         console.log("No active god pack discount found")
@@ -472,11 +472,11 @@ const [showInfo, setShowInfo] = useState(false)
       if (!supabase) return
 
       try {
-        const { data: epochs, error } = await supabase.from("cards").select("epoch").not("epoch", "is", null)
+        const { data: epochs, error } = await (supabase.from("cards").select("epoch").not("epoch", "is", null) as any)
 
         if (!error && epochs) {
-          const uniqueEpochs = [...new Set(epochs.map((e) => e.epoch as number))].sort((a, b) => b - a)
-          setAvailableEpochs(uniqueEpochs as number[])
+          const uniqueEpochs = (([...new Set(epochs.map((e: any) => e.epoch as number))] as number[]).sort((a, b) => b - a))
+          setAvailableEpochs(uniqueEpochs)
         }
       } catch (error) {
         console.error("Error fetching epochs:", error)
@@ -486,43 +486,7 @@ const [showInfo, setShowInfo] = useState(false)
     fetchAvailableEpochs()
   }, [])
 
-  // Check user's clan role for XP bonuses
-  useEffect(() => {
-    const fetchUserClanRole = async () => {
-      if (!user?.wallet_address) return
-
-      const supabase = getSupabaseBrowserClient()
-      if (!supabase) return
-
-      try {
-        const { data: userData, error: userError } = await supabase
-          .from("users")
-          .select("clan_id")
-          .eq("wallet_address", user.wallet_address)
-          .single()
-
-        if (userError || !userData?.clan_id) {
-          setUserClanRole(null)
-          return
-        }
-
-        const { data: memberData, error: memberError } = await supabase
-          .from("clan_members")
-          .select("role")
-          .eq("clan_id", userData.clan_id)
-          .eq("wallet_address", user.wallet_address)
-          .single()
-
-        if (!memberError && memberData) {
-          setUserClanRole(memberData.role as string)
-        }
-      } catch (error) {
-        console.error("Error fetching clan role:", error)
-      }
-    }
-
-    fetchUserClanRole()
-  }, [user?.username])
+ 
 
   useEffect(() => {
     const normalDollarAmount = 0.8
@@ -552,12 +516,12 @@ const [showInfo, setShowInfo] = useState(false)
       const supabase = getSupabaseBrowserClient()
       if (!supabase) return
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from("xp_passes")
         .select("active")
         .eq("wallet_address", user.wallet_address)
         .eq("active", true)
-        .single()
+        .single() as any)
 
       if (data?.active) {
         setHasXpPass(true)
@@ -578,12 +542,12 @@ const [showInfo, setShowInfo] = useState(false)
         const supabase = getSupabaseBrowserClient()
         if (!supabase) return
 
-        const { data, error } = await supabase
+        const { data, error } = await (supabase
           .from('premium_passes')
           .select('active, expires_at')
           .eq('wallet_address', user.wallet_address)
           .eq('active', true)
-          .single()
+          .single() as any)
 
         if (!error && data) {
           // Check if premium pass has expired
@@ -650,8 +614,8 @@ const [showInfo, setShowInfo] = useState(false)
   }
 
   const handleCardLeave = () => {
-    x.set(0, true)
-    y.set(0, true)
+    x.set(0)
+    y.set(0)
   }
 
   const handleSelectPack = useCallback(
@@ -749,16 +713,16 @@ const [showInfo, setShowInfo] = useState(false)
 
                 if (now <= contestEnd) {
                   // Check if entry exists
-                  const { data: existingEntry, error: fetchError } = await supabase
+                  const { data: existingEntry, error: fetchError } = await (supabase
                     .from("weekly_contest_entries")
                     .select("legendary_count")
                     .eq("wallet_address", user.wallet_address)
                     .eq("week_start_date", weekStart)
-                    .maybeSingle()
+                    .maybeSingle() as any)
 
                   if (!existingEntry || (fetchError && (fetchError as any).code === "PGRST116")) {
                     // No entry exists - create new one
-                    await supabase.from("weekly_contest_entries").insert({
+                    await (supabase.from("weekly_contest_entries") as any).insert({
                       wallet_address: user.wallet_address,
                       week_start_date: weekStart,
                       legendary_count: totalPoints,
@@ -767,8 +731,8 @@ const [showInfo, setShowInfo] = useState(false)
                     // Entry exists - add points to existing count
                     const currentCount = Number(existingEntry.legendary_count) || 0
                     const newCount = currentCount + totalPoints
-                    await supabase
-                      .from("weekly_contest_entries")
+                    await (supabase
+                      .from("weekly_contest_entries") as any)
                       .update({ legendary_count: newCount })
                       .eq("wallet_address", user.wallet_address)
                       .eq("week_start_date", weekStart)
@@ -1963,8 +1927,8 @@ const [showInfo, setShowInfo] = useState(false)
                       y.set(yPos)
                     }}
                     onMouseLeave={() => {
-                      x.set(0, true)
-                      y.set(0, true)
+                      x.set(0)
+                      y.set(0)
                     }}
                     onTouchMove={(event) => {
                       const rect = event.currentTarget.getBoundingClientRect()
@@ -1975,8 +1939,8 @@ const [showInfo, setShowInfo] = useState(false)
                       y.set(yPos)
                     }}
                     onTouchEnd={() => {
-                      x.set(0, true)
-                      y.set(0, true)
+                      x.set(0)
+                      y.set(0)
                     }}
                     onClick={(e) => e.stopPropagation()}
                     style={{

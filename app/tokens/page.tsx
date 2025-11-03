@@ -94,6 +94,7 @@ interface TokenInfo {
   totalLiquidity: bigint
   isListed?: boolean
   cardData?: CardData
+  earnedAmount?: number
   // Contract 1 specific
   xVirtualReserve?: bigint
   yVirtualReserve?: bigint
@@ -235,6 +236,7 @@ export default function TokensPage() {
         ...token,
         isListed: tokensWithListedStatus[token.tokenAddress]?.isListed || false,
         cardData: tokensWithListedStatus[token.tokenAddress]?.cardData,
+        earnedAmount: tokensWithListedStatus[token.tokenAddress]?.earnedAmount,
       }))
 
       setTokens(tokensWithStatus)
@@ -271,21 +273,30 @@ export default function TokensPage() {
     }
   }
 
-  const checkTokensListed = async (tokenAddresses: string[]): Promise<Record<string, { isListed: boolean; cardData?: CardData }>> => {
+  const checkTokensListed = async (tokenAddresses: string[]): Promise<Record<string, { isListed: boolean; cardData?: CardData; earnedAmount?: number }>> => {
     const supabase = getSupabaseBrowserClient()
     if (!supabase) return {}
     
     try {
-      const result: Record<string, { isListed: boolean; cardData?: CardData }> = {}
+      const result: Record<string, { isListed: boolean; cardData?: CardData; earnedAmount?: number }> = {}
       
       // Get all cards with contract_address, image_url, and rarity
-      const { data: cards, error } = await supabase
+      const { data: cards, error } = await (supabase
         .from("cards")
-        .select("contract_address, image_url, rarity")
+        .select("contract_address, image_url, rarity") as any)
       
       if (error) {
         console.error("Error fetching cards:", error)
         return {}
+      }
+      
+      // Get earned amounts from card_creations
+      const { data: cardCreations, error: creationsError } = await (supabase
+        .from("card_creations")
+        .select("token_address, earned_amount") as any)
+      
+      if (creationsError) {
+        console.error("Error fetching card_creations:", creationsError)
       }
       
       // Create a map of contract addresses to card data (lowercase for comparison)
@@ -299,13 +310,23 @@ export default function TokensPage() {
         }
       })
       
+      // Create a map of token addresses to earned amounts (lowercase for comparison)
+      const earnedAmountMap = new Map<string, number>()
+      ;(cardCreations || []).forEach((creation: any) => {
+        if (creation.token_address && creation.earned_amount !== undefined) {
+          earnedAmountMap.set(creation.token_address.toLowerCase(), creation.earned_amount || 0)
+        }
+      })
+      
       // Check each token address
       for (const address of tokenAddresses) {
         const lowerAddress = address.toLowerCase()
         const cardData = cardDataMap.get(lowerAddress)
+        const earnedAmount = earnedAmountMap.get(lowerAddress)
         result[address] = {
           isListed: !!cardData,
           cardData: cardData,
+          earnedAmount: earnedAmount,
         }
       }
       
@@ -474,7 +495,7 @@ export default function TokensPage() {
       const supabase = getSupabaseBrowserClient()
       if (!supabase) throw new Error('Supabase client not available')
       
-      const { error: cardError } = await supabase.from('cards').insert({
+      const { error: cardError } = await (supabase.from('cards') as any).insert({
         contract_address: selectedToken.tokenAddress.toLowerCase(),
         name: selectedToken.name,
         character: selectedToken.name,
@@ -490,7 +511,7 @@ export default function TokensPage() {
       }
 
       // Save card creation record to database
-      const { error: creationError } = await supabase.from('card_creations').insert({
+      const { error: creationError } = await (supabase.from('card_creations') as any).insert({
         wallet_address: walletAddress.toLowerCase(),
         token_address: selectedToken.tokenAddress.toLowerCase(),
         rarity: selectedRarity,
@@ -800,13 +821,23 @@ export default function TokensPage() {
                               
                               <div className="flex flex-col items-end gap-2 flex-shrink-0">
                                 {token.isListed ? (
-                                  <Badge 
-                                    variant="default"
-                                    className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 text-xs px-3 py-1 shadow-md"
-                                  >
-                                    <CheckCircle className="h-3 w-3 mr-1" />
-                                    {t("tokens.listed", "Listed")}
-                                  </Badge>
+                                  <>
+                                    <Badge 
+                                      variant="default"
+                                      className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 text-xs px-3 py-1 shadow-md"
+                                    >
+                                      <CheckCircle className="h-3 w-3 mr-1" />
+                                      {t("tokens.listed", "Listed")}
+                                    </Badge>
+                                    {token.earnedAmount !== undefined && token.earnedAmount > 0 && (
+                                      <div className="text-right">
+                                        <p className="text-xs text-gray-500 mb-0.5">{t("tokens.earned", "Earned")}</p>
+                                        <p className="text-lg font-bold text-green-600">
+                                          {token.earnedAmount.toFixed(5)} WLD
+                                        </p>
+                                      </div>
+                                    )}
+                                  </>
                                 ) : (
                                   <Button
                                     size="sm"

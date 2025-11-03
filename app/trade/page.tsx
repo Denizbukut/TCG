@@ -584,8 +584,8 @@ export default function TradePage() {
         try {
           const supabase = getSupabaseBrowserClient()
           if (supabase) {
-            await supabase
-              .from("market_listings")
+            await (supabase
+              .from("market_listings") as any)
               .update({ 
                 status: "active", 
                 blocked_at: null 

@@ -568,6 +568,7 @@
     "market_common": "Common: 1%",
     "market_rare": "Rare: 2%",
     "market_epic": "Epic: 3%",
-    "market_legendary": "Legendary: 5%"
+    "market_legendary": "Legendary: 5%",
+    "earned": "Earned"
   }
 }
