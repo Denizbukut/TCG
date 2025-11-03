@@ -460,7 +460,9 @@ export default function TokensPage() {
       console.log("MiniKit transaction completed:", { commandPayload, finalPayload })
 
       if (finalPayload.status !== "success") {
-        throw new Error("Payment failed")
+        const status = finalPayload.status || "unknown"
+        const errorMessage = (finalPayload as any).errorMessage || (finalPayload as any).error?.message || "Payment failed"
+        throw new Error(`${errorMessage} (Transaction Status: ${status})`)
       }
 
       // Convert base64 to blob if needed
@@ -485,7 +487,9 @@ export default function TokensPage() {
       if (!uploadResponse.ok) {
         const errorData = await uploadResponse.json().catch(() => ({ error: 'Unknown error' }))
         console.error('Upload error response:', errorData)
-        throw new Error(errorData.error || 'Failed to upload image')
+        const errorMsg = errorData.error || 'Failed to upload image'
+        const errorCode = uploadResponse.status
+        throw new Error(`${errorMsg} (Error Code: ${errorCode})`)
       }
 
       const uploadData = await uploadResponse.json()
@@ -507,7 +511,9 @@ export default function TokensPage() {
       })
       
       if (cardError) {
-        throw cardError
+        const errorMsg = cardError.message || 'Failed to save card to database'
+        const errorCode = (cardError as any).code || (cardError as any).hint || 'UNKNOWN'
+        throw new Error(`${errorMsg} (Error Code: ${errorCode})`)
       }
 
       // Save card creation record to database
@@ -540,9 +546,23 @@ export default function TokensPage() {
       await loadTokens(walletAddress)
     } catch (error: any) {
       console.error('Error creating card:', error)
+      let errorMessage = error.message || "Failed to create card"
+      
+      // Extract error code if available
+      if (error.code) {
+        errorMessage += ` (Code: ${error.code})`
+      } else if (error.status || error.statusCode) {
+        errorMessage += ` (Status: ${error.status || error.statusCode})`
+      }
+      
+      // If it's a MiniKit transaction error, include the status
+      if (error.finalPayload?.status) {
+        errorMessage += ` (Transaction Status: ${error.finalPayload.status})`
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "Failed to create card",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
