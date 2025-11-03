@@ -76,13 +76,7 @@ export async function POST(req: NextRequest) {
     const miss = missingEnv();
     if (miss.length) {
       const msg = `[upload-card-image] Missing ENV: ${miss.join(', ')}`;
-      console.error(msg);
-      console.error('Available ENV vars:', {
-        hasNEXT_PUBLIC_R2_ACCESS_KEY: !!process.env.NEXT_PUBLIC_R2_ACCESS_KEY,
-        hasNEXT_PUBLIC_R2_SECRET_KEY: !!process.env.NEXT_PUBLIC_R2_SECRET_KEY,
-        hasR2_ENDPOINT: !!process.env.R2_ENDPOINT,
-        R2_BUCKET_NAME: process.env.R2_BUCKET_NAME || process.env.R2_BUCKET || 'anime-images',
-      });
+      
       return NextResponse.json({ error: msg }, { status: 500 });
     }
 
