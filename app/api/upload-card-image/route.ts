@@ -38,8 +38,8 @@ const s3Client = new S3Client({
   region: 'auto',
   endpoint: R2_ENDPOINT,
   credentials: {
-    accessKeyId: process.env.NEXT_PUBLIC_R2_ACCESS_KEY as string,
-    secretAccessKey: process.env.NEXT_PUBLIC_R2_SECRET_KEY as string,
+    accessKeyId: "1833343c0104a77f1e024176201c3157",
+    secretAccessKey: "9826a75fcf3785c7fae4f4ec642cb50401b0a80f70897b7792272137f10689d4",
   },
 });
 
@@ -52,6 +52,25 @@ const makeName = (tokenAddress: string, ext: string) =>
 
 export async function POST(req: NextRequest) {
   try {
+    // Debug: Log incoming headers (only in development or when UPLOAD_DIAG is set)
+    if (process.env.UPLOAD_DIAG === '1' || process.env.NODE_ENV === 'development') {
+      const headers: Record<string, string> = {};
+      req.headers.forEach((value, key) => {
+        headers[key] = value;
+      });
+      console.log('[upload-card-image] Incoming request headers:', Object.keys(headers));
+      // Only log authorization header name, not value for security
+      if (req.headers.get('authorization')) {
+        const authHeader = req.headers.get('authorization') || '';
+        console.log('[upload-card-image] Authorization header present, length:', authHeader.length);
+        // Check for invalid characters
+        const invalidChars = /[^\x20-\x7E]/;
+        if (invalidChars.test(authHeader)) {
+          console.error('[upload-card-image] WARNING: Invalid characters detected in authorization header');
+        }
+      }
+    }
+    
     // ENV check
     const miss = missingEnv();
     if (miss.length) {
