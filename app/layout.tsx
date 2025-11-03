@@ -31,7 +31,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
             <I18nProvider>
               <AppProvider>
-                <WldPriceProvider><ErudaLoader />
+                <WldPriceProvider>
                   {children}
                 </WldPriceProvider>
               </AppProvider>
