@@ -36,7 +36,6 @@ function missingEnv() {
 
 const s3Client = new S3Client({
   region: 'auto',
-  endpoint: R2_ENDPOINT,
   credentials: {
     accessKeyId: "1833343c0104a77f1e024176201c3157",
     secretAccessKey: "9826a75fcf3785c7fae4f4ec642cb50401b0a80f70897b7792272137f10689d4",
