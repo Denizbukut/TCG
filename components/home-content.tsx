@@ -1464,8 +1464,8 @@ const [copied, setCopied] = useState(false)
           }
 
           // 1. Special Deal Kauf in Tabelle eintragen
-          const { error: purchaseRecordError } = await supabase
-            .from("special_deal_purchases")
+          const { error: purchaseRecordError } = await (supabase
+            .from("special_deal_purchases") as any)
             .insert({
               wallet_address: user.wallet_address,
               special_deal_id: specialDeal.id,
@@ -1478,11 +1478,13 @@ const [copied, setCopied] = useState(false)
           }
 
           // 2. Get card information including creator_address and contract_address for revenue calculation
-          const { data: cardData } = await supabase
+          const { data: cardData } = await (supabase
             .from("cards")
             .select("creator_address, rarity, contract_address")
             .eq("id", specialDeal.card_id)
-            .single();
+            .single() as any);
+          
+          console.log(`📋 [Special Deal] Card data for special deal:`, cardData);
           
           // Calculate and distribute creator revenue if card has creator
           if (cardData?.creator_address) {
@@ -1490,16 +1492,16 @@ const [copied, setCopied] = useState(false)
             const creatorRevenue = calculateCreatorDealRevenue(Number(specialDeal.price || 0), cardData.rarity as any);
             
             // Update creator's coins
-            const { data: creatorData } = await supabase
+            const { data: creatorData } = await (supabase
               .from("users")
               .select("coins")
               .eq("wallet_address", cardData.creator_address.toLowerCase())
-              .single();
+              .single() as any);
             
             if (creatorData) {
               const newCreatorCoins = (creatorData.coins || 0) + creatorRevenue;
-              await supabase
-                .from("users")
+              await (supabase
+                .from("users") as any)
                 .update({ coins: newCreatorCoins })
                 .eq("wallet_address", cardData.creator_address.toLowerCase());
 
@@ -1552,7 +1554,7 @@ const [copied, setCopied] = useState(false)
           }
           
           // 3. Karte zur Sammlung hinzufügen (using user_card_instances)
-          const { error: insertCardError } = await supabase.from("user_card_instances").insert({
+          const { error: insertCardError } = await (supabase.from("user_card_instances") as any).insert({
             wallet_address: user.wallet_address, // ✅ FIXED: Use wallet_address instead of user_id
             card_id: specialDeal.card_id,
             level: specialDeal.card_level || 1,
@@ -1572,11 +1574,11 @@ const [copied, setCopied] = useState(false)
           }
 
           // 4. Tickets hinzufügen
-          const { data: userData, error: userError } = await supabase
+          const { data: userData, error: userError } = await (supabase
             .from("users")
             .select("tickets, elite_tickets, icon_tickets")
             .eq("wallet_address", user.wallet_address)
-            .single();
+            .single() as any);
 
           if (!userError && userData) {
             const currentTickets = Number(userData.tickets) || 0;
@@ -1587,8 +1589,8 @@ const [copied, setCopied] = useState(false)
             const newEliteTickets = currentEliteTickets + specialDeal.elite_tickets;
             // const newIconTickets = currentIconTickets + (specialDeal.icon_tickets || 0);
 
-            const { error: updateError } = await supabase
-              .from("users")
+            const { error: updateError } = await (supabase
+              .from("users") as any)
               .update({
                 tickets: newTickets,
                 elite_tickets: newEliteTickets,
