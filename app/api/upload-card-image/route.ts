@@ -28,14 +28,16 @@ const R2_PUBLIC_BASE_URL = process.env.R2_PUBLIC_BASE_URL || 'https://ani-labs.x
 
 function missingEnv() {
   const miss: string[] = [];
-  if (!process.env.NEXT_PUBLIC_R2_ACCESS_KEY) miss.push('NEXT_PUBLIC_R2_ACCESS_KEY');
-  if (!process.env.NEXT_PUBLIC_R2_SECRET_KEY) miss.push('NEXT_PUBLIC_R2_SECRET_KEY');
-  // R2_ENDPOINT hat jetzt einen Fallback, also nicht mehr required
+  if (!process.env.R2_ENDPOINT) miss.push("R2_ENDPOINT");
+  if (!process.env.R2_ACCESS_KEY) miss.push("R2_ACCESS_KEY");
+  if (!process.env.R2_SECRET_KEY) miss.push("R2_SECRET_KEY");
+  if (!process.env.R2_PUBLIC_BASE_URL) miss.push("R2_PUBLIC_BASE_URL");
   return miss;
 }
 
 const s3Client = new S3Client({
   region: 'auto',
+  endpoint: process.env.R2_ENDPOINT,
   credentials: {
     accessKeyId: "1833343c0104a77f1e024176201c3157",
     secretAccessKey: "9826a75fcf3785c7fae4f4ec642cb50401b0a80f70897b7792272137f10689d4",
