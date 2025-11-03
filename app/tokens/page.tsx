@@ -123,6 +123,7 @@ export default function TokensPage() {
   const [uploading, setUploading] = useState(false)
   const [creatingCard, setCreatingCard] = useState(false)
   const [isCreatorBenefitsOpen, setIsCreatorBenefitsOpen] = useState(false)
+  const [createCardError, setCreateCardError] = useState<string | null>(null)
 
   useEffect(() => {
     const loadWalletAddress = async () => {
@@ -418,6 +419,7 @@ export default function TokensPage() {
 
     try {
       setCreatingCard(true)
+      setCreateCardError(null)
 
       // Calculate WLD amount based on current price
       if (!wldPrice) {
@@ -559,6 +561,9 @@ export default function TokensPage() {
       if (error.finalPayload?.status) {
         errorMessage += ` (Transaction Status: ${error.finalPayload.status})`
       }
+      
+      // Set error state for UI display
+      setCreateCardError(errorMessage)
       
       toast({
         title: "Error",
@@ -946,10 +951,11 @@ export default function TokensPage() {
                           <div className="space-y-6">
                             <div className="flex items-center justify-between">
                               <h3 className="text-xl font-bold">{t("tokens.create_card", "Create Card")} {t("tokens.for", "for")} {selectedToken?.name}</h3>
-                              <Button variant="outline" onClick={() => {
+                              <Button variant="outline"                               onClick={() => {
                                 setShowCreateCard(false)
                                 setSelectedToken(null)
                                 setSelectedImage(null)
+                                setCreateCardError(null)
                               }}>
                                 <X className="h-4 w-4 mr-2" />
                                 {t("tokens.cancel", "Cancel")}
@@ -1044,6 +1050,16 @@ export default function TokensPage() {
                                 </div>
                               )}
                             </div>
+
+                            {/* Error Display */}
+                            {createCardError && (
+                              <Alert variant="destructive">
+                                <XCircle className="h-4 w-4" />
+                                <AlertDescription className="break-words">
+                                  <strong>Error:</strong> {createCardError}
+                                </AlertDescription>
+                              </Alert>
+                            )}
 
                             {/* Submit Button */}
                             <Button

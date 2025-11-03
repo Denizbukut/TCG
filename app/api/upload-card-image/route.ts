@@ -8,8 +8,8 @@ export const revalidate = 0;
 
 /**
  * .env.local – benötigte Variablen:
- * R2_ACCESS_KEY=xxxxxxxx  (erforderlich)
- * R2_SECRET_KEY=xxxxxxxx  (erforderlich)
+ * NEXT_PUBLIC_R2_ACCESS_KEY=xxxxxxxx  (erforderlich)
+ * NEXT_PUBLIC_R2_SECRET_KEY=xxxxxxxx  (erforderlich)
  *
  * Optional (mit Fallbacks im Code):
  * R2_BUCKET_NAME=anime-images (Fallback: 'anime-images')
@@ -28,8 +28,8 @@ const R2_PUBLIC_BASE_URL = process.env.R2_PUBLIC_BASE_URL || 'https://ani-labs.x
 
 function missingEnv() {
   const miss: string[] = [];
-  if (!process.env.R2_ACCESS_KEY) miss.push('R2_ACCESS_KEY');
-  if (!process.env.R2_SECRET_KEY) miss.push('R2_SECRET_KEY');
+  if (!process.env.NEXT_PUBLIC_R2_ACCESS_KEY) miss.push('NEXT_PUBLIC_R2_ACCESS_KEY');
+  if (!process.env.NEXT_PUBLIC_R2_SECRET_KEY) miss.push('NEXT_PUBLIC_R2_SECRET_KEY');
   // R2_ENDPOINT hat jetzt einen Fallback, also nicht mehr required
   return miss;
 }
@@ -38,8 +38,8 @@ const s3Client = new S3Client({
   region: 'auto',
   endpoint: R2_ENDPOINT,
   credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY as string,
-    secretAccessKey: process.env.R2_SECRET_KEY as string,
+    accessKeyId: process.env.NEXT_PUBLIC_R2_ACCESS_KEY as string,
+    secretAccessKey: process.env.NEXT_PUBLIC_R2_SECRET_KEY as string,
   },
 });
 
@@ -58,8 +58,8 @@ export async function POST(req: NextRequest) {
       const msg = `[upload-card-image] Missing ENV: ${miss.join(', ')}`;
       console.error(msg);
       console.error('Available ENV vars:', {
-        hasR2_ACCESS_KEY: !!process.env.R2_ACCESS_KEY,
-        hasR2_SECRET_KEY: !!process.env.R2_SECRET_KEY,
+        hasNEXT_PUBLIC_R2_ACCESS_KEY: !!process.env.NEXT_PUBLIC_R2_ACCESS_KEY,
+        hasNEXT_PUBLIC_R2_SECRET_KEY: !!process.env.NEXT_PUBLIC_R2_SECRET_KEY,
         hasR2_ENDPOINT: !!process.env.R2_ENDPOINT,
         R2_BUCKET_NAME: process.env.R2_BUCKET_NAME || process.env.R2_BUCKET || 'anime-images',
       });
