@@ -187,6 +187,23 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     console.error('[upload-card-image] fatal:', err?.message || err);
+    console.error('[upload-card-image] error details:', {
+      name: err?.name,
+      message: err?.message,
+      stack: err?.stack,
+      cause: err?.cause,
+    });
+    
+    // Handle specific header validation errors from Vercel
+    if (err?.message?.includes('Invalid character in header content') || 
+        err?.message?.includes('authorization')) {
+      console.error('[upload-card-image] Header validation error detected. This may be caused by invalid characters in request headers.');
+      return NextResponse.json(
+        { error: `[upload-card-image] Header validation error. Please ensure no special characters are in request headers. Original: ${String(err?.message || err)}` },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
       { error: `[upload-card-image] ${String(err?.message || err)}` },
       { status: 500 }

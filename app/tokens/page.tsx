@@ -481,9 +481,14 @@ export default function TokensPage() {
       formData.append('file', imageBlob, 'card-image.png')
       formData.append('tokenAddress', selectedToken.tokenAddress)
 
+      // Upload image to Cloudflare
+      // Note: Don't set custom headers - FormData automatically sets Content-Type with boundary
+      // This prevents "Invalid character in header content" errors on Vercel
       const uploadResponse = await fetch('/api/upload-card-image', {
         method: 'POST',
         body: formData,
+        // Explicitly don't set headers to avoid Vercel header validation issues
+        // fetch will automatically set Content-Type with boundary for FormData
       })
 
       if (!uploadResponse.ok) {
