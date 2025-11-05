@@ -66,7 +66,7 @@ useEffect(() => {
   } else if (cardRarity === "epic") {
     minUsdPrice = 1.0
   } else if (cardRarity === "rare") {
-    minUsdPrice = 0.5
+    minUsdPrice = 0.34
   } else if (cardRarity === "common") {
     minUsdPrice = 0.15
   }

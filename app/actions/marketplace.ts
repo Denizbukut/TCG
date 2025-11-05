@@ -644,7 +644,7 @@ export async function createListing(
     } else if (cardDetails.rarity === "epic") {
       minUsdPrice = 1.0
     } else if (cardDetails.rarity === "rare") {
-      minUsdPrice = 0.5
+      minUsdPrice = 0.34
     } else if (cardDetails.rarity === "common") {
       minUsdPrice = 0.15
     }
@@ -1360,7 +1360,7 @@ export async function updateListingPrice(walletAddress: string, listingId: strin
     } else if (cardDetails.rarity === "epic") {
       minUsdPrice = 1.0
     } else if (cardDetails.rarity === "rare") {
-      minUsdPrice = 0.5
+      minUsdPrice = 0.34
     } else if (cardDetails.rarity === "common") {
       minUsdPrice = 0.15
     }

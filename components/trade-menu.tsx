@@ -280,8 +280,8 @@ export default function TradeMenu() {
       minUsdPrice = 1.0
       console.log("Epic rarity detected, setting min price to $1.00")
     } else if (selectedCard.cards.rarity === "rare") {
-      minUsdPrice = 0.5
-      console.log("Rare rarity detected, setting min price to $0.50")
+      minUsdPrice = 0.34
+      console.log("Rare rarity detected, setting min price to $0.34")
     } else if (selectedCard.cards.rarity === "elite") {
       minUsdPrice = 0.5
       console.log("Elite rarity detected, setting min price to $0.50")
@@ -893,7 +893,7 @@ export default function TradeMenu() {
                        } else if (card.cards.rarity === "epic") {
                          minUsdPrice = 1.0
                        } else if (card.cards.rarity === "rare") {
-                         minUsdPrice = 0.5
+                         minUsdPrice = 0.34
                        }
                        
                        const defaultPrice = priceUsdPerWLD
@@ -956,7 +956,7 @@ export default function TradeMenu() {
                        : selectedCard.cards.rarity === "epic"
                        ? `Epic cards must be listed for at least $1.00 (~${priceUsdPerWLD ? (1 / priceUsdPerWLD).toFixed(3) : "1"} WLD)`
                        : selectedCard.cards.rarity === "rare"
-                       ? `Rare cards must be listed for at least $0.50 (~${priceUsdPerWLD ? (0.5 / priceUsdPerWLD).toFixed(3) : "0.5"} WLD)`
+                       ? `Rare cards must be listed for at least $0.34 (~${priceUsdPerWLD ? (0.34 / priceUsdPerWLD).toFixed(3) : "0.34"} WLD)`
                        : `Minimum price: $0.15 (~${priceUsdPerWLD ? (0.15 / priceUsdPerWLD).toFixed(3) : "0.15"} WLD)`
                      }
                    </p>

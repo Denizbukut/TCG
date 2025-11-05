@@ -156,7 +156,7 @@ export default function SellCardDialog({ isOpen, onClose, card, walletAddress, o
     const baseUsdPrice =
       {
         common: 0.15,
-        rare: 0.5,
+        rare: 0.34,
         epic: 1.0,
         legendary: 1.5,
         godlike: 10.0,
@@ -201,8 +201,8 @@ export default function SellCardDialog({ isOpen, onClose, card, walletAddress, o
     minUsdPrice = 1.0
     console.log("Epic rarity detected, setting min price to $1.00")
   } else if (card.rarity === "rare") {
-    minUsdPrice = 0.5
-    console.log("Rare rarity detected, setting min price to $0.50")
+    minUsdPrice = 0.34
+    console.log("Rare rarity detected, setting min price to $0.34")
   } else if (card.rarity === "elite") {
     minUsdPrice = 0.5
     console.log("Elite rarity detected, setting min price to $0.50")

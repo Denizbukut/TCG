@@ -71,7 +71,7 @@ export async function listCardForSale(userId: string, cardId: string, price: num
     } else if (cardDetails.rarity === "epic") {
       minUsdPrice = 1.0
     } else if (cardDetails.rarity === "rare") {
-      minUsdPrice = 0.5
+      minUsdPrice = 0.34
     }
 
     const minWldPrice = priceUsdPerWLD ? minUsdPrice / priceUsdPerWLD : minUsdPrice

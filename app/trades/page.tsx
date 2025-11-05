@@ -168,14 +168,14 @@ export default function TradesPage() {
         : selectedCard.cards.rarity === "epic"
         ? 1
         : selectedCard.cards.rarity === "rare"
-        ? 0.5
+        ? 0.34
         : 0.15
 
     if (parsedPrice < minWldPrice) {
       const cardType = selectedCard.cards.rarity === "legendary" ? "Legendary" : 
                       selectedCard.cards.rarity === "epic" ? "Epic" : 
                       selectedCard.cards.rarity === "rare" ? "Rare" : "cards"
-      const usdAmount = selectedCard.cards.rarity === "legendary" ? 1.5 : selectedCard.cards.rarity === "epic" ? 1 : selectedCard.cards.rarity === "rare" ? 0.5 : 0.15
+      const usdAmount = selectedCard.cards.rarity === "legendary" ? 1.5 : selectedCard.cards.rarity === "epic" ? 1 : selectedCard.cards.rarity === "rare" ? 0.34 : 0.15
       toast({
         title: "Price too low",
         description: `${cardType} cards must be listed for at least $${usdAmount.toFixed(2)} (~${minWldPrice.toFixed(3)} WLD)`,
