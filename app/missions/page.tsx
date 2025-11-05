@@ -6,20 +6,27 @@ import { claimMissionReward, claimBonusReward } from "../actions/missions"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import MobileNav from "@/components/mobile-nav"
-import { Gift, CheckCircle, ArrowLeft, Sparkles, Star, Target } from "lucide-react"
+import { Gift, CheckCircle, ArrowLeft, Sparkles, Star, Target, Trophy } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import toast from "react-hot-toast"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { getSupabaseBrowserClient } from "@/lib/supabase"
+import { WEEKLY_CONTEST_CONFIG } from "@/lib/weekly-contest-config"
+import Link from "next/link"
+import { useI18n } from "@/contexts/i18n-context"
 
 export default function ModernMissionsPage() {
   const { user, refreshUserData } = useAuth()
+  const { t } = useI18n()
   const router = useRouter()
   const [missions, setMissions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [bonusClaimed, setBonusClaimed] = useState(false)
   const [claimingBonus, setClaimingBonus] = useState(false)
+  const [contestStats, setContestStats] = useState<{ legendary_count: number; rank: number | null } | null>(null)
+  const [contestLoading, setContestLoading] = useState(true)
 
   const loadMissions = async () => {
     if (!user) return
@@ -36,8 +43,61 @@ export default function ModernMissionsPage() {
     setLoading(false)
   }
 
+  const loadContestStats = async () => {
+    if (!user?.wallet_address) {
+      setContestLoading(false)
+      return
+    }
+
+    try {
+      const supabase = getSupabaseBrowserClient()
+      if (!supabase) {
+        setContestLoading(false)
+        return
+      }
+
+      const weekStart = WEEKLY_CONTEST_CONFIG.weekStart
+      const { data: userEntry, error: userError } = await supabase
+        .from("weekly_contest_entries")
+        .select("legendary_count")
+        .eq("week_start_date", weekStart)
+        .eq("wallet_address", user.wallet_address)
+        .maybeSingle()
+
+      if (!userError) {
+        if (userEntry) {
+          const userLegendaryCount: number = Number(userEntry.legendary_count) || 0
+
+          // Calculate rank
+          const { count } = await supabase
+            .from("weekly_contest_entries")
+            .select("*", { count: "exact", head: true })
+            .eq("week_start_date", weekStart)
+            .gt("legendary_count", userLegendaryCount)
+
+          const rank: number | null = typeof count === 'number' && count !== null ? count + 1 : null
+
+          setContestStats({
+            legendary_count: userLegendaryCount,
+            rank,
+          })
+        } else {
+          setContestStats({
+            legendary_count: 0,
+            rank: null,
+          })
+        }
+      }
+    } catch (error) {
+      console.error("Error loading contest stats:", error)
+    } finally {
+      setContestLoading(false)
+    }
+  }
+
   useEffect(() => {
     loadMissions()
+    loadContestStats()
   }, [user])
 
   const handleClaim = async (key: string) => {
@@ -97,6 +157,65 @@ export default function ModernMissionsPage() {
       </header>
 
       <main className="p-4 space-y-4 max-w-md mx-auto">
+        {/* Weekly Contest Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Link href="/weekly-contest">
+            <Card className="border-0 shadow-2xl bg-gradient-to-br from-yellow-100 via-amber-100 to-orange-100 border-2 border-yellow-300/50 overflow-hidden cursor-pointer hover:shadow-3xl transition-all duration-300">
+              <CardHeader className="pb-3 bg-gradient-to-r from-yellow-500/20 to-amber-500/20">
+                <CardTitle className="text-sm font-bold bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent flex items-center gap-2">
+                  <Trophy className="h-4 w-4 text-yellow-600" />
+                  Weekly Contest 🏆
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 space-y-3">
+                {contestLoading ? (
+                  <div className="text-center py-4">
+                    <div className="h-4 w-4 border-2 border-t-transparent border-yellow-500 rounded-full animate-spin mx-auto"></div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-xs text-gray-700">
+                      Earn points by pulling legendary cards, buying cards on the trade market, or buying tickets in the shop
+                    </p>
+                    {contestStats ? (
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">
+                            Your Points: <span className="text-yellow-600 font-bold">{contestStats.legendary_count}</span>
+                          </p>
+                          {contestStats.rank && (
+                            <p className="text-xs text-gray-600">
+                              Current Rank: <span className="font-semibold text-amber-600">#{contestStats.rank}</span>
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-2xl">🏆</div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-600">No points yet. Start earning to compete!</p>
+                    )}
+                    <div className="pt-2 space-y-1">
+                      <p className="text-xs text-amber-700 font-semibold">
+                        Top 10 win prizes! Tap to view leaderboard →
+                      </p>
+                      <div className="pt-2 border-t border-yellow-200/30">
+                        <p className="text-xs font-semibold text-amber-800 mb-1">{t("contest.legendary_cards_equals_points", "Legendary Cards = 15 Points")}</p>
+                        <p className="text-xs text-amber-700">
+                          {t("contest.trade_market_rules_desc", "Points are only counted when buying cards from different users. Every 24 hours, you can only buy a card from the same user once and receive points.")}
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </Link>
+        </motion.div>
+
         {loading ? (
           <div className="text-center py-12">
             <div className="relative">

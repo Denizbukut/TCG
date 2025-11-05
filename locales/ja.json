@@ -281,7 +281,12 @@
     "current_rank": "現在の順位:",
     "loading_leaderboard": "ランキング読込中...",
     "no_entries": "今週のエントリーなし",
-    "place": "位"
+    "place": "位",
+    "trade_market": "トレードマーケットでカード購入",
+    "ticket_shop": "ショップでチケット購入",
+    "legendary_cards_equals_points": "レジェンドカード = 15ポイント",
+    "trade_market_rules_title": "重要: トレードマーケットのルール",
+    "trade_market_rules_desc": "異なるユーザーからカードを購入した場合のみポイントがカウントされます。24時間ごとに、同じユーザーからは1回のみカードを購入してポイントを受け取ることができます。"
   },
   "ticket_shop": {
     "title": "チケットショップ",

@@ -281,7 +281,12 @@
     "current_rank": "Rango actual:",
     "loading_leaderboard": "Cargando clasificación...",
     "no_entries": "Sin entradas esta semana.",
-    "place": "Lugar"
+    "place": "Lugar",
+    "trade_market": "Comprar Cartas en el Mercado",
+    "ticket_shop": "Comprar Tickets en la Tienda",
+    "legendary_cards_equals_points": "Cartas Legendarias = 15 Puntos",
+    "trade_market_rules_title": "Importante: Reglas del Mercado",
+    "trade_market_rules_desc": "Los puntos solo se cuentan al comprar cartas de diferentes usuarios. Cada 24 horas, solo puedes comprar una carta del mismo usuario una vez y recibir puntos."
   },
   "ticket_shop": {
     "title": "Tienda de Tickets",

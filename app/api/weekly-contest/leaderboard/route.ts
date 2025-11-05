@@ -8,6 +8,7 @@ export async function GET() {
 
   try {
     // Top 20 Weekly - Join mit users-Tabelle um username zu bekommen
+    // WICHTIG: trade_points fließen jetzt direkt in legendary_count
     const { data: entries, error } = await supabase
       .from("weekly_contest_entries")
       .select("wallet_address, legendary_count")
@@ -30,10 +31,10 @@ export async function GET() {
     // Erstelle eine Map für schnellen Zugriff
     const usernameMap = new Map(users?.map(u => [u.wallet_address, u.username]) || [])
 
-    // Formatiere die Daten
+    // Formatiere die Daten (legendary_count enthält jetzt auch Trade-Punkte)
     const formattedData = entries?.map(entry => ({
       user_id: usernameMap.get(entry.wallet_address) || entry.wallet_address.slice(0, 10) + "...",
-      legendary_count: entry.legendary_count,
+      legendary_count: entry.legendary_count || 0,
       wallet_address: entry.wallet_address
     })) || []
 

@@ -1223,10 +1223,33 @@ export async function purchaseCard(walletAddress: string, listingId: string) {
         })
     }
     
-    // 9. Trade in der Datenbank speichern
+    // 9. Weekly Contest: Trade-Punkte vergeben (6 Punkte pro Kauf)
+    // WICHTIG: Muss VOR dem Einfügen des Trades passieren, damit die Betrugsprävention funktioniert
+    // Nur wenn Contest aktiv ist und User von anderen Usern kauft (nicht von sich selbst)
+    console.log(`💰 [purchaseCard] Attempting to award trade points for purchase - buyer: ${walletAddress}, seller: ${listing.seller_wallet_address}`)
+    try {
+      const { incrementTradePoints } = await import("@/app/actions/weekly-contest")
+      const tradePointsResult = await incrementTradePoints(
+        walletAddress,
+        listing.seller_wallet_address,
+        6
+      )
+      if (!tradePointsResult.success) {
+        // Logge Fehler, aber lasse Kauf trotzdem erfolgreich sein
+        console.warn(`⚠️ [purchaseCard] Trade points not awarded: ${tradePointsResult.error}`)
+      } else {
+        console.log(`✅ [purchaseCard] Trade points successfully awarded!`)
+      }
+    } catch (tradePointsError) {
+      // Non-fatal: Kaufe ist trotzdem erfolgreich, auch wenn Punkte-Vergabe fehlschlägt
+      console.error("❌ [purchaseCard] Error awarding trade points (non-fatal):", tradePointsError)
+    }
+
+    // 9b. Trade in der Datenbank speichern (NACH der Punkte-Vergabe)
+    // WICHTIG: Normalisiere Wallet-Adressen (lowercase) für konsistente Betrugsprävention
     await supabase.from("trades").insert({
-      seller_wallet_address: listing.seller_wallet_address,
-      buyer_wallet_address: walletAddress,
+      seller_wallet_address: listing.seller_wallet_address.toLowerCase(),
+      buyer_wallet_address: walletAddress.toLowerCase(),
       user_card_id: listing.user_card_id,
       card_id: listing.card_id,
       price: listing.price,

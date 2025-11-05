@@ -281,7 +281,12 @@
     "current_rank": "Current rank:",
     "loading_leaderboard": "Loading leaderboard...",
     "no_entries": "No entries yet this week.",
-    "place": "Place"
+    "place": "Place",
+    "trade_market": "Buying Cards on Trade Market",
+    "ticket_shop": "Buying Tickets in Shop",
+    "legendary_cards_equals_points": "Legendary Cards = 15 Points",
+    "trade_market_rules_title": "Important: Trade Market Rules",
+    "trade_market_rules_desc": "Points are only counted when buying cards from different users. Every 24 hours, you can only buy a card from the same user once and receive points."
   },
   "ticket_shop": {
     "title": "Ticket Shop",

@@ -527,6 +527,23 @@ await supabase.from("ticket_purchases").insert({
   discounted: getDiscountedPrice(packageId.startsWith("reg") ? regularPackages.find(p => p.id === packageId)?.price ?? 0 : legendaryPackages.find(p => p.id === packageId)?.price ?? 0) < (packageId.startsWith("reg") ? regularPackages.find(p => p.id === packageId)?.price ?? 0 : legendaryPackages.find(p => p.id === packageId)?.price ?? 0),
 })
 
+      // Weekly Contest: Ticket Shop Punkte vergeben (2 Punkte pro Kauf)
+      try {
+        const { incrementTicketShopPoints } = await import("@/app/actions/weekly-contest")
+        const ticketShopPointsResult = await incrementTicketShopPoints(
+          user.wallet_address,
+          2
+        )
+        if (!ticketShopPointsResult.success) {
+          console.warn(`⚠️ [handleBuyTickets] Ticket shop points not awarded: ${ticketShopPointsResult.error}`)
+        } else {
+          console.log(`✅ [handleBuyTickets] Ticket shop points successfully awarded!`)
+        }
+      } catch (ticketShopPointsError) {
+        // Non-fatal: Kauf ist trotzdem erfolgreich, auch wenn Punkte-Vergabe fehlschlägt
+        console.error("❌ [handleBuyTickets] Error awarding ticket shop points (non-fatal):", ticketShopPointsError)
+      }
+
       toast({
         title: t("shop.purchase_successful", "Purchase Successful!"),
         description: t("shop.purchase_successful_desc", "You've purchased {amount} {type} tickets!{discount}", { 

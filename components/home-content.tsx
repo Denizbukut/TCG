@@ -428,6 +428,24 @@ const [copied, setCopied] = useState(false)
         setEliteTickets(newLegendaryTicketCount)
         // Update auth context
         await updateUserTickets?.(newTicketCount, newLegendaryTicketCount)
+
+        // Weekly Contest: Ticket Shop Punkte vergeben (2 Punkte pro Kauf)
+        try {
+          const { incrementTicketShopPoints } = await import("@/app/actions/weekly-contest")
+          const ticketShopPointsResult = await incrementTicketShopPoints(
+            user.wallet_address,
+            2
+          )
+          if (!ticketShopPointsResult.success) {
+            console.warn(`⚠️ [handleBuyTickets] Ticket shop points not awarded: ${ticketShopPointsResult.error}`)
+          } else {
+            console.log(`✅ [handleBuyTickets] Ticket shop points successfully awarded!`)
+          }
+        } catch (ticketShopPointsError) {
+          // Non-fatal: Kauf ist trotzdem erfolgreich, auch wenn Punkte-Vergabe fehlschlägt
+          console.error("❌ [handleBuyTickets] Error awarding ticket shop points (non-fatal):", ticketShopPointsError)
+        }
+
         toast({
           title: "Purchase Successful!",
           description: `You've purchased ${ticketAmount} ${ticketType === "legendary" ? "legendary" : "regular"} tickets!`,
@@ -502,12 +520,11 @@ const [copied, setCopied] = useState(false)
             const username = usernameMap.get(ref.referred_wallet_address)
             
             return {
-              id: ref.id,
-              wallet_address: ref.referred_wallet_address,
-              username: username,
-              level: level,
-              reward_claimed: ref.rewards_claimed ?? false,
-              created_at: ref.created_at
+              id: Number(ref.id),
+              wallet_address: String(ref.referred_wallet_address),
+              username: username || "",
+              level: Number(level),
+              reward_claimed: Boolean(ref.rewards_claimed ?? false)
             }
           })
 
@@ -626,10 +643,21 @@ const [copied, setCopied] = useState(false)
         }
 
         // Get card information
+        // Validate card_id before querying
+        const cardId = deal.card_id ? String(deal.card_id).trim() : null
+        if (!cardId || cardId === "null" || cardId === "undefined" || cardId === "NaN") {
+          console.error("Invalid card_id in deal:", deal.card_id)
+          setDailyDeal(null)
+          setDailyDealInteraction(null)
+          setHasShownDailyDeal(true)
+          setDailyDealLoading(false)
+          return
+        }
+
         const { data: card, error: cardError } = await supabase
           .from("cards")
           .select("*")
-          .eq("id", deal.card_id)
+          .eq("id", cardId)
           .single()
 
         if (cardError || !card) {
@@ -642,13 +670,20 @@ const [copied, setCopied] = useState(false)
         }
 
         // Format the deal data to include card information
-        const formattedDeal = {
-          ...deal,
-          card_name: card.name,
-          card_image_url: card.image_url,
-          card_rarity: card.rarity,
-          card_character: card.character,
-          creator_address: card.creator_address,
+        const formattedDeal: DailyDeal = {
+          id: Number(deal.id),
+          card_id: String(deal.card_id),
+          card_level: Number(deal.card_level),
+          classic_tickets: Number(deal.classic_tickets),
+          elite_tickets: Number(deal.elite_tickets),
+          price: Number(deal.price),
+          description: String(deal.description || ""),
+          discount_percentage: Number(deal.discount_percentage),
+          card_name: String(card.name),
+          card_image_url: String(card.image_url),
+          card_rarity: String(card.rarity),
+          card_character: String(card.character),
+          creator_address: card.creator_address ? String(card.creator_address) : undefined,
         }
 
         // Check if user has already interacted with this deal
@@ -656,18 +691,26 @@ const [copied, setCopied] = useState(false)
           .from("deal_interactions")
           .select("*")
           .eq("wallet_address", user.wallet_address)
-          .eq("deal_id", deal.id)
+          .eq("deal_id", Number(deal.id))
           .order("purchased", { ascending: false })
           .order("interaction_date", { ascending: false })
           .limit(1)
 
-        let interaction = interactions?.[0]
+        let interaction: DealInteraction | null = null
+        if (interactions?.[0]) {
+          const rawInteraction = interactions[0]
+          interaction = {
+            seen: Boolean(rawInteraction.seen),
+            dismissed: Boolean(rawInteraction.dismissed),
+            purchased: Boolean(rawInteraction.purchased),
+          }
+        }
 
         // If no interaction record exists, create one
         if (interactionError || !interaction) {
           const { error: insertError } = await supabase.from("deal_interactions").insert({
             wallet_address: user.wallet_address,
-            deal_id: deal.id,
+            deal_id: Number(deal.id),
             seen: false,
             dismissed: false,
             purchased: false,
@@ -746,7 +789,7 @@ const [copied, setCopied] = useState(false)
       // Check if discount is still valid (within time window)
       if (data.end_time) {
         const now = new Date()
-        const endTime = new Date(data.end_time)
+        const endTime = new Date(String(data.end_time))
         
         if (now > endTime) {
           // Discount has expired, deactivate it
@@ -761,7 +804,7 @@ const [copied, setCopied] = useState(false)
       }
 
       setHasActiveDiscount(true)
-      setDiscountValue(Math.round((data.value || 0) * 100))
+      setDiscountValue(Math.round((Number(data.value) || 0) * 100))
     } catch (error) {
       console.error("Error checking discount status:", error)
       setHasActiveDiscount(false)
@@ -1275,19 +1318,36 @@ const [copied, setCopied] = useState(false)
         }
 
         // Get card information including creator_address
+        // Validate card_id before querying
+        const cardId = deal.card_id ? String(deal.card_id).trim() : null
+        if (!cardId || cardId === "null" || cardId === "undefined" || cardId === "NaN") {
+          console.error("Invalid card_id in special deal:", deal.card_id)
+          setSpecialDeal(null)
+          setSpecialDealLoading(false)
+          return
+        }
+
         const { data: card } = await supabase
           .from("cards")
           .select("*, creator_address")
-          .eq("id", deal.card_id)
+          .eq("id", cardId)
           .single()
 
-        const formattedDeal = {
-          ...deal,
-          card_name: card?.name,
-          card_image_url: card?.image_url,
-          card_rarity: card?.rarity,
-          card_character: card?.character,
-          creator_address: card?.creator_address,
+        const formattedDeal: SpecialDeal = {
+          id: Number(deal.id),
+          card_id: String(deal.card_id),
+          card_level: Number(deal.card_level),
+          classic_tickets: Number(deal.classic_tickets),
+          elite_tickets: Number(deal.elite_tickets),
+          icon_tickets: Number(deal.icon_tickets || 0),
+          price: Number(deal.price),
+          description: String(deal.description || ""),
+          discount_percentage: Number(deal.discount_percentage),
+          card_name: String(card?.name || ""),
+          card_image_url: String(card?.image_url || ""),
+          card_rarity: String(card?.rarity || ""),
+          card_character: String(card?.character || ""),
+          creator_address: card?.creator_address ? String(card.creator_address) : undefined,
         }
 
         setSpecialDeal(formattedDeal)
@@ -1304,7 +1364,7 @@ const [copied, setCopied] = useState(false)
   useEffect(() => {
     if (specialDeal?.card_rarity) {
       import("@/lib/creator-revenue").then((module) => {
-        const split = module.getDealRevenueSplit(specialDeal.card_rarity)
+        const split = module.getDealRevenueSplit(specialDeal.card_rarity.toLowerCase() as Parameters<typeof module.getDealRevenueSplit>[0])
         setSpecialDealCreatorPercentage(Math.round(split.creatorShare * 100))
       })
     } else {

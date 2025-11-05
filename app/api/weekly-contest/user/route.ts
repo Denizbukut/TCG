@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // Benutzerdaten abrufen
+    // WICHTIG: trade_points fließen jetzt direkt in legendary_count
     const { data: userEntry, error: userError } = await supabase
       .from("weekly_contest_entries")
       .select("legendary_count")
@@ -47,22 +48,29 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Rang des Benutzers berechnen
-    const { count: rank, error: rankError } = await supabase
-      .from("weekly_contest_entries")
-      .select("*", { count: "exact", head: true })
-      .eq("week_start_date", weekStart)
-      .gt("legendary_count", userEntry.legendary_count)
+    const userLegendaryCount = userEntry.legendary_count || 0
 
-    if (rankError) {
-      return NextResponse.json({ success: false, error: rankError.message }, { status: 500 })
+    // Rang des Benutzers berechnen basierend auf legendary_count (enthält jetzt auch Trade-Punkte)
+    const { data: allEntries, error: allEntriesError } = await supabase
+      .from("weekly_contest_entries")
+      .select("legendary_count")
+      .eq("week_start_date", weekStart)
+
+    if (allEntriesError) {
+      return NextResponse.json({ success: false, error: allEntriesError.message }, { status: 500 })
     }
+
+    // Berechne Rang basierend auf legendary_count
+    const rank = allEntries?.filter(entry => {
+      const entryCount = entry.legendary_count || 0
+      return entryCount > userLegendaryCount
+    }).length || 0
 
     return NextResponse.json({
       success: true,
       data: {
-        legendary_count: userEntry.legendary_count,
-        rank: (rank || 0) + 1,
+        legendary_count: userLegendaryCount,
+        rank: rank + 1,
       },
     })
   } catch (error) {

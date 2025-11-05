@@ -45,6 +45,7 @@ export default function WeeklyContestPage() {
         const weekStart = WEEKLY_CONTEST_CONFIG.weekStart
 
         // Fetch leaderboard - Top 20
+        // WICHTIG: trade_points fließen jetzt direkt in legendary_count
         const { data: entries, error: entriesError } = await supabase
           .from("weekly_contest_entries")
           .select("wallet_address, legendary_count")
@@ -63,16 +64,21 @@ export default function WeeklyContestPage() {
           // Create a map for quick lookup
           const usernameMap = new Map(users?.map(u => [u.wallet_address, u.username]) || [])
 
-          // Format the data
-          const formattedData = entries.map(entry => ({
-            user_id: usernameMap.get(entry.wallet_address) || entry.wallet_address.slice(0, 10) + "...",
-            legendary_count: entry.legendary_count,
-          }))
+          // Format the data (legendary_count enthält jetzt auch Trade-Punkte)
+          const formattedData: Entry[] = entries.map(entry => {
+            const walletAddr = entry.wallet_address as string
+            const username = usernameMap.get(walletAddr)
+            return {
+              user_id: (username || walletAddr.slice(0, 10) + "...") as string,
+              legendary_count: Number(entry.legendary_count) || 0,
+            }
+          })
 
           setLeaderboard(formattedData)
         }
 
         // Fetch user stats
+        // WICHTIG: trade_points fließen jetzt direkt in legendary_count
         if (user?.wallet_address) {
           const { data: userEntry, error: userError } = await supabase
             .from("weekly_contest_entries")
@@ -83,16 +89,20 @@ export default function WeeklyContestPage() {
 
           if (!userError) {
             if (userEntry) {
+              const userLegendaryCount: number = Number(userEntry.legendary_count) || 0
+
               // Calculate rank - count how many have more points
               const { count } = await supabase
                 .from("weekly_contest_entries")
                 .select("*", { count: "exact", head: true })
                 .eq("week_start_date", weekStart)
-                .gt("legendary_count", userEntry.legendary_count)
+                .gt("legendary_count", userLegendaryCount)
+
+              const rank: number | null = typeof count === 'number' && count !== null ? count + 1 : null
 
               setUserStats({
-                legendary_count: userEntry.legendary_count || 0,
-                rank: count !== null ? count + 1 : null,
+                legendary_count: userLegendaryCount,
+                rank,
               })
             } else {
               setUserStats({
@@ -180,9 +190,17 @@ export default function WeeklyContestPage() {
           
             <div className="text-sm text-yellow-100 space-y-1">
               <div>• {t("contest.rare_cards", "Rare Cards")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
+              <div>• {t("contest.ticket_shop", "Buying Tickets in Shop")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
               <div>• {t("contest.epic_cards", "Epic Cards")} = <span className="font-bold text-yellow-400">4 {t("contest.points", "Points")}</span></div>
               <div>• {t("contest.referrals", "Referrals")} = <span className="font-bold text-yellow-400">5 {t("contest.points", "Points")}</span></div>
+              <div>• {t("contest.trade_market", "Buying Cards on Trade Market")} = <span className="font-bold text-yellow-400">6 {t("contest.points", "Points")}</span></div>
               <div>• {t("contest.legendary_cards", "Legendary Cards")} = <span className="font-bold text-yellow-400">15 {t("contest.points", "Points")}</span></div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-yellow-400/30">
+              <p className="text-xs text-yellow-200 font-semibold mb-1">{t("contest.trade_market_rules_title", "Important: Trade Market Rules")}</p>
+              <p className="text-xs text-yellow-100/80">
+                {t("contest.trade_market_rules_desc", "Points are only counted when buying cards from different users. Every 24 hours, you can only buy a card from the same user once and receive points.")}
+              </p>
             </div>
         </div>
 
