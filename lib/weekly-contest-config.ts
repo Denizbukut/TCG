@@ -23,10 +23,16 @@ export const getContestEndTimestamp = () => new Date(WEEKLY_CONTEST_CONFIG.conte
 
 export const getContestEndDate = () => new Date(WEEKLY_CONTEST_CONFIG.contestEnd)
 
+export const getContestStartDate = () => {
+  // weekStart ist ein Datum (YYYY-MM-DD), setze es auf 00:00:00 UTC
+  return new Date(WEEKLY_CONTEST_CONFIG.weekStart + "T00:00:00Z")
+}
+
 export const isContestActive = () => {
   const now = new Date()
+  const contestStart = getContestStartDate()
   const contestEnd = getContestEndDate()
-  return now <= contestEnd
+  return now >= contestStart && now <= contestEnd
 }
 
 export const getTimeUntilContestEnd = () => {

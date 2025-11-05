@@ -1,7 +1,7 @@
 "use server"
 
 import { createClient } from "@supabase/supabase-js"
-import { WEEKLY_CONTEST_CONFIG, getContestEndDate } from "@/lib/weekly-contest-config"
+import { WEEKLY_CONTEST_CONFIG, getContestEndDate, getContestStartDate } from "@/lib/weekly-contest-config"
 
 function createSupabaseServer() {
   return createClient(process.env.SUPABASE_URL || "", process.env.SUPABASE_SERVICE_ROLE_KEY || "", {
@@ -12,9 +12,16 @@ function createSupabaseServer() {
 export async function incrementLegendaryDraw(walletAddress: string, count: number = 1) {
   const supabase = createSupabaseServer()
   const weekStart = WEEKLY_CONTEST_CONFIG.weekStart
+  const contestStart = getContestStartDate()
   const contestEnd = getContestEndDate()
   const now = new Date()
 
+  // Prüfe ob Contest bereits gestartet ist
+  if (now < contestStart) {
+    return { success: false, error: "The contest has not started yet. No points can be awarded." }
+  }
+
+  // Prüfe ob Contest noch aktiv ist (nicht beendet)
   if (now > contestEnd) {
     return { success: false, error: "The contest has ended. No more entries allowed." }
   }
@@ -61,12 +68,19 @@ export async function incrementTradePoints(
   
   const supabase = createSupabaseServer()
   const weekStart = WEEKLY_CONTEST_CONFIG.weekStart
+  const contestStart = getContestStartDate()
   const contestEnd = getContestEndDate()
   const now = new Date()
 
-  console.log(`📅 [incrementTradePoints] Contest check - now: ${now.toISOString()}, contestEnd: ${contestEnd.toISOString()}`)
+  console.log(`📅 [incrementTradePoints] Contest check - now: ${now.toISOString()}, contestStart: ${contestStart.toISOString()}, contestEnd: ${contestEnd.toISOString()}`)
 
-  // Prüfe ob Contest noch aktiv ist
+  // Prüfe ob Contest bereits gestartet ist
+  if (now < contestStart) {
+    console.log(`❌ [incrementTradePoints] Contest has not started yet`)
+    return { success: false, error: "The contest has not started yet. No points can be awarded." }
+  }
+
+  // Prüfe ob Contest noch aktiv ist (nicht beendet)
   if (now > contestEnd) {
     console.log(`❌ [incrementTradePoints] Contest has ended`)
     return { success: false, error: "The contest has ended. No more entries allowed." }
@@ -120,9 +134,10 @@ export async function incrementTradePoints(
 
   // Hole oder erstelle Contest-Eintrag
   // WICHTIG: trade_points fließen direkt in legendary_count
+  // Zusätzlich: tracke Anzahl gekaufter Karten in trade_cards_purchased
   const { data, error } = await supabase
     .from("weekly_contest_entries")
-    .select("legendary_count")
+    .select("legendary_count, trade_cards_purchased")
     .eq("wallet_address", normalizedWalletAddress)
     .eq("week_start_date", weekStart)
     .single()
@@ -134,21 +149,29 @@ export async function incrementTradePoints(
       wallet_address: normalizedWalletAddress,
       week_start_date: weekStart,
       legendary_count: points, // Direkt zu legendary_count hinzufügen
+      trade_cards_purchased: 1, // Erste Karte gekauft
     })
     if (insertError) {
       console.error(`❌ [incrementTradePoints] Error inserting new entry:`, insertError)
       return { success: false, error: `Failed to create contest entry: ${insertError.message}` }
     }
-    console.log(`✅ [incrementTradePoints] Successfully created new entry with ${points} points in legendary_count`)
+    console.log(`✅ [incrementTradePoints] Successfully created new entry with ${points} points in legendary_count and 1 card purchased`)
   } else if (data) {
-    // Eintrag existiert - erhöhe legendary_count direkt
+    // Eintrag existiert - erhöhe legendary_count und trade_cards_purchased
     const currentCount = data?.legendary_count ?? 0
+    const currentCardsPurchased = data?.trade_cards_purchased ?? 0
     const newCount = currentCount + points
+    const newCardsPurchased = currentCardsPurchased + 1
+    
     console.log(`📈 [incrementTradePoints] Entry found - current legendary_count: ${currentCount}, adding ${points} from trade, new total: ${newCount}`)
+    console.log(`📊 [incrementTradePoints] Cards purchased: ${currentCardsPurchased} → ${newCardsPurchased}`)
     
     const { error: updateError } = await supabase
       .from("weekly_contest_entries")
-      .update({ legendary_count: newCount })
+      .update({ 
+        legendary_count: newCount,
+        trade_cards_purchased: newCardsPurchased 
+      })
       .eq("wallet_address", normalizedWalletAddress)
       .eq("week_start_date", weekStart)
     
@@ -156,7 +179,7 @@ export async function incrementTradePoints(
       console.error(`❌ [incrementTradePoints] Error updating entry:`, updateError)
       return { success: false, error: `Failed to update contest entry: ${updateError.message}` }
     }
-    console.log(`✅ [incrementTradePoints] Successfully updated legendary_count to ${newCount} points`)
+    console.log(`✅ [incrementTradePoints] Successfully updated legendary_count to ${newCount} points and trade_cards_purchased to ${newCardsPurchased}`)
   } else if (error) {
     console.error(`❌ [incrementTradePoints] Error fetching contest entry:`, error)
     return { success: false, error: `Failed to fetch contest entry: ${error.message}` }
@@ -178,12 +201,19 @@ export async function incrementTicketShopPoints(
   
   const supabase = createSupabaseServer()
   const weekStart = WEEKLY_CONTEST_CONFIG.weekStart
+  const contestStart = getContestStartDate()
   const contestEnd = getContestEndDate()
   const now = new Date()
 
-  console.log(`📅 [incrementTicketShopPoints] Contest check - now: ${now.toISOString()}, contestEnd: ${contestEnd.toISOString()}`)
+  console.log(`📅 [incrementTicketShopPoints] Contest check - now: ${now.toISOString()}, contestStart: ${contestStart.toISOString()}, contestEnd: ${contestEnd.toISOString()}`)
 
-  // Prüfe ob Contest noch aktiv ist
+  // Prüfe ob Contest bereits gestartet ist
+  if (now < contestStart) {
+    console.log(`❌ [incrementTicketShopPoints] Contest has not started yet`)
+    return { success: false, error: "The contest has not started yet. No points can be awarded." }
+  }
+
+  // Prüfe ob Contest noch aktiv ist (nicht beendet)
   if (now > contestEnd) {
     console.log(`❌ [incrementTicketShopPoints] Contest has ended`)
     return { success: false, error: "The contest has ended. No more entries allowed." }
