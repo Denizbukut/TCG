@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache"
 import { createClient } from "@supabase/supabase-js"
-import {  incrementMission } from "@/app/actions/missions"
 import { isUserBanned } from "@/lib/banned-users"
 
 // Card rarity types
@@ -374,8 +373,6 @@ export async function drawCards(walletAddress: string, packType: string, count =
       let cardPool: any[]
 
       if (!isLegendary) {
-        await incrementMission(walletAddress, "open_regular_pack")
-        
         // Verwende Rarity-basiertes System statt Rating
         rarity = determineRarity("regular", hasPremiumPass)
         
@@ -390,9 +387,6 @@ export async function drawCards(walletAddress: string, packType: string, count =
         }
         const selectedCard = cardPool[Math.floor(Math.random() * cardPool.length)];
         drawnCards.push(selectedCard);
-        if (selectedCard.rarity === "ultimate") {
-          await incrementMission(walletAddress, "draw_legendary_card");
-        }
         // Calculate score for this card
         const cardPoints = getScoreForRarity(selectedCard.rarity);
         totalScoreToAdd += cardPoints;
@@ -483,9 +477,6 @@ export async function drawCards(walletAddress: string, packType: string, count =
         rarity = cardPool[0]?.rarity || "epic";
         const selectedCard = cardPool[Math.floor(Math.random() * cardPool.length)];
         drawnCards.push(selectedCard);
-        if (selectedCard.rarity === "ultimate") {
-          await incrementMission(walletAddress, "draw_legendary_card");
-        }
         // Calculate score for this card
         const cardPoints = getScoreForRarity(selectedCard.rarity);
         totalScoreToAdd += cardPoints;
@@ -579,10 +570,6 @@ export async function drawCards(walletAddress: string, packType: string, count =
       // Select a random card from the pool
       const selectedCard = cardPool[Math.floor(Math.random() * cardPool.length)]
       drawnCards.push(selectedCard)
-
-      if (selectedCard.rarity === "ultimate") {
-        await incrementMission(walletAddress, "draw_legendary_card")
-      }
 
       // Calculate score for this card
       const cardPoints = getScoreForRarity(selectedCard.rarity)

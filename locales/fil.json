@@ -66,6 +66,7 @@
     "claiming": "Kinukuha...",
     "ticket_shop_title": "Tindahan",
     "ticket_shop_desc": "Bumili ng tickets",
+    "cta_view": "Tingnan",
     "collection_cta_title": "Koleksyon",
     "collection_cta_desc": "Tingnan ang kards",
     "trade_cta_title": "Transfer",
@@ -252,6 +253,38 @@
   },
   "special_day": {
     "title": "Special Day"
+  },
+  "daily_missions": {
+    "header": {
+      "title": "Daily Missions"
+    },
+    "trade_market_purchase": {
+      "title": "Bumili ng card sa Trade Market"
+    },
+    "ticket_shop_bulk_purchase": {
+      "title": "Bumili ng hindi bababa sa 5 regular na ticket"
+    },
+    "legendary_bulk_20": {
+      "title": "Magbukas ng 20 Legendary Pack"
+    },
+    "special_deal_purchase": {
+      "title": "Bilhin ang Special Deal"
+    },
+    "daily_deal_purchase": {
+      "title": "Bilhin ang Deal of the Day"
+    },
+    "rewards": {
+      "regular_ticket_one": "+{count} regular na ticket",
+      "regular_ticket_other": "+{count} regular na ticket",
+      "legendary_ticket_one": "+{count} legendary na ticket",
+      "legendary_ticket_other": "+{count} legendary na ticket",
+      "xp": "+{count} XP"
+    },
+    "bonus": {
+      "description": "Tapusin ang {count} misyón para makakuha ng +3 legendary ticket",
+      "toast": "Nakuha ang 3 legendary ticket! 🎉"
+    },
+    "cta": "Tapusin ang mga misyon at kumuha ng gantimpala"
   },
   "contest": {
     "title": "Lingguhang Paligsahan",

@@ -291,6 +291,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState<Record<string, boolean>>({})
   const [buyingBigPack, setBuyingBigPack] = useState(false)
   const [chatExpanded, setChatExpanded] = useState(false)
+  const [hasClaimableMission, setHasClaimableMission] = useState(false)
 
   // Refs to track if effects have run
   const hasCheckedClaims = useRef(false)
@@ -300,7 +301,7 @@ export default function Home() {
   const dailyDealCheckedRef = useRef<string | null>(null)
   const referralsCheckedRef = useRef<string | null>(null)
   const checkDiscountStatusRef = useRef(false)
-const [copied, setCopied] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false)
 
   // Discount timer state
@@ -332,6 +333,45 @@ const [copied, setCopied] = useState(false)
       router.push("/login")
     }
   }, [user?.username, router])
+
+  useEffect(() => {
+    if (!user?.wallet_address) return
+
+    let isActive = true
+
+    const fetchMissionSummary = async () => {
+      try {
+        const res = await fetch("/api/daily-missions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ walletAddress: user.wallet_address }),
+        })
+        const data = await res.json()
+        if (!isActive) return
+
+        if (data?.success && Array.isArray(data.missions)) {
+          const claimable = data.missions.some(
+            (mission: { progress: number; goal: number; reward_claimed: boolean }) =>
+              Number(mission.progress) >= Number(mission.goal) && !mission.reward_claimed,
+          )
+          setHasClaimableMission(claimable)
+        } else {
+          setHasClaimableMission(false)
+        }
+      } catch (error) {
+        if (isActive) {
+          console.error("Failed to fetch mission summary:", error)
+          setHasClaimableMission(false)
+        }
+      }
+    }
+
+    fetchMissionSummary()
+
+    return () => {
+      isActive = false
+    }
+  }, [user?.wallet_address])
 
   const sendPayment = async () => {
     const dollarPrice = 17
@@ -1752,7 +1792,7 @@ const [copied, setCopied] = useState(false)
           </div>
         </header>
 
-        <main className="w-full px-2 md:px-6 flex-1 overflow-y-auto overscroll-contain"> {/* Padding hinzugefügt */}
+        <main className="w-full px-2 md:px-6 pb-16 flex-1 overflow-y-auto overscroll-contain"> {/* Padding hinzugefügt */}
          
           <div className="grid grid-cols-6 gap-3 mt-2 pb-4">
             {/* Profile */}
@@ -1959,20 +1999,27 @@ const [copied, setCopied] = useState(false)
             {/* Shop in der Mitte, Card Gallery daneben, Referrals rechts */}
             <div className="col-span-6 grid grid-cols-3 gap-3">
               {/* Card Gallery */}
+              {/* Missions */}
               <div className="relative">
-                <Link href="/catalog" className="block w-full h-full">
+                <Link href="/missions" className="block w-full h-full">
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3, duration: 0.4 }}
                     whileHover={{ scale: 1.04, boxShadow: '0 0 32px 0 rgba(255, 215, 0, 0.25)' }}
-                    className="bg-gradient-to-br from-[#232526] to-[#414345] rounded-xl shadow-lg p-3 h-full border-2 border-yellow-400 cursor-pointer flex flex-col items-center justify-center text-center"
+                    className="relative bg-gradient-to-br from-[#232526] to-[#414345] rounded-xl shadow-lg p-3 h-full border-2 border-yellow-400 cursor-pointer flex flex-col items-center justify-center text-center"
                   >
+                    {hasClaimableMission && (
+                      <span className="absolute right-3 top-3 flex h-3 w-3">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75"></span>
+                        <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500"></span>
+                      </span>
+                    )}
                     <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center mb-1 border border-yellow-300">
-                      <BookOpen className="h-5 w-5 text-white drop-shadow-lg" />
+                      <Target className="h-5 w-5 text-white drop-shadow-lg" />
                     </div>
-                    <div className="text-sm font-bold text-yellow-100">{t("collection.gallery_btn", "Card Gallery")}</div>
-                    <div className="text-xs text-sky-400">{t("collection.view_cards", "Browse Cards")}</div>
+                    <div className="text-sm font-bold text-yellow-100">{t("daily_missions.header.title", "Daily Missions")}</div>
+                    <div className="text-xs text-sky-400">{t("daily_missions.cta", "Complete tasks and earn rewards")}</div>
                   </motion.div>
                 </Link>
               </div>
@@ -2406,82 +2453,83 @@ const [copied, setCopied] = useState(false)
               </Dialog>
             </div>
 
-            {/* Ticket Claim - ganz unten */}
-            <div className="col-span-6 mb-4">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25, duration: 0.4 }}
-                className="bg-gradient-to-br from-[#232526] to-[#414345] rounded-xl shadow-md border-2 border-yellow-400 overflow-hidden"
-              >
-                <div className="relative">
-                  <div className="relative p-3">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center border border-yellow-300">
-                          <Gift className="h-4 w-4 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium text-sm text-yellow-100">{t("home.ticket_claim_title", "Ticket Claim")}</h3>
-                          <p className="text-xs text-yellow-200">
-                            {t("home.ticket_claim_desc", "Get {count} tickets every 24 hours", { count: ticketClaimAmount as unknown as number })}
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        onClick={handleClaimBonus}
-                        disabled={claimLoading || alreadyClaimed}
-                        size="sm"
-                        className={`rounded-full px-4 ${
-                          alreadyClaimed
-                            ? "bg-gray-600 text-gray-300 hover:bg-gray-600"
-                            : "bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white"
-                        }`}
-                      >
-                        {claimLoading ? (
-                          <div className="flex items-center">
-                            <div className="h-3 w-3 border-2 border-t-transparent border-current rounded-full animate-spin mr-2"></div>
-                            <span className="text-xs">Claiming...</span>
-                          </div>
-                        ) : alreadyClaimed ? (
-                          <div className="flex items-center">
-                            <Clock className="h-3 w-3 mr-1" />
-                            <span className="text-xs">{ticketTimerDisplay}</span>
-                          </div>
-                        ) : (
-                          <span className="text-xs">{t("common.claim_now", "Claim Now")}</span>
-                        )}
-                      </Button>
+            {/* Ticket Claim & Missions */}
+            <div className="col-span-6 mb-3">
+              <div className="grid grid-cols-2 gap-2">
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.25, duration: 0.4 }}
+                  className="bg-gradient-to-br from-[#232526] to-[#414345] rounded-xl shadow-lg px-3 py-3 h-full border-2 border-yellow-400 flex flex-col items-center text-center justify-between"
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-9 h-9 rounded-full bg-yellow-400 flex items-center justify-center border border-yellow-300 shadow-md">
+                      <Gift className="h-4 w-4 text-white" />
                     </div>
+                    <h3 className="text-xs font-bold text-yellow-100 uppercase tracking-wide">
+                      {t("home.ticket_claim_title", "Ticket Claim")}
+                    </h3>
+                    <p className="text-[11px] leading-snug text-yellow-200 max-w-[170px]">
+                      {t("home.ticket_claim_desc", "Get {count} tickets every 24 hours", { count: ticketClaimAmount as unknown as number })}
+                    </p>
                   </div>
-                </div>
-              </motion.div>
+                  <Button
+                    onClick={handleClaimBonus}
+                    disabled={claimLoading || alreadyClaimed}
+                    size="sm"
+                    className={`rounded-full px-4 py-1.5 ${
+                      alreadyClaimed
+                        ? "bg-gray-600 text-gray-300 hover:bg-gray-600"
+                        : "bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white"
+                    }`}
+                  >
+                    {claimLoading ? (
+                      <div className="flex items-center">
+                        <div className="h-3 w-3 border-2 border-t-transparent border-current rounded-full animate-spin mr-2"></div>
+                        <span className="text-[11px]">Claiming...</span>
+                      </div>
+                    ) : alreadyClaimed ? (
+                      <div className="flex items-center">
+                        <Clock className="h-3 w-3 mr-1" />
+                        <span className="text-[11px]">{ticketTimerDisplay}</span>
+                      </div>
+                    ) : (
+                      <span className="text-[11px]">{t("common.claim_now", "Claim Now")}</span>
+                    )}
+                  </Button>
+                </motion.div>
+
+                <Link href="/catalog" className="block h-full">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, duration: 0.4 }}
+                    whileHover={{ scale: 1.04, boxShadow: '0 0 32px 0 rgba(255, 215, 0, 0.25)' }}
+                    className="bg-gradient-to-br from-[#232526] to-[#414345] rounded-xl shadow-lg px-3 py-3 h-full border-2 border-yellow-400 cursor-pointer flex flex-col items-center text-center justify-between"
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-9 h-9 rounded-full bg-yellow-400 flex items-center justify-center border border-yellow-300 shadow-md">
+                        <BookOpen className="h-4 w-4 text-white" />
+                      </div>
+                      <div className="text-xs font-bold text-yellow-100 uppercase tracking-wide">
+                        {t("collection.gallery_btn", "Card Gallery")}
+                      </div>
+                      <div className="text-[11px] leading-snug text-yellow-200 max-w-[170px]">
+                        {t("collection.view_cards", "Browse Cards")}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 text-yellow-100 text-[11px] font-semibold">
+                      {t("home.cta_view", "View")}
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </div>
+                  </motion.div>
+                </Link>
+              </div>
             </div>
           </div>
-
-          {/* Quick Actions: Friends & Missions - COMMENTED OUT */}
-          {/* <div className="mt-4 mb-20 grid grid-cols-2 gap-3">
-            <Link href="/friends" className="block w-full h-full">
-              <div className="bg-gradient-to-br from-[#232526] to-[#414345] rounded-xl p-4 shadow-lg flex flex-col items-center justify-center min-h-[90px] h-full text-center transition border-2 border-yellow-400">
-                <div className="w-10 h-10 rounded-full bg-yellow-400 flex items-center justify-center mb-2 border border-yellow-300">
-                  <Users className="h-5 w-5 text-white" />
-                </div>
-                <div className="text-base font-bold text-yellow-100">Friends</div>
-              </div>
-            </Link>
-            <Link href="/missions" className="block w-full h-full">
-              <div className="bg-gradient-to-br from-[#232526] to-[#414345] rounded-xl p-4 shadow-lg flex flex-col items-center justify-center min-h-[90px] h-full text-center transition border-2 border-yellow-400">
-                <div className="w-10 h-10 rounded-full bg-yellow-400 flex items-center justify-center mb-2 border border-yellow-300">
-                  <Trophy className="h-5 w-5 text-white" />
-                </div>
-                <div className="text-base font-bold text-yellow-100">Missions</div>
-              </div>
-            </Link>
-          </div> */}
+          <div className="mb-6" />
         </main>
         
-        {/* Add bottom padding to ensure content is not hidden by MobileNav */}
-        <div className="h-20"></div>
 
         {showClaimAnimation && (
           <motion.div

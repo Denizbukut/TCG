@@ -66,6 +66,7 @@
     "claiming": "Reclamando...",
     "ticket_shop_title": "Tienda",
     "ticket_shop_desc": "Compra tickets",
+    "cta_view": "Ver",
     "collection_cta_title": "Colección",
     "collection_cta_desc": "Ver cartas",
     "trade_cta_title": "Transferir",
@@ -252,6 +253,38 @@
   },
   "special_day": {
     "title": "Día Especial"
+  },
+  "daily_missions": {
+    "header": {
+      "title": "Misiones Diarias"
+    },
+    "trade_market_purchase": {
+      "title": "Compra una carta en el Mercado de Intercambios"
+    },
+    "ticket_shop_bulk_purchase": {
+      "title": "Compra al menos 5 boletos regulares"
+    },
+    "legendary_bulk_20": {
+      "title": "Abre un paquete legendario de 20 cartas"
+    },
+    "special_deal_purchase": {
+      "title": "Compra la oferta especial"
+    },
+    "daily_deal_purchase": {
+      "title": "Compra la oferta del día"
+    },
+    "rewards": {
+      "regular_ticket_one": "+{count} boleto regular",
+      "regular_ticket_other": "+{count} boletos regulares",
+      "legendary_ticket_one": "+{count} boleto legendario",
+      "legendary_ticket_other": "+{count} boletos legendarios",
+      "xp": "+{count} XP"
+    },
+    "bonus": {
+      "description": "Completa {count} misiones para ganar +3 boletos legendarios",
+      "toast": "¡3 boletos legendarios obtenidos! 🎉"
+    },
+    "cta": "Completa tareas y gana recompensas"
   },
   "contest": {
     "title": "Concurso Semanal",

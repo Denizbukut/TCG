@@ -3,6 +3,7 @@
 import { getSupabaseServerClient } from "@/lib/supabase"
 import { revalidatePath } from "next/cache"
 import { isUserBanned } from "@/lib/banned-users"
+import { incrementMission } from "@/app/actions/missions"
 
 type CardRarity = "common" | "rare" | "epic" | "legendary" | "ultimate"
 
@@ -233,6 +234,14 @@ export async function drawCardsIndividual(walletAddress: string, packType: strin
 
     if (updateError) {
       return { success: false, error: "Failed to update user data" }
+    }
+
+    if (count >= 20 && isLegendary) {
+      try {
+        await incrementMission(correctWalletAddress, "legendary_bulk_20")
+      } catch (missionError) {
+        console.error("⚠️ Failed to increment legendary bulk mission:", missionError)
+      }
     }
 
     revalidatePath("/leaderboard")

@@ -66,6 +66,7 @@
     "claiming": "Wird eingesammelt...",
     "ticket_shop_title": "Ticket-Shop",
     "ticket_shop_desc": "Kaufe mehr Tickets",
+    "cta_view": "Ansehen",
     "collection_cta_title": "Sammlung",
     "collection_cta_desc": "Deine Karten ansehen",
     "trade_cta_title": "Transfer",
@@ -252,6 +253,38 @@
   },
   "special_day": {
     "title": "Besonderer Tag"
+  },
+  "daily_missions": {
+    "header": {
+      "title": "Tägliche Missionen"
+    },
+    "trade_market_purchase": {
+      "title": "Kaufe eine Karte auf dem Trade Market"
+    },
+    "ticket_shop_bulk_purchase": {
+      "title": "Kaufe mindestens 5 reguläre Tickets"
+    },
+    "legendary_bulk_20": {
+      "title": "Öffne ein 20er-Legendary-Pack"
+    },
+    "special_deal_purchase": {
+      "title": "Kaufe den Special Deal"
+    },
+    "daily_deal_purchase": {
+      "title": "Kaufe den Deal des Tages"
+    },
+    "rewards": {
+      "regular_ticket_one": "+{count} reguläres Ticket",
+      "regular_ticket_other": "+{count} reguläre Tickets",
+      "legendary_ticket_one": "+{count} Legendary-Ticket",
+      "legendary_ticket_other": "+{count} Legendary-Tickets",
+      "xp": "+{count} XP"
+    },
+    "bonus": {
+      "description": "Schließe {count} Missionen ab, um +3 Legendary-Tickets zu erhalten",
+      "toast": "+3 Legendary-Tickets gesichert! 🎉"
+    },
+    "cta": "Erledige Aufgaben und sichere dir Belohnungen"
   },
   "contest": {
     "title": "Wöchentlicher Contest",

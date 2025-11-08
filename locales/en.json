@@ -66,6 +66,7 @@
     "claiming": "Claiming...",
     "ticket_shop_title": "Ticket Shop",
     "ticket_shop_desc": "Buy more tickets",
+    "cta_view": "View",
     "collection_cta_title": "Collection",
     "collection_cta_desc": "View your cards",
     "trade_cta_title": "Transfer",
@@ -252,6 +253,38 @@
   },
   "special_day": {
     "title": "Special Day"
+  },
+  "daily_missions": {
+    "header": {
+      "title": "Daily Missions"
+    },
+    "trade_market_purchase": {
+      "title": "Buy a card on the Trade Market"
+    },
+    "ticket_shop_bulk_purchase": {
+      "title": "Purchase at least 5 regular tickets"
+    },
+    "legendary_bulk_20": {
+      "title": "Open a 20-pack legendary bundle"
+    },
+    "special_deal_purchase": {
+      "title": "Purchase the Special Deal"
+    },
+    "daily_deal_purchase": {
+      "title": "Purchase the Deal of the Day"
+    },
+    "rewards": {
+      "regular_ticket_one": "+{count} regular Ticket",
+      "regular_ticket_other": "+{count} regular Tickets",
+      "legendary_ticket_one": "+{count} legendary Ticket",
+      "legendary_ticket_other": "+{count} legendary Tickets",
+      "xp": "+{count} XP"
+    },
+    "bonus": {
+      "description": "Complete {count} missions to earn +3 legendary tickets",
+      "toast": "3 legendary tickets claimed! 🎉"
+    },
+    "cta": "Complete tasks and earn rewards"
   },
   "contest": {
     "title": "Weekly Contest",
