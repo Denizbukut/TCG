@@ -1792,6 +1792,14 @@ export default function Home() {
           </div>
         </header>
 
+        <button
+          type="button"
+          onClick={() => router.push('/tokens')}
+          className="w-full bg-yellow-400 text-black text-center text-sm font-semibold py-2 px-4 shadow-md hover:bg-yellow-300 transition-colors"
+        >
+          Enjoy a 50% discount on Card Creations today!
+        </button>
+
         <main className="w-full px-2 md:px-6 pb-16 flex-1 overflow-y-auto overscroll-contain"> {/* Padding hinzugefügt */}
          
           <div className="grid grid-cols-6 gap-3 mt-2 pb-4">
