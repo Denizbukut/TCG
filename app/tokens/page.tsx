@@ -79,6 +79,13 @@ interface CardData {
   rarity: string
 }
 
+interface CardCreationSettings {
+  discount_percent: number
+  is_active: boolean
+  starts_at?: string | null
+  ends_at?: string | null
+}
+
 interface TokenInfo {
   tokenAddress: string
   contractType: "contract1" | "contract2"
@@ -124,6 +131,66 @@ export default function TokensPage() {
   const [creatingCard, setCreatingCard] = useState(false)
   const [isCreatorBenefitsOpen, setIsCreatorBenefitsOpen] = useState(false)
   const [createCardError, setCreateCardError] = useState<string | null>(null)
+  const [cardCreationSettings, setCardCreationSettings] = useState<CardCreationSettings | null>(null)
+
+  const formatTemplate = (template: string, replacements: Record<string, string | number>) =>
+    Object.entries(replacements).reduce(
+      (acc, [key, value]) => acc.split(`{${key}}`).join(String(value)),
+      template,
+    )
+
+  const activeDiscountPercent =
+    cardCreationSettings && cardCreationSettings.is_active
+      ? Math.max(0, Number(cardCreationSettings.discount_percent) || 0)
+      : 0
+
+  const getDiscountedUsdPrice = (rarity: string) => {
+    const basePrice = CARD_CREATION_PRICES[rarity]?.usd ?? 0
+    if (!activeDiscountPercent) return basePrice
+    const discounted = basePrice * (1 - activeDiscountPercent / 100)
+    return Number(discounted.toFixed(2))
+  }
+
+  const formatUsd = (value: number) => {
+    if (!Number.isFinite(value)) return "0"
+    return Number.isInteger(value) ? value.toString() : value.toFixed(2)
+  }
+
+  const rarityLabelMap: Record<string, string> = {
+    common: t("tokens.rarity_common_label", "Common"),
+    rare: t("tokens.rarity_rare_label", "Rare"),
+    epic: t("tokens.rarity_epic_label", "Epic"),
+    legendary: t("tokens.rarity_legendary_label", "Legendary"),
+  }
+
+  const formatPriceOptionLabel = (rarity: string) => {
+    const baseLabel = rarityLabelMap[rarity] || rarity
+    const baseUsd = CARD_CREATION_PRICES[rarity]?.usd ?? 0
+    if (!baseUsd) return baseLabel
+
+    if (activeDiscountPercent > 0) {
+      const discountedUsd = getDiscountedUsdPrice(rarity)
+      const template = t(
+        "tokens.rarity_option_discount",
+        "{label} - ${base} {percent}% off -> ${discounted}",
+      )
+      return formatTemplate(template, {
+        label: baseLabel,
+        base: formatUsd(baseUsd),
+        percent: activeDiscountPercent,
+        discounted: formatUsd(discountedUsd),
+      })
+    }
+
+    const template = t(
+      "tokens.rarity_option_regular",
+      "{label} - ${base}",
+    )
+    return formatTemplate(template, {
+      label: baseLabel,
+      base: formatUsd(baseUsd),
+    })
+  }
 
   useEffect(() => {
     const loadWalletAddress = async () => {
@@ -155,6 +222,43 @@ export default function TokensPage() {
 
     loadWalletAddress()
   }, [user])
+
+  useEffect(() => {
+    const loadCardCreationSettings = async () => {
+      try {
+        const supabase = getSupabaseBrowserClient()
+        if (!supabase) {
+          return
+        }
+
+        const { data, error } = await (supabase
+          .from("card_creation_settings")
+          .select("discount_percent, is_active, starts_at, ends_at")
+          .eq("is_active", true)
+          .maybeSingle() as any)
+
+        if (error && (error as any).code !== "PGRST116") {
+          console.error("Error loading card creation settings:", error)
+          return
+        }
+
+        if (data) {
+          setCardCreationSettings({
+            discount_percent: Number(data.discount_percent) || 0,
+            is_active: Boolean(data.is_active),
+            starts_at: data.starts_at ?? null,
+            ends_at: data.ends_at ?? null,
+          })
+        } else {
+          setCardCreationSettings(null)
+        }
+      } catch (settingsError) {
+        console.error("Unexpected error loading card creation settings:", settingsError)
+      }
+    }
+
+    loadCardCreationSettings()
+  }, [])
 
   const loadTokens = async (address: string) => {
     try {
@@ -431,12 +535,19 @@ export default function TokensPage() {
         throw new Error('Invalid rarity selected')
       }
 
-      const wldAmount = priceInfo.usd / wldPrice
+      const baseUsdPrice = priceInfo.usd
+      const discountPercent = activeDiscountPercent
+      const discountedUsdPrice =
+        discountPercent > 0 ? Number((baseUsdPrice * (1 - discountPercent / 100)).toFixed(2)) : baseUsdPrice
+
+      const wldAmount = discountedUsdPrice / wldPrice
       const wldAmountWei = toWei(wldAmount)
 
       console.log('=== Card Creation Payment ===')
       console.log('Rarity:', selectedRarity)
-      console.log('USD Price:', priceInfo.usd)
+      console.log('USD Price (Base):', baseUsdPrice)
+      console.log('Discount Percent:', discountPercent)
+      console.log('USD Price (Discounted):', discountedUsdPrice)
       console.log('WLD Price:', wldPrice)
       console.log('WLD Amount:', wldAmount)
       console.log('WLD Amount (Wei):', wldAmountWei)
@@ -529,8 +640,9 @@ export default function TokensPage() {
         token_address: selectedToken.tokenAddress.toLowerCase(),
         rarity: selectedRarity,
         price_wld: wldAmount,
-        price_usd: priceInfo.usd,
+        price_usd: discountedUsdPrice,
         image_url: uploadData.path,
+        discount_percent: discountPercent > 0 ? discountPercent : null,
       })
 
       if (creationError) {
@@ -540,7 +652,9 @@ export default function TokensPage() {
 
       toast({
         title: "Success",
-        description: `Card created successfully! You paid ${wldAmount.toFixed(4)} WLD ($${priceInfo.usd})`,
+        description: discountPercent > 0
+          ? `Card created successfully! You paid ${wldAmount.toFixed(4)} WLD ($${discountedUsdPrice.toFixed(2)}) after ${discountPercent}% discount`
+          : `Card created successfully! You paid ${wldAmount.toFixed(4)} WLD ($${discountedUsdPrice.toFixed(2)})`,
       })
 
       // Reset form
@@ -642,6 +756,18 @@ export default function TokensPage() {
                         <div>
                           <h4 className="text-lg font-bold text-gray-900">{t("tokens.creator_benefits_title", "Card Creator Benefits")}</h4>
                           <p className="text-sm text-gray-600 mt-1">{t("tokens.creator_benefits_subtitle", "Creator earns for all Sales")}</p>
+                          {activeDiscountPercent > 0 && (
+                            <p className="mt-2 text-sm font-semibold text-purple-600 flex items-center gap-2">
+                              <Sparkles className="h-4 w-4" />
+                              {formatTemplate(
+                                t(
+                                  "tokens.creator_discount_today",
+                                  "Only today: {percent}% discount on card creations!",
+                                ),
+                                { percent: activeDiscountPercent },
+                              )}
+                            </p>
+                          )}
                         </div>
                         {isCreatorBenefitsOpen ? (
                           <ChevronUp className="h-5 w-5 text-gray-700" />
@@ -757,6 +883,18 @@ export default function TokensPage() {
                               <div>
                                 <h4 className="text-lg font-bold text-gray-900">{t("tokens.creator_benefits_title", "Card Creator Benefits")}</h4>
                                 <p className="text-sm text-gray-600 mt-1">{t("tokens.creator_benefits_subtitle", "Creator earns for all Sales")}</p>
+                                {activeDiscountPercent > 0 && (
+                                  <p className="mt-2 text-sm font-semibold text-purple-600 flex items-center gap-2">
+                                    <Sparkles className="h-4 w-4" />
+                                    {formatTemplate(
+                                      t(
+                                        "tokens.creator_discount_today",
+                                        "Only today: {percent}% discount on card creations!",
+                                      ),
+                                      { percent: activeDiscountPercent },
+                                    )}
+                                  </p>
+                                )}
                               </div>
                               {isCreatorBenefitsOpen ? (
                                 <ChevronUp className="h-5 w-5 text-gray-700" />
@@ -975,12 +1113,24 @@ export default function TokensPage() {
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="common">Common - $3</SelectItem>
-                                  <SelectItem value="rare">Rare - $10</SelectItem>
-                                  <SelectItem value="epic">Epic - $25</SelectItem>
-                                  <SelectItem value="legendary">Legendary - $50</SelectItem>
+                                  <SelectItem value="common">{formatPriceOptionLabel("common")}</SelectItem>
+                                  <SelectItem value="rare">{formatPriceOptionLabel("rare")}</SelectItem>
+                                  <SelectItem value="epic">{formatPriceOptionLabel("epic")}</SelectItem>
+                                  <SelectItem value="legendary">{formatPriceOptionLabel("legendary")}</SelectItem>
                                 </SelectContent>
                               </Select>
+                              {activeDiscountPercent > 0 && (
+                                <p className="mt-2 text-sm text-green-600 flex items-center gap-2">
+                                  <Sparkles className="h-4 w-4" />
+                                  {formatTemplate(
+                                    t(
+                                      "tokens.card_creation_discount_active",
+                                      "{percent}% discount on card creations",
+                                    ),
+                                    { percent: activeDiscountPercent },
+                                  )}
+                                </p>
+                              )}
                             </div>
 
                             {/* Image Upload */}
