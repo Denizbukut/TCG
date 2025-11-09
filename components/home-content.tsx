@@ -1767,6 +1767,23 @@ export default function Home() {
                   <path d="M17.53 3H21.5L14.36 10.66L22.75 21H16.28L11.22 14.73L5.52 21H1.54L9.04 12.76L1 3H7.6L12.18 8.67L17.53 3ZM16.4 19.13H18.18L7.45 4.76H5.54L16.4 19.13Z" fill="currentColor"/>
                 </svg>
               </a>
+
+              {/* Telegram Icon */}
+              <a
+                href="https://t.me/+TNwjVcoRfnliY2Zi"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-7 h-7 rounded-full bg-gradient-to-br from-[#37aee2] to-[#1e96c8] flex items-center justify-center transition-transform hover:scale-105 shadow border border-[#37aee2]"
+                aria-label="Telegram"
+              >
+                <span className="sr-only">Telegram</span>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" className="w-3.5 h-3.5 text-white">
+                  <path
+                    fill="currentColor"
+                    d="M120 0C53.7 0 0 53.7 0 120s53.7 120 120 120 120-53.7 120-120S186.3 0 120 0zm58.6 81.3l-19.8 93.5c-1.5 6.6-5.4 8.2-11 5.1l-30.4-22.4-14.7 14.2c-1.6 1.6-2.9 2.9-5.8 2.9l2-28.7 52.2-47.2c2.3-2 0.3-3.1-2.6-1.1l-64.5 40.6-27.8-8.7c-6-1.9-6.1-6-1.3-8.8l108.8-49.9c5-2.3 9.4 1.2 7.6 8.7z"
+                  />
+                </svg>
+              </a>
             
               {/* Info Icon */}
               <button
