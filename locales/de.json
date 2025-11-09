@@ -82,7 +82,8 @@
     "shop_exclusive_packs": "Exklusive Packs",
     "card_bonus_title": "Karten-Bonus",
     "card_bonus_desc": "Nutze deine Karten, um Bonus-Token beim Kauf im ANI Wallet zu erhalten",
-    "open_ani_wallet": "ANI Wallet öffnen"
+    "open_ani_wallet": "ANI Wallet öffnen",
+    "card_creation_discount_banner": "Heute erhältst du 50 % Rabatt auf Card Creations!"
   },
   "draw": {
     "open_packs": "Kartenpacks öffnen",

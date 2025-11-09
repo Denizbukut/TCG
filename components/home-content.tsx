@@ -1745,7 +1745,7 @@ export default function Home() {
         }}
       >
         {/* Header with glass effect */}
-        <header className="sticky top-0 z-30 backdrop-blur-md bg-gradient-to-br from-[#232526]/90 to-[#414345]/90 border-b-2 border-yellow-400 shadow-sm">
+        <header className="sticky top-0 z-30 backdrop-blur-md bg-gradient-to-br from-[#232526]/90 to-[#414345]/90 border-b-2 border-emerald-400 shadow-sm">
           <div className="w-full px-4 py-2 flex items-center justify-between">
             {/* Left: App Name */}
             <h1 className="text-base font-bold tracking-tight bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">
@@ -1795,9 +1795,9 @@ export default function Home() {
         <button
           type="button"
           onClick={() => router.push('/tokens')}
-          className="w-full bg-yellow-400 text-black text-center text-sm font-semibold py-2 px-4 shadow-md hover:bg-yellow-300 transition-colors"
+          className="w-full bg-emerald-400 text-black text-center text-sm font-semibold py-2 px-4 shadow-md hover:bg-emerald-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 transition-colors"
         >
-          Enjoy a 50% discount on Card Creations today!
+          {t("home.card_creation_discount_banner", "Enjoy a 50% discount on Card Creations today!")}
         </button>
 
         <main className="w-full px-2 md:px-6 pb-16 flex-1 overflow-y-auto overscroll-contain"> {/* Padding hinzugefügt */}

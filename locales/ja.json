@@ -82,7 +82,8 @@
     "shop_exclusive_packs": "限定パック",
     "card_bonus_title": "カードボーナス",
     "card_bonus_desc": "ANIウォレットでの購入時にカードを使用してボーナストークンを獲得",
-    "open_ani_wallet": "ANIウォレットを開く"
+    "open_ani_wallet": "ANIウォレットを開く",
+    "card_creation_discount_banner": "本日はCard Creationsが50％オフ！"
   },
   "draw": {
     "open_packs": "パック開封",
