@@ -624,18 +624,24 @@ await supabase.from("ticket_purchases").insert({
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-b from-[#181a20] to-[#23262f] pb-20 text-white">
         {/* Shop Header mit Ticket-Anzeige oben rechts */}
-        <div className="flex items-center justify-between max-w-lg mx-auto px-4 py-3">
-          <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-gray-200 to-gray-400 bg-clip-text text-transparent drop-shadow-lg">
+        <div className="flex items-center max-w-lg mx-auto px-4 py-3 gap-2">
+          <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-gray-200 to-gray-400 bg-clip-text text-transparent drop-shadow-lg whitespace-nowrap">
             {t("shop.title", "Ticket Shop")}
           </h1>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded-full shadow-sm border border-blue-400/30 backdrop-blur-md">
-              <Ticket className="h-3.5 w-3.5 text-blue-400" />
-              <span className="font-medium text-sm text-blue-100">{tickets}</span>
+          <div className="flex flex-1 justify-center min-w-0">
+            <PaymentCurrencyToggle
+              size="sm"
+              className="w-full max-w-[150px] shadow-[0_0_22px_rgba(46,113,255,0.25)]"
+            />
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-full shadow-sm border border-blue-400/30 backdrop-blur-md">
+              <Ticket className="h-2.5 w-2.5 text-blue-400" />
+              <span className="font-medium text-[11px] text-blue-100">{tickets}</span>
             </div>
-            <div className="flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded-full shadow-sm border border-purple-400/30 backdrop-blur-md">
-              <Ticket className="h-3.5 w-3.5 text-purple-400" />
-                              <span className="font-medium text-sm text-purple-100">{eliteTickets}</span>
+            <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-full shadow-sm border border-purple-400/30 backdrop-blur-md">
+              <Ticket className="h-2.5 w-2.5 text-purple-400" />
+                              <span className="font-medium text-[11px] text-purple-100">{eliteTickets}</span>
             </div>
             {/* Icon Tickets - COMMENTED OUT */}
             {/* <div className="flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded-full shadow-sm border border-gray-400/30 backdrop-blur-md">
@@ -682,10 +688,6 @@ await supabase.from("ticket_purchases").insert({
     </p>
   </motion.div>
 )}
-
-          <div className="flex justify-end mb-4">
-            <PaymentCurrencyToggle size="sm" />
-          </div>
 
                     {/* Main Shop Tabs */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
