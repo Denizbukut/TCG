@@ -21,11 +21,7 @@ import { getActiveTimeDiscount } from "@/app/actions/time-discount"
 import { getBattleLimitStatus } from "@/app/battle-limit-actions"
 import { PaymentCurrencyToggle } from "@/components/payment-currency-toggle"
 import { usePaymentCurrency } from "@/contexts/payment-currency-context"
-import {
-  ERC20_TRANSFER_ABI,
-  PAYMENT_RECIPIENT,
-  getTransferDetails,
-} from "@/lib/payment-utils"
+import { PAYMENT_RECIPIENT, getTransferDetails } from "@/lib/payment-utils"
 
 
 export default function ShopPage() {
@@ -279,38 +275,27 @@ export default function ShopPage() {
       wldPrice: price,
     })
 
-    let finalPayload
+    const tokenAmountForMiniKit = transferDetails.miniKitTokenAmount ?? transferDetails.rawAmount
 
-    if (paymentCurrency === "USDC" && transferDetails.miniKitTokenAmount) {
-      const reference = `shop-${packageId}-${Date.now().toString(36)}`.slice(0, 36)
-      const description = `Shop ${ticketAmount} ${ticketType} tickets`
-      const { finalPayload: payPayload } = await MiniKit.commandsAsync.pay({
-        reference,
-        to: PAYMENT_RECIPIENT,
-        description,
-        tokens: [
-          {
-            symbol: transferDetails.miniKitSymbol,
-            token_amount: transferDetails.miniKitTokenAmount,
-          },
-        ],
-      })
-      finalPayload = payPayload
-    } else {
-      const { finalPayload: txPayload } = await MiniKit.commandsAsync.sendTransaction({
-        transaction: [
-          {
-            address: transferDetails.tokenAddress,
-            abi: ERC20_TRANSFER_ABI,
-            functionName: "transfer",
-            args: [PAYMENT_RECIPIENT, transferDetails.rawAmount],
-          },
-        ],
-      })
-      finalPayload = txPayload
+    if (!tokenAmountForMiniKit) {
+      throw new Error("Payment amount could not be prepared. Please try again.")
     }
-   
- 
+
+    const reference = `shop-${packageId}-${Date.now().toString(36)}`.slice(0, 32)
+    const description = `Shop ${ticketAmount} ${ticketType} tickets`
+
+    const { finalPayload } = await MiniKit.commandsAsync.pay({
+      reference,
+      to: PAYMENT_RECIPIENT,
+      description,
+      tokens: [
+        {
+          symbol: transferDetails.miniKitSymbol,
+          token_amount: tokenAmountForMiniKit,
+        },
+      ],
+    })
+
     if (finalPayload.status === "success") {
       console.log("success sending payment")
       await handleBuyTickets(packageId, ticketAmount, ticketType)
