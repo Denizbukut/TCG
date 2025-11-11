@@ -77,33 +77,48 @@ export const getTransferDetails = ({
   const sanitizedUsd = Number.isFinite(usdAmount) ? Math.max(0, usdAmount) : 0
   const miniKitSymbol = TOKEN_SYMBOL[currency]
 
-  if (currency === "USDC") {
-    const numericAmount = parseFloat(sanitizedUsd.toFixed(TOKEN_FRACTION_DIGITS.USDC.maximum))
-    const rawAmount = toUsdcUnits(numericAmount)
+  try {
+    if (currency === "USDC") {
+      const numericAmount = parseFloat(sanitizedUsd.toFixed(TOKEN_FRACTION_DIGITS.USDC.maximum))
+      const rawAmount = toUsdcUnits(numericAmount)
+      const miniKitTokenAmount = Math.round(numericAmount * 10 ** USDC_DECIMALS).toString()
+      return {
+        tokenAddress: TOKEN_ADDRESSES.USDC,
+        rawAmount,
+        numericAmount,
+        displayAmount: `${formatAmount(numericAmount, "USDC")} USDC`,
+        currency,
+        miniKitSymbol,
+        miniKitTokenAmount,
+      }
+    }
+
+    const effectivePrice = wldPrice && wldPrice > 0 ? wldPrice : 1
+    const tokenAmount = sanitizedUsd / effectivePrice
+    const numericAmount = parseFloat(tokenAmount.toFixed(TOKEN_FRACTION_DIGITS.WLD.maximum))
+    const rawAmount = tokenToDecimals(numericAmount, Tokens.WLD).toString()
+
     return {
-      tokenAddress: TOKEN_ADDRESSES.USDC,
+      tokenAddress: TOKEN_ADDRESSES.WLD,
       rawAmount,
       numericAmount,
-      displayAmount: `${formatAmount(numericAmount, "USDC")} USDC`,
+      displayAmount: `${formatAmount(numericAmount, "WLD")} WLD`,
       currency,
       miniKitSymbol,
-      miniKitTokenAmount: tokenToDecimals(numericAmount, Tokens.USDCE).toString(),
+      miniKitTokenAmount: rawAmount,
     }
+  } catch (error) {
+    console.error("Failed to build transfer details", { usdAmount, currency, error })
   }
 
-  const effectivePrice = wldPrice && wldPrice > 0 ? wldPrice : 1
-  const tokenAmount = sanitizedUsd / effectivePrice
-  const numericAmount = parseFloat(tokenAmount.toFixed(TOKEN_FRACTION_DIGITS.WLD.maximum))
-  const rawAmount = tokenToDecimals(numericAmount, Tokens.WLD).toString()
-
+  const fallbackDisplay = `$${sanitizedUsd.toFixed(2)} USD`
   return {
-    tokenAddress: TOKEN_ADDRESSES.WLD,
-    rawAmount,
-    numericAmount,
-    displayAmount: `${formatAmount(numericAmount, "WLD")} WLD`,
+    tokenAddress: TOKEN_ADDRESSES[currency],
+    rawAmount: "0",
+    numericAmount: sanitizedUsd,
+    displayAmount: fallbackDisplay,
     currency,
     miniKitSymbol,
-    miniKitTokenAmount: rawAmount,
   }
 }
 
