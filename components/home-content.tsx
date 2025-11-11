@@ -47,11 +47,19 @@ import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { getSupabaseBrowserClient } from "@/lib/supabase"
 import DealOfTheDayDialog from "@/components/deal-of-the-day-dialog"
-import { MiniKit, Tokens, tokenToDecimals, type PayCommandInput } from "@worldcoin/minikit-js"
+import { MiniKit } from "@worldcoin/minikit-js"
 import { useWldPrice } from "@/contexts/WldPriceContext"
 import { claimReferralRewardForUser } from "@/app/actions/referrals"
 import { Progress } from "@/components/ui/progress" // Import Progress component
 import { renderStars } from "@/utils/card-stars"
+import { PaymentCurrencyToggle } from "@/components/payment-currency-toggle"
+import { usePaymentCurrency } from "@/contexts/payment-currency-context"
+import {
+  type PaymentCurrency,
+  ERC20_TRANSFER_ABI,
+  PAYMENT_RECIPIENT,
+  getTransferDetails,
+} from "@/lib/payment-utils"
 
 // Add the Cloudflare URL function
 const getCloudflareImageUrl = (imagePath?: string) => {
@@ -323,6 +331,18 @@ export default function Home() {
   const [walletAddress, setWalletAddress] = useState<string>("")
   const [isChatOpen, setIsChatOpen] = useState(false)
   const { price } = useWldPrice()
+  const { currency: paymentCurrency, setCurrency: setPaymentCurrency } = usePaymentCurrency()
+
+  const formatPrice = (usdAmount: number) =>
+    getTransferDetails({ usdAmount, currency: paymentCurrency, wldPrice: price }).displayAmount
+
+  const specialDealHasDiscount = Boolean(
+    specialDeal?.discount_percentage && specialDeal.discount_percentage > 0,
+  )
+
+  const specialDealDiscountedPrice = specialDealHasDiscount && specialDeal
+    ? specialDeal.price * (1 - specialDeal.discount_percentage / 100)
+    : specialDeal?.price ?? null
 
   const ticketClaimAmount = 3
 
@@ -379,27 +399,27 @@ export default function Home() {
     const ticketType = "regular"
 
     try {
-      // WLD-Betrag berechnen (fallback = 1:1)
-      const roundedWldAmount = Number.parseFloat((price ? dollarPrice / price : dollarPrice).toFixed(3))
-  
       const res = await fetch("/api/initiate-payment", { method: "POST" })
       const { id } = await res.json()
-  
-      const payload: PayCommandInput = {
-        reference: id,
-        to: "0xDb4D9195EAcE195440fbBf6f80cA954bf782468E",
-        tokens: [
+
+      const transferDetails = getTransferDetails({
+        usdAmount: dollarPrice,
+        currency: paymentCurrency,
+        wldPrice: price,
+      })
+
+      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [
           {
-            symbol: Tokens.WLD,
-            token_amount: tokenToDecimals(roundedWldAmount, Tokens.WLD).toString(),
+            address: transferDetails.tokenAddress,
+            abi: ERC20_TRANSFER_ABI,
+            functionName: "transfer",
+            args: [PAYMENT_RECIPIENT, transferDetails.rawAmount],
           },
         ],
-        description: " ",
-      }
-      const { finalPayload } = await MiniKit.commandsAsync.pay(payload)
-  
+      })
+
       if (finalPayload.status === "success") {
-        // Payment successful
         await handleBuyTickets(ticketAmount, ticketType)
       } else {
         toast({
@@ -1467,84 +1487,89 @@ export default function Home() {
   const WLD_TOKEN = "0x2cFc85d8E48F8EAB294be644d9E25C3030863003" // WLD (World Chain)
   // Payment function for Special Deal
   const sendSpecialDealPayment = async () => {
-    if (!specialDeal) return false;
-    
+    if (!specialDeal) return false
+
     try {
-      // Calculate the discounted price
-      const discountedPrice = specialDeal.discount_percentage && specialDeal.discount_percentage > 0 
-        ? specialDeal.price * (1 - specialDeal.discount_percentage / 100)
-        : specialDeal.price;
-      
-      const dollarAmount = discountedPrice;
-      const fallbackWldAmount = discountedPrice;
-      const wldAmount = price ? dollarAmount / price : fallbackWldAmount;
-      
-      // Check if card has a creator that needs payment
+      const discountedPrice =
+        specialDeal.discount_percentage && specialDeal.discount_percentage > 0
+          ? specialDeal.price * (1 - specialDeal.discount_percentage / 100)
+          : specialDeal.price
+
       const hasCreator = specialDeal.creator_address && specialDeal.creator_address.trim() !== ""
-      
+
       let transactions: any[] = []
-      
+
       if (hasCreator && specialDeal.card_rarity) {
-        // Calculate split payment for dev and creator
         const { getDealRevenueSplit } = await import("@/lib/creator-revenue")
         const split = getDealRevenueSplit(specialDeal.card_rarity as any)
-        
-        const devAmount = wldAmount * split.devShare
-        const creatorAmount = wldAmount * split.creatorShare
-        
-        console.log('Special Deal Split payment:', {
-          total: wldAmount,
-          devShare: `${(split.devShare * 100).toFixed(1)}% = ${devAmount.toFixed(4)} WLD`,
-          creatorShare: `${(split.creatorShare * 100).toFixed(1)}% = ${creatorAmount.toFixed(4)} WLD`,
-          creatorAddress: specialDeal.creator_address
+
+        const devTransfer = getTransferDetails({
+          usdAmount: discountedPrice * split.devShare,
+          currency: paymentCurrency,
+          wldPrice: price,
         })
-        
-        // Two transfers: one to dev, one to creator
+
+        const creatorTransfer = getTransferDetails({
+          usdAmount: discountedPrice * split.creatorShare,
+          currency: paymentCurrency,
+          wldPrice: price,
+        })
+
+        console.log("Special Deal Split payment:", {
+          totalUsd: discountedPrice,
+          currency: paymentCurrency,
+          devShare: `${(split.devShare * 100).toFixed(1)}% = ${devTransfer.displayAmount}`,
+          creatorShare: `${(split.creatorShare * 100).toFixed(1)}% = ${creatorTransfer.displayAmount}`,
+          creatorAddress: specialDeal.creator_address,
+        })
+
         transactions = [
           {
-            address: WLD_TOKEN,
-            abi: erc20TransferAbi,
+            address: devTransfer.tokenAddress,
+            abi: ERC20_TRANSFER_ABI,
             functionName: "transfer",
-            args: ["0xDb4D9195EAcE195440fbBf6f80cA954bf782468E", tokenToDecimals(parseFloat(devAmount.toFixed(2)), Tokens.WLD).toString()],
+            args: [PAYMENT_RECIPIENT, devTransfer.rawAmount],
           },
           {
-            address: WLD_TOKEN,
-            abi: erc20TransferAbi,
+            address: creatorTransfer.tokenAddress,
+            abi: ERC20_TRANSFER_ABI,
             functionName: "transfer",
-            args: [specialDeal.creator_address, tokenToDecimals(parseFloat(creatorAmount.toFixed(2)), Tokens.WLD).toString()],
+            args: [specialDeal.creator_address, creatorTransfer.rawAmount],
           },
         ]
       } else {
-        // Single transfer to dev wallet only
+        const transferDetails = getTransferDetails({
+          usdAmount: discountedPrice,
+          currency: paymentCurrency,
+          wldPrice: price,
+        })
+
         transactions = [
           {
-            address: WLD_TOKEN,
-            abi: erc20TransferAbi,
+            address: transferDetails.tokenAddress,
+            abi: ERC20_TRANSFER_ABI,
             functionName: "transfer",
-            args: ["0xDb4D9195EAcE195440fbBf6f80cA954bf782468E", tokenToDecimals(parseFloat(wldAmount.toFixed(2)), Tokens.WLD).toString()],
+            args: [PAYMENT_RECIPIENT, transferDetails.rawAmount],
           },
         ]
       }
-      
-      const {commandPayload, finalPayload} = await MiniKit.commandsAsync.sendTransaction({
+
+      const { commandPayload, finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: transactions,
       })
-     
-
-    
 
       if (finalPayload.status === "success") {
-        console.log("success sending special deal payment");
-        return true;
+        console.log("success sending special deal payment")
+        return true
       } else {
-        console.log("payment failed:", finalPayload);
-        return false;
+        console.log("payment failed:", finalPayload)
+        return false
       }
     } catch (error) {
-      console.error("Error sending special deal payment:", error);
-      return false;
+      console.error("Error sending special deal payment:", error)
+      return false
     }
-  };
+  }
 
   // Direct purchase handler for Special Deal
   const handleBuySpecialDeal = async () => {
@@ -2432,34 +2457,37 @@ export default function Home() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-sm text-gray-400">{t("common.price", "Price")}</p>
-                          {specialDeal.discount_percentage && specialDeal.discount_percentage > 0 ? (
+                          {specialDealHasDiscount && specialDealDiscountedPrice !== null ? (
                             <div>
-                              <p className="text-lg line-through text-gray-500">{price ? `${(specialDeal.price / price).toFixed(2)} WLD` : `$${specialDeal.price.toFixed(2)} USD`}</p>
-                              <p className="text-2xl font-bold text-green-400">{price ? `${((specialDeal.price * (1 - specialDeal.discount_percentage / 100)) / price).toFixed(2)} WLD` : `$${(specialDeal.price * (1 - specialDeal.discount_percentage / 100)).toFixed(2)} USD`}</p>
+                              <p className="text-lg line-through text-gray-500">{formatPrice(specialDeal.price)}</p>
+                              <p className="text-2xl font-bold text-green-400">{formatPrice(specialDealDiscountedPrice)}</p>
                               <p className="text-sm text-red-400 font-bold">-{specialDeal.discount_percentage}% off</p>
                             </div>
                           ) : (
-                            <p className="text-2xl font-bold text-[#3DAEF5]">{price ? `${(specialDeal.price / price).toFixed(2)} WLD` : `$${specialDeal.price.toFixed(2)} USD`}</p>
+                            <p className="text-2xl font-bold text-[#3DAEF5]">{specialDeal ? formatPrice(specialDeal.price) : "—"}</p>
                           )}
                         </div>
-                        <Button
-                          onClick={handleBuySpecialDeal}
-                          disabled={buyingSpecialDeal}
-                          size="lg"
-                          className="bg-gradient-to-r from-[#3DAEF5] to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-full shadow-lg shadow-blue-900/30"
-                        >
-                          {buyingSpecialDeal ? (
-                            <>
-                              <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
-                              {t("common.processing", "Processing...")}
-                            </>
-                          ) : (
-                            <>
-                              <ShoppingBag className="h-4 w-4 mr-2" />
-                              {t("deals.buy_now", "Buy Now")}
-                            </>
-                          )}
-                        </Button>
+                        <div className="flex flex-col items-end gap-2">
+                          <PaymentCurrencyToggle size="sm" className="w-full max-w-[200px]" />
+                          <Button
+                            onClick={handleBuySpecialDeal}
+                            disabled={buyingSpecialDeal}
+                            size="lg"
+                            className="bg-gradient-to-r from-[#3DAEF5] to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-full shadow-lg shadow-blue-900/30"
+                          >
+                            {buyingSpecialDeal ? (
+                              <>
+                                <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
+                                {t("common.processing", "Processing...")}
+                              </>
+                            ) : (
+                              <>
+                                <ShoppingBag className="h-4 w-4 mr-2" />
+                                {t("deals.buy_now", "Buy Now")}
+                              </>
+                            )}
+                          </Button>
+                        </div>
                       </div>
                     </div>
                         </div>

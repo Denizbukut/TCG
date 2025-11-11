@@ -14,11 +14,18 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { getSupabaseBrowserClient } from "@/lib/supabase"
-import { MiniKit, tokenToDecimals, Tokens, type PayCommandInput } from "@worldcoin/minikit-js"
+import { MiniKit } from "@worldcoin/minikit-js"
 import { useEffect } from "react"
 import { useWldPrice } from "@/contexts/WldPriceContext"
 import { getActiveTimeDiscount } from "@/app/actions/time-discount"
 import { getBattleLimitStatus } from "@/app/battle-limit-actions"
+import { PaymentCurrencyToggle } from "@/components/payment-currency-toggle"
+import { usePaymentCurrency } from "@/contexts/payment-currency-context"
+import {
+  ERC20_TRANSFER_ABI,
+  PAYMENT_RECIPIENT,
+  getTransferDetails,
+} from "@/lib/payment-utils"
 
 
 export default function ShopPage() {
@@ -48,10 +55,14 @@ export default function ShopPage() {
     endTime?: string
   } | null>(null)
   const [discountTimeLeft, setDiscountTimeLeft] = useState<string>("")
+ 
+   const { price } = useWldPrice()
+   const { currency: paymentCurrency, setCurrency: setPaymentCurrency } = usePaymentCurrency()
 
-  const { price } = useWldPrice()
-
-   useEffect(() => {
+   const formatPrice = (usdAmount: number) =>
+     getTransferDetails({ usdAmount, currency: paymentCurrency, wldPrice: price }).displayAmount
+ 
+  useEffect(() => {
   const fetchUserClanRole = async () => {
     if (!user?.username) return
 
@@ -210,18 +221,6 @@ export default function ShopPage() {
 
   return finalPrice
 }
-const erc20TransferAbi = [{
-  type: "function",
-  name: "transfer",
-  stateMutability: "nonpayable",
-  inputs: [
-    { name: "to", type: "address" },
-    { name: "amount", type: "uint256" }
-  ],
-  outputs: [{ type: "bool" }]
-}]
-
-const WLD_TOKEN = "0x2cFc85d8E48F8EAB294be644d9E25C3030863003" // WLD (World Chain)
   // const sendPvpBattlePayment = async (dollarPrice: number, packageId: string, battleAmount: number) => {
   //   setIsLoading({ ...isLoading, [packageId]: true })
 
@@ -264,32 +263,54 @@ const WLD_TOKEN = "0x2cFc85d8E48F8EAB294be644d9E25C3030863003" // WLD (World Cha
   // }
 
   const sendPayment = async (
-  dollarPrice: number,
-  packageId: string,
-  ticketAmount: number,
-  ticketType: "regular" | "legendary" | "icon",
-) => {
+    dollarPrice: number,
+    packageId: string,
+    ticketAmount: number,
+    ticketType: "regular" | "legendary" | "icon",
+  ) => {
   setIsLoading({ ...isLoading, [packageId]: true })
-
-  try {
+ 
+   try {
     const discountedPrice = getDiscountedPrice(dollarPrice)
-    // WLD-Betrag berechnen (fallback = 1:1)
-    const roundedWldAmount = Number.parseFloat((price ? discountedPrice / price : discountedPrice).toFixed(3))
 
-   
-    const {commandPayload, finalPayload} = await MiniKit.commandsAsync.sendTransaction({
-      transaction: [
-        {
-          address: WLD_TOKEN,
-          abi: erc20TransferAbi,
-          functionName: "transfer",
-          args: ["0xDb4D9195EAcE195440fbBf6f80cA954bf782468E",tokenToDecimals(roundedWldAmount, Tokens.WLD).toString() ],
-        },
-
-      ],
+    const transferDetails = getTransferDetails({
+      usdAmount: discountedPrice,
+      currency: paymentCurrency,
+      wldPrice: price,
     })
-   
 
+    let finalPayload
+
+    if (paymentCurrency === "USDC" && transferDetails.miniKitTokenAmount) {
+      const reference = `shop-${packageId}-${Date.now().toString(36)}`.slice(0, 36)
+      const description = `Shop ${ticketAmount} ${ticketType} tickets`
+      const { finalPayload: payPayload } = await MiniKit.commandsAsync.pay({
+        reference,
+        to: PAYMENT_RECIPIENT,
+        description,
+        tokens: [
+          {
+            symbol: transferDetails.miniKitSymbol,
+            token_amount: transferDetails.miniKitTokenAmount,
+          },
+        ],
+      })
+      finalPayload = payPayload
+    } else {
+      const { finalPayload: txPayload } = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [
+          {
+            address: transferDetails.tokenAddress,
+            abi: ERC20_TRANSFER_ABI,
+            functionName: "transfer",
+            args: [PAYMENT_RECIPIENT, transferDetails.rawAmount],
+          },
+        ],
+      })
+      finalPayload = txPayload
+    }
+   
+ 
     if (finalPayload.status === "success") {
       console.log("success sending payment")
       await handleBuyTickets(packageId, ticketAmount, ticketType)
@@ -662,6 +683,10 @@ await supabase.from("ticket_purchases").insert({
   </motion.div>
 )}
 
+          <div className="flex justify-end mb-4">
+            <PaymentCurrencyToggle size="sm" />
+          </div>
+
                     {/* Main Shop Tabs */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             {/* <Tabs defaultValue="tickets" className="w-full">
@@ -742,17 +767,15 @@ await supabase.from("ticket_purchases").insert({
                     <div className="flex flex-col items-start">
                       {hasDiscount && (
                         <span className="text-xs text-blue-200/60 line-through">
-                          {price ? `${(originalPrice / price).toFixed(3)} WLD` : `${originalPrice.toFixed(3)} WLD`}
-                        </span>
-                      )}
-                      <span className="text-base font-bold text-blue-100">
-                        {price
-                          ? `${(discountedPrice / price).toFixed(3)} WLD`
-                          : `${discountedPrice.toFixed(3)} WLD`}
-                      </span>
-                      <span className="text-xs text-blue-100/80">
-                        (~${discountedPrice.toFixed(2)})
-                      </span>
+                          {formatPrice(originalPrice)}
+                         </span>
+                       )}
+                       <span className="text-base font-bold text-blue-100">
+                        {formatPrice(discountedPrice)}
+                       </span>
+                       <span className="text-xs text-blue-100/80">
+                         (~${discountedPrice.toFixed(2)})
+                       </span>
                     </div>
                   </div>
                 </CardContent>
@@ -818,13 +841,11 @@ await supabase.from("ticket_purchases").insert({
                   <div className="flex flex-col items-start">
                     {hasDiscount && (
                       <span className="text-xs text-purple-200/60 line-through">
-                        {price ? `${(originalPrice / price).toFixed(3)} WLD` : `${originalPrice.toFixed(3)} WLD`}
+                        {formatPrice(originalPrice)}
                       </span>
                     )}
                     <span className="text-base font-bold text-purple-100">
-                      {price
-                        ? `${(discountedPrice / price).toFixed(3)} WLD`
-                        : `${discountedPrice.toFixed(3)} WLD`}
+                      {formatPrice(discountedPrice)}
                     </span>
                     <span className="text-xs text-purple-100/80">
                       (~${discountedPrice.toFixed(2)})
@@ -921,13 +942,11 @@ await supabase.from("ticket_purchases").insert({
                                     <div className="flex flex-col items-start">
                                       {hasDiscount && (
                                         <span className="text-xs text-orange-200/60 line-through">
-                                          {price ? `${(originalPrice / price).toFixed(3)} WLD` : `${originalPrice.toFixed(3)} WLD`}
+                                          {formatPrice(originalPrice)}
                                         </span>
                                       )}
                                       <span className="text-base font-bold text-orange-100">
-                                        {price
-                                          ? `${(discountedPrice / price).toFixed(3)} WLD`
-                                          : `${discountedPrice.toFixed(3)} WLD`}
+                                        {formatPrice(discountedPrice)}
                                       </span>
                                       <span className="text-xs text-orange-100/80">
                                         (~${discountedPrice.toFixed(2)})

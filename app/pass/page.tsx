@@ -29,9 +29,14 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import type { PremiumPass, ClaimedReward } from "@/types/database"
-import { MiniKit, tokenToDecimals, Tokens, type PayCommandInput } from "@worldcoin/minikit-js"
-import Link from "next/link";
+import { MiniKit, Tokens, type PayCommandInput } from "@worldcoin/minikit-js"
+import Link from "next/link"
+import { PaymentCurrencyToggle } from "@/components/payment-currency-toggle"
+import { usePaymentCurrency } from "@/contexts/payment-currency-context"
+import { getTransferDetails, PAYMENT_RECIPIENT } from "@/lib/payment-utils"
 
+const PREMIUM_PASS_PRICE_USD = 5
+const XP_PASS_PRICE_USD = 5
 
 interface LevelReward {
   level: number
@@ -91,6 +96,23 @@ const [xpPassExpiryDate, setXpPassExpiryDate] = useState<Date | null>(null)
     dropRates: true,
     duration: true,
   })
+  const { currency: paymentCurrency, setCurrency: setPaymentCurrency } = usePaymentCurrency()
+
+  const resolvePriceDetails = (usdAmount: number) => {
+    if (paymentCurrency === "WLD" && (!price || price <= 0)) {
+      return null
+    }
+    return getTransferDetails({
+      usdAmount,
+      currency: paymentCurrency,
+      wldPrice: price,
+    })
+  }
+
+  const premiumPriceDetails = resolvePriceDetails(PREMIUM_PASS_PRICE_USD)
+  const xpPriceDetails = resolvePriceDetails(XP_PASS_PRICE_USD)
+  const premiumPriceDisplay = premiumPriceDetails?.displayAmount ?? `$${PREMIUM_PASS_PRICE_USD.toFixed(2)} USD`
+  const xpPriceDisplay = xpPriceDetails?.displayAmount ?? `$${XP_PASS_PRICE_USD.toFixed(2)} USD`
 
   // Toggle function for individual benefits
   const toggleBenefit = (benefit: string) => {
@@ -99,6 +121,8 @@ const [xpPassExpiryDate, setXpPassExpiryDate] = useState<Date | null>(null)
       [benefit]: !prev[benefit],
     }))
   }
+
+  // Toggle function for individual benefits
   useEffect(() => {
   const fetchPrice = async () => {
     try {
@@ -152,45 +176,61 @@ useEffect(() => {
 
   const sendXpPayment = async () => {
     try {
-      console.log("Starting XP payment process...")
-      const dollarAmount = 5.00
-      const fallbackWldAmount = 5.00
-      const wldAmount = price ? dollarAmount / price : fallbackWldAmount
-      
-      console.log("Payment details:", { dollarAmount, wldAmount, price })
-      
+      if (!user?.wallet_address) {
+        toast({
+          title: "Error",
+          description: "Please log in to continue",
+          variant: "destructive",
+        })
+        return
+      }
+
+      if (paymentCurrency === "WLD" && (!price || price <= 0)) {
+        toast({
+          title: "Price unavailable",
+          description: "Unable to load WLD price. Please try again in a moment or switch to USDC.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      const transferDetails = resolvePriceDetails(XP_PASS_PRICE_USD)
+      if (!transferDetails?.miniKitTokenAmount) {
+        toast({
+          title: "Payment unavailable",
+          description: "Unable to prepare the payment amount. Please try again.",
+          variant: "destructive",
+        })
+        return
+      }
+
       const res = await fetch("/api/initiate-payment", {
         method: "POST",
       })
-      
+
       if (!res.ok) {
         throw new Error(`Payment initiation failed: ${res.status}`)
       }
-      
+
       const { id } = await res.json()
-      console.log("Payment initiated with ID:", id)
 
       const payload: PayCommandInput = {
         reference: id,
-        to: "0xDb4D9195EAcE195440fbBf6f80cA954bf782468E", // unified wallet address
+        to: PAYMENT_RECIPIENT,
         tokens: [
           {
-            symbol: Tokens.WLD,
-            token_amount: tokenToDecimals(wldAmount, Tokens.WLD).toString(),
+            symbol: transferDetails.miniKitSymbol,
+            token_amount: transferDetails.miniKitTokenAmount,
           },
         ],
         description: "XP Pass",
       }
 
-      console.log("Sending payment payload:", payload)
       const { finalPayload } = await MiniKit.commandsAsync.pay(payload)
-      console.log("Payment response:", finalPayload)
 
       if (finalPayload.status == "success") {
-        console.log("Payment successful, calling handlePurchaseXpPass")
         await handlePurchaseXpPass()
       } else {
-        console.error("Payment failed:", finalPayload)
         toast({
           title: "Payment Failed",
           description: "Failed to process payment. Please try again.",
@@ -200,8 +240,8 @@ useEffect(() => {
     } catch (error) {
       console.error("Error in sendXpPayment:", error)
       toast({
-        title: "Payment Error",
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        title: "Error",
+        description: "Something went wrong during payment. Please try again.",
         variant: "destructive",
       })
     }
@@ -750,21 +790,56 @@ const handlePurchaseXpPass = async () => {
 
   // Update the sendPayment function to reflect the promotional price
   const sendPayment = async () => {
-    const dollarAmount = 5.00
-    const fallbackWldAmount = 5.00
-    const wldAmount = price ? dollarAmount / price : fallbackWldAmount
+    if (!user?.wallet_address) {
+      toast({
+        title: "Error",
+        description: "Please log in to continue",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (paymentCurrency === "WLD" && (!price || price <= 0)) {
+      toast({
+        title: "Price unavailable",
+        description: "Unable to load WLD price. Please try again in a moment or switch to USDC.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const transferDetails = resolvePriceDetails(PREMIUM_PASS_PRICE_USD)
+    if (!transferDetails?.miniKitTokenAmount) {
+      toast({
+        title: "Payment unavailable",
+        description: "Unable to prepare the payment amount. Please try again.",
+        variant: "destructive",
+      })
+      return
+    }
+
     const res = await fetch("/api/initiate-payment", {
       method: "POST",
     })
+
+    if (!res.ok) {
+      toast({
+        title: "Payment Failed",
+        description: "Could not start the payment. Please try again.",
+        variant: "destructive",
+      })
+      return
+    }
+
     const { id } = await res.json()
 
     const payload: PayCommandInput = {
       reference: id,
-      to: "0xDb4D9195EAcE195440fbBf6f80cA954bf782468E", // unified wallet address
+      to: PAYMENT_RECIPIENT,
       tokens: [
         {
-          symbol: Tokens.WLD,
-          token_amount: tokenToDecimals(wldAmount, Tokens.WLD).toString(),
+          symbol: transferDetails.miniKitSymbol,
+          token_amount: transferDetails.miniKitTokenAmount,
         },
       ],
       description: "Premium Pass",
@@ -773,8 +848,13 @@ const handlePurchaseXpPass = async () => {
     const { finalPayload } = await MiniKit.commandsAsync.pay(payload)
 
     if (finalPayload.status == "success") {
-      console.log("success sending payment")
       handlePurchasePremium()
+    } else {
+      toast({
+        title: "Payment Failed",
+        description: "Failed to process payment. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -970,12 +1050,10 @@ const handlePurchaseXpPass = async () => {
                 <Ticket className="h-3.5 w-3.5 text-blue-500" />
                 <span className="font-medium text-sm">{eliteTickets}</span>
               </div>
-              {/* Icon Ticket - COMMENTED OUT */}
-              {/* <div className="flex items-center gap-1 bg-white px-3 py-1.5 rounded-full shadow-sm border border-gray-100">
-                <Crown className="h-3.5 w-3.5 text-indigo-500" />
-                <span className="font-medium text-sm">{user?.icon_tickets ?? 0}</span>
-              </div> */}
             </div>
+          </div>
+          <div className="flex justify-end">
+            <PaymentCurrencyToggle size="sm" className="shadow-sm" />
           </div>
           {/* Back to Home Button mittig */}
           <div className="flex justify-center mt-2">
@@ -1082,7 +1160,11 @@ const handlePurchaseXpPass = async () => {
                     <div className="flex-1">
                       <h4 className="font-bold text-gray-900 text-sm">{t("game_pass.support_game", "Support the Game")}</h4>
                       <p className="text-gray-700 text-sm">
-                        {t("game_pass.support_game_desc", "Get Premium Pass for only $5.00 and enjoy full benefits!")}
+                        {t(
+                          "game_pass.support_game_desc",
+                          "Get Premium Pass for only {price} and enjoy full benefits!",
+                          { price: premiumPriceDisplay },
+                        )}
                       </p>
                     </div>
                   </div>

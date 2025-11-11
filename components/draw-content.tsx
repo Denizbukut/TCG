@@ -14,11 +14,19 @@ import { motion, AnimatePresence, useAnimation, useMotionValue, useTransform } f
 // Removed Next.js Image import - using regular img tags
 import { getSupabaseBrowserClient } from "@/lib/supabase"
 import { WEEKLY_CONTEST_CONFIG, getContestEndDate } from "@/lib/weekly-contest-config"
-import { MiniKit, Tokens, type PayCommandInput, tokenToDecimals } from "@worldcoin/minikit-js"
+import { MiniKit } from "@worldcoin/minikit-js"
 import { useWldPrice } from "@/contexts/WldPriceContext"
 import { Info } from "lucide-react"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { useI18n } from "@/contexts/i18n-context"
+import { usePaymentCurrency } from "@/contexts/payment-currency-context"
+import { PaymentCurrencyToggle } from "@/components/payment-currency-toggle"
+import {
+  type PaymentCurrency,
+  ERC20_TRANSFER_ABI,
+  PAYMENT_RECIPIENT,
+  getTransferDetails,
+} from "@/lib/payment-utils"
 // import { isUserBanned } from "@/lib/banned-users" // Lokale Version verwendet
 
 // Gebannte Benutzernamen - diese können keine Packs ziehen
@@ -170,8 +178,7 @@ export default function DrawPage() {
   const [isMultiDraw, setIsMultiDraw] = useState(false)
   const [isBulkDraw, setIsBulkDraw] = useState(false)
   const [showBulkLoading, setShowBulkLoading] = useState(false)
-  const [wldPriceEstimate, setWldPriceEstimate] = useState<string>("–")
-  const [normalWldPrice, setNormalWldPrice] = useState<string>("–")
+  const { currency: paymentCurrency, setCurrency: setPaymentCurrency } = usePaymentCurrency()
 
   // Animation states
   const [showPackSelection, setShowPackSelection] = useState(true)
@@ -341,10 +348,27 @@ const [showInfo, setShowInfo] = useState(false)
 
   const preventNavigation = useRef(false)
   const { price } = useWldPrice()
+
+  const calculateBaseDollarAmount = (count: number) => {
+    let amount = 0.91 * count
+    if (count === 5) {
+      amount *= 0.9
+    }
+    return amount
+  }
+
+  const calculateDiscountedDollarAmount = (count: number) => {
+    const base = calculateBaseDollarAmount(count)
+    if (godPackDiscount?.isActive && activeTab === "god") {
+      return base * (1 - godPackDiscount.value)
+    }
+    return base
+  }
+
   useEffect(() => {
-  fetchGodPacksLeft()
-  fetchGodPackDiscount()
-}, [])
+    fetchGodPacksLeft()
+    fetchGodPackDiscount()
+  }, [])
 
   // God Pack Discount countdown
   useEffect(() => {
@@ -374,20 +398,8 @@ const [showInfo, setShowInfo] = useState(false)
     return () => clearInterval(interval)
   }, [godPackDiscount?.endTime])
 
-  const erc20TransferAbi = [{
-    type: "function",
-    name: "transfer",
-    stateMutability: "nonpayable",
-    inputs: [
-      { name: "to", type: "address" },
-      { name: "amount", type: "uint256" }
-    ],
-    outputs: [{ type: "bool" }]
-  }]
-
-  const WLD_TOKEN = "0x2cFc85d8E48F8EAB294be644d9E25C3030863003" // WLD (World Chain)
   // Payment function for God Pack
-  const sendPayment = async (count = 1) => {
+  const sendPayment = async (count = 1, currency: PaymentCurrency = paymentCurrency) => {
     // Check if user is banned before allowing payment
     if (!user) {
       toast({ title: "Error", description: "You must be logged in.", variant: "destructive" })
@@ -396,49 +408,54 @@ const [showInfo, setShowInfo] = useState(false)
 
     // Check if user is banned
     if (isUserBanned(user.username)) {
-      toast({ 
-        title: "Access Denied", 
-        description: "You are banned from drawing packs.", 
-        variant: "destructive" 
+      toast({
+        title: "Access Denied",
+        description: "You are banned from drawing packs.",
+        variant: "destructive",
       })
       return
     }
 
-    let dollarAmount = 0.91 * count
-    
-    // Apply permanent 10% discount for 5 packs
-    if (count === 5) {
-      dollarAmount = dollarAmount * 0.90 // 10% discount
-    }
-    
-    // Apply additional God Pack discount if active and user is on god pack tab
-    if (godPackDiscount?.isActive && activeTab === "god") {
-      dollarAmount = dollarAmount * (1 - godPackDiscount.value)
-    }
-    
-    const fallbackWldAmount = dollarAmount
-    const wldAmount = price ? dollarAmount / price : fallbackWldAmount
-    const wldAmountRounded = Number(wldAmount.toFixed(3))
-    setWldPriceEstimate(wldAmountRounded.toFixed(3))
+    const dollarAmount = calculateDiscountedDollarAmount(count)
+    const transferDetails = getTransferDetails({
+      usdAmount: dollarAmount,
+      currency,
+      wldPrice: price,
+    })
 
     try {
-      const {commandPayload, finalPayload} = await MiniKit.commandsAsync.sendTransaction({
-        transaction: [
-          {
-            address: WLD_TOKEN,
-            abi: erc20TransferAbi,
-            functionName: "transfer",
-            args: ["0xDb4D9195EAcE195440fbBf6f80cA954bf782468E", tokenToDecimals(wldAmountRounded, Tokens.WLD).toString()],
-          },
+      let finalPayload
 
-        ],
-      })
-     
+      if (currency === "USDC" && transferDetails.miniKitTokenAmount) {
+        const reference = `wheel-${count}-${Date.now().toString(36)}`.slice(0, 36)
+        const description = `Lucky wheel ${count} spin${count > 1 ? "s" : ""}`
+        const { finalPayload: payPayload } = await MiniKit.commandsAsync.pay({
+          reference,
+          to: PAYMENT_RECIPIENT,
+          description,
+          tokens: [
+            {
+              symbol: transferDetails.miniKitSymbol,
+              token_amount: transferDetails.miniKitTokenAmount,
+            },
+          ],
+        })
+        finalPayload = payPayload
+      } else {
+        const { finalPayload: txPayload } = await MiniKit.commandsAsync.sendTransaction({
+          transaction: [
+            {
+              address: transferDetails.tokenAddress,
+              abi: ERC20_TRANSFER_ABI,
+              functionName: "transfer",
+              args: [PAYMENT_RECIPIENT, transferDetails.rawAmount],
+            },
+          ],
+        })
+        finalPayload = txPayload
+      }
 
-     
       const isGoatPack = activeTab === "god"
-    
-     
 
       if (finalPayload.status == "success") {
         console.log("success sending payment")
@@ -487,24 +504,6 @@ const [showInfo, setShowInfo] = useState(false)
   }, [])
 
  
-
-  useEffect(() => {
-    const normalDollarAmount = 0.8
-    let discountedDollarAmount = 0.8
-    
-    // Apply God Pack discount if active and user is on god pack tab
-    if (godPackDiscount?.isActive && activeTab === "god") {
-      discountedDollarAmount = discountedDollarAmount * (1 - godPackDiscount.value)
-    }
-    
-    if (price) {
-      const normalWld = normalDollarAmount / price
-      const discountedWld = discountedDollarAmount / price
-      
-      setNormalWldPrice(normalWld.toFixed(3))
-      setWldPriceEstimate(discountedWld.toFixed(3))
-    }
-  }, [price, godPackDiscount, activeTab])
 
   useEffect(() => {
     setIsClient(true)
@@ -1095,6 +1094,26 @@ const [showInfo, setShowInfo] = useState(false)
     )
   }
 
+  const showGodDiscount = godPackDiscount?.isActive && activeTab === "god"
+
+  const singlePackBaseDetails = getTransferDetails({
+    usdAmount: calculateBaseDollarAmount(1),
+    currency: paymentCurrency,
+    wldPrice: price,
+  })
+
+  const singlePackDiscountDetails = getTransferDetails({
+    usdAmount: calculateDiscountedDollarAmount(1),
+    currency: paymentCurrency,
+    wldPrice: price,
+  })
+
+  const fivePackDiscountDetails = getTransferDetails({
+    usdAmount: calculateDiscountedDollarAmount(5),
+    currency: paymentCurrency,
+    wldPrice: price,
+  })
+
   return (
     <ProtectedRoute>
       <div 
@@ -1201,12 +1220,12 @@ const [showInfo, setShowInfo] = useState(false)
                 </div>
                 
                 {/* God Pack Discount Banner */}
-                {godPackDiscount?.isActive && activeTab === "god" && (
+                {showGodDiscount && (
                   <div className="mb-4 text-center text-sm font-medium px-4 py-2 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white border border-red-400 animate-pulse">
-                    🔥 {Math.round(godPackDiscount.value * 100)}% OFF GOAT PACKS! 
+                    🔥 {Math.round(godPackDiscount.value * 100)}% OFF GOAT PACKS!
                     <div className="flex items-center justify-center gap-2 mt-1 text-xs">
-                      <span className="line-through text-gray-300">{normalWldPrice} WLD</span>
-                      <span className="text-green-300 font-bold">{wldPriceEstimate} WLD</span>
+                      <span className="line-through text-gray-300">{singlePackBaseDetails.displayAmount}</span>
+                      <span className="text-green-300 font-bold">{singlePackDiscountDetails.displayAmount}</span>
                     </div>
                     {godPackDiscountTimeLeft && (
                       <span className="block text-xs mt-1">
@@ -1423,83 +1442,83 @@ const [showInfo, setShowInfo] = useState(false)
                           <>
                             {/* God Pack Buttons */}
                             <div className="space-y-3">
-                              <Button
-                                onClick={() => sendPayment(1)}
-                                disabled={godPacksLeft === null || godPacksLeft >= max_godpacks_daily}
-                                className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl py-4 shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                {isDrawing ? (
-                                  <div className="flex items-center justify-center">
-                                    <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
-                                    <span className="text-sm font-medium">{t("draw.opening_pack", "Opening...")}</span>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-2">
-                                    <Zap className="h-5 w-5" />
-                                    <span className="font-bold text-base">{t("draw.one_pack", "1 Pack")}</span>
-                                    {godPackDiscount?.isActive ? (
-                                      <span className="block text-sm">
-                                        <span className="line-through text-gray-300">{(0.91 / (price || 1)).toFixed(3)} WLD</span>
-                                        <span className="text-green-300 ml-2">{((0.91 * (1 - godPackDiscount.value)) / (price || 1)).toFixed(3)} WLD</span>
-                                      </span>
-                                    ) : (
-                                      <span className="block text-sm">{(0.91 / (price || 1)).toFixed(3)} WLD</span>
-                                    )}
-                                  </div>
-                                )}
-                              </Button>
-
-                              <div className="relative">
+                              <div className="flex items-center justify-center gap-2 rounded-xl border border-red-400/40 bg-black/40 p-1 text-xs font-semibold uppercase">
+                                <PaymentCurrencyToggle size="sm" className="w-full mb-2" />
                                 <Button
-                                  onClick={() => sendPayment(5)}
-                                  disabled={godPacksLeft === null || godPacksLeft >= max_godpacks_daily || (godPacksLeft !== null && godPacksLeft + 5 > max_godpacks_daily)}
-                                  className={
-                                    godPacksLeft === null || godPacksLeft >= max_godpacks_daily || (godPacksLeft !== null && godPacksLeft + 5 > max_godpacks_daily)
-                                      ? "w-full bg-gray-300 text-gray-500 rounded-xl py-4 shadow-sm cursor-not-allowed opacity-60"
-                                      : "w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl py-4 shadow-lg hover:shadow-xl transition-all duration-200 border-2 border-red-400 relative overflow-hidden"
-                                  }
+                                  onClick={() => sendPayment(1, paymentCurrency)}
+                                  disabled={godPacksLeft === null || godPacksLeft >= max_godpacks_daily}
+                                  className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl py-4 shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                  {/* Shine effect */}
-                                  <motion.div
-                                    className="absolute inset-0 pointer-events-none"
-                                    style={{
-                                      background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)",
-                                      backgroundSize: "200% 100%",
-                                    }}
-                                    animate={{
-                                      backgroundPosition: ["-200% 0%", "200% 0%"],
-                                    }}
-                                    transition={{
-                                      duration: 3,
-                                      repeat: Number.POSITIVE_INFINITY,
-                                      repeatType: "loop",
-                                      ease: "linear",
-                                    }}
-                                  />
-                                {isDrawing ? (
-                                  <div className="flex items-center justify-center">
-                                    <div className="h-4 w-4 border-2 border-t-transparent border-current rounded-full animate-spin mr-2"></div>
-                                    <span className="text-sm font-medium">{t("draw.opening_pack", "Opening...")}</span>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-2">
-                                    <Zap className="h-5 w-5" />
-                                    <span className="font-bold text-base text-white">{t("draw.five_packs", "5 Packs")}</span>
-                                    <span className="block text-sm">
-                                      <span className="text-white">
-                                        {godPackDiscount?.isActive 
-                                          ? ((4.55 * 0.90 * (1 - godPackDiscount.value)) / (price || 1)).toFixed(3)
-                                          : ((4.55 * 0.90) / (price || 1)).toFixed(3)
-                                        } WLD
+                                  {isDrawing ? (
+                                    <div className="flex items-center justify-center">
+                                      <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
+                                      <span className="text-sm font-medium">{t("draw.opening_pack", "Opening...")}</span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-2">
+                                      <Zap className="h-5 w-5" />
+                                      <span className="font-bold text-base">{t("draw.one_pack", "1 Pack")}</span>
+                                      <span className="block text-sm">
+                                        {showGodDiscount ? (
+                                          <>
+                                            <span className="line-through text-gray-300">{singlePackBaseDetails.displayAmount}</span>
+                                            <span className="text-green-300 ml-2">{singlePackDiscountDetails.displayAmount}</span>
+                                          </>
+                                        ) : (
+                                          <span>{singlePackDiscountDetails.displayAmount}</span>
+                                        )}
                                       </span>
-                                    </span>
+                                    </div>
+                                  )}
+                                </Button>
+
+                                <div className="relative">
+                                  <Button
+                                    onClick={() => sendPayment(5, paymentCurrency)}
+                                    disabled={godPacksLeft === null || godPacksLeft >= max_godpacks_daily || (godPacksLeft !== null && godPacksLeft + 5 > max_godpacks_daily)}
+                                    className={
+                                      godPacksLeft === null || godPacksLeft >= max_godpacks_daily || (godPacksLeft !== null && godPacksLeft + 5 > max_godpacks_daily)
+                                        ? "w-full bg-gray-300 text-gray-500 rounded-xl py-4 shadow-sm cursor-not-allowed opacity-60"
+                                        : "w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl py-4 shadow-lg hover:shadow-xl transition-all duration-200 border-2 border-red-400 relative overflow-hidden"
+                                    }
+                                  >
+                                    {/* Shine effect */}
+                                    <motion.div
+                                      className="absolute inset-0 pointer-events-none"
+                                      style={{
+                                        background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)",
+                                        backgroundSize: "200% 100%",
+                                      }}
+                                      animate={{
+                                        backgroundPosition: ["-200% 0%", "200% 0%"],
+                                      }}
+                                      transition={{
+                                        duration: 3,
+                                        repeat: Number.POSITIVE_INFINITY,
+                                        repeatType: "loop",
+                                        ease: "linear",
+                                      }}
+                                    />
+                                  {isDrawing ? (
+                                    <div className="flex items-center justify-center">
+                                      <div className="h-4 w-4 border-2 border-t-transparent border-current rounded-full animate-spin mr-2"></div>
+                                      <span className="text-sm font-medium">{t("draw.opening_pack", "Opening...")}</span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-2">
+                                      <Zap className="h-5 w-5" />
+                                      <span className="font-bold text-base text-white">{t("draw.five_packs", "5 Packs")}</span>
+                                      <span className="block text-sm text-white">
+                                        {fivePackDiscountDetails.displayAmount}
+                                      </span>
+                                    </div>
+                                  )}
+                                  </Button>
+                                  <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">
+                                    DISCOUNT (-10%)
                                   </div>
-                                )}
-                              </Button>
-                              <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">
-                                DISCOUNT (-10%)
+                                </div>
                               </div>
-                            </div>
                             </div>
                           </>
                         ) : (

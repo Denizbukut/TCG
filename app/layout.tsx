@@ -9,10 +9,11 @@ import { AppProvider } from "@/contexts/auth-context"
 import { WldPriceProvider } from "@/contexts/WldPriceContext"
 import { Poppins } from "next/font/google"
 import { I18nProvider } from "@/contexts/i18n-context"
+import { PaymentCurrencyProvider } from "@/contexts/payment-currency-context"
 
 const poppins = Poppins({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"], // optional je nach Bedarf
+  weight: ["400", "500", "600", "700"],
 })
 
 const inter = Inter({ subsets: ["latin"] })
@@ -32,14 +33,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <I18nProvider>
               <AppProvider>
                 <WldPriceProvider>
-                  {children}
+                  <PaymentCurrencyProvider>
+                    {children}
+                  </PaymentCurrencyProvider>
                 </WldPriceProvider>
               </AppProvider>
             </I18nProvider>
           </ThemeProvider>
-          
-          
-
         </body>
       </MiniKitProvider>
     </html>
