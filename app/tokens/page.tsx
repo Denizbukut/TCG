@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, Suspense } from "react"
 import { ethers } from "ethers"
 import { MiniKit } from "@worldcoin/minikit-js"
 import { useAuth } from "@/contexts/auth-context"
@@ -54,6 +54,22 @@ const toWei = (amount: number | string) => {
   const frac = BigInt(fracStr || "0")
 
   return (base + frac).toString()
+}
+
+function TokensPageSuspenseFallback() {
+  return (
+    <div className="flex w-full justify-center py-10">
+      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+      Loading tokens...
+    </div>
+  )
+}
+export default function TokensPage() {
+  return (
+    <Suspense fallback={<TokensPageSuspenseFallback />}>
+      <TokensPageContent />
+    </Suspense>
+  )
 }
 
 const CARD_CREATION_PRICES: Record<string, { usd: number; wld: number }> = {
@@ -115,7 +131,7 @@ enum Phase {
   PUBLIC = 1,
 }
 
-export default function TokensPage() {
+function TokensPageContent() {
   const { user } = useAuth()
   const { t } = useI18n()
   const { price: wldPrice } = useWldPrice()
