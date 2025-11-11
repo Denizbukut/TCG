@@ -33,7 +33,7 @@ import { MiniKit, Tokens, type PayCommandInput } from "@worldcoin/minikit-js"
 import Link from "next/link"
 import { PaymentCurrencyToggle } from "@/components/payment-currency-toggle"
 import { usePaymentCurrency } from "@/contexts/payment-currency-context"
-import { getTransferDetails, PAYMENT_RECIPIENT } from "@/lib/payment-utils"
+import { ERC20_TRANSFER_ABI, getTransferDetails, PAYMENT_RECIPIENT } from "@/lib/payment-utils"
 
 const PREMIUM_PASS_PRICE_USD = 5
 const XP_PASS_PRICE_USD = 5
@@ -87,7 +87,8 @@ const [xpPassExpiryDate, setXpPassExpiryDate] = useState<Date | null>(null)
 
   // State for collapsible sections
   const [benefitsExpanded, setBenefitsExpanded] = useState(true)
-  const [price, setPrice] = useState<number | null>(null)
+const [price, setPrice] = useState<number | null>(null)
+const [anixPrice, setAnixPrice] = useState<number | null>(null)
 
   // Add a new state for tracking which benefits are expanded
   const [expandedBenefits, setExpandedBenefits] = useState<Record<string, boolean>>({
@@ -102,10 +103,14 @@ const [xpPassExpiryDate, setXpPassExpiryDate] = useState<Date | null>(null)
     if (paymentCurrency === "WLD" && (!price || price <= 0)) {
       return null
     }
+    if (paymentCurrency === "ANIX" && (!anixPrice || anixPrice <= 0)) {
+      return null
+    }
     return getTransferDetails({
       usdAmount,
       currency: paymentCurrency,
       wldPrice: price,
+      anixPrice,
     })
   }
 
@@ -142,10 +147,33 @@ const [xpPassExpiryDate, setXpPassExpiryDate] = useState<Date | null>(null)
   fetchPrice()
 }, [])
 useEffect(() => {
+  const fetchAnixPrice = async () => {
+    try {
+      const res = await fetch("/api/anix-price")
+      const json = await res.json()
+
+      if (json.price) {
+        setAnixPrice(json.price)
+      } else {
+        console.warn("ANIX-Preis nicht gefunden in JSON:", json)
+      }
+    } catch (err) {
+      console.error("Client error (ANIX):", err)
+    }
+  }
+
+  fetchAnixPrice()
+}, [])
+useEffect(() => {
   if (price !== null) {
     console.log("WLD Preis:", price)
   }
 }, [price])
+useEffect(() => {
+  if (anixPrice !== null) {
+    console.log("ANIX Preis:", anixPrice)
+  }
+}, [anixPrice])
 
   // Format time remaining as HH:MM:SS
   const formatTimeRemaining = (milliseconds: number) => {
@@ -185,10 +213,26 @@ useEffect(() => {
         return
       }
 
-      if (paymentCurrency === "WLD" && (!price || price <= 0)) {
+  if (paymentCurrency === "WLD" && (!price || price <= 0)) {
+      toast({
+        title: "Price unavailable",
+        description: "Unable to load WLD price. Please try again in a moment or switch to USDC.",
+        variant: "destructive",
+      })
+      return
+    }
+    if (paymentCurrency === "ANIX" && (!anixPrice || anixPrice <= 0)) {
+      toast({
+        title: "Price unavailable",
+        description: "Unable to load ANIX price. Please try again in a moment or switch currency.",
+        variant: "destructive",
+      })
+      return
+    }
+      if (paymentCurrency === "ANIX" && (!anixPrice || anixPrice <= 0)) {
         toast({
           title: "Price unavailable",
-          description: "Unable to load WLD price. Please try again in a moment or switch to USDC.",
+          description: "Unable to load ANIX price. Please try again in a moment or switch currency.",
           variant: "destructive",
         })
         return
@@ -214,28 +258,60 @@ useEffect(() => {
 
       const { id } = await res.json()
 
-      const payload: PayCommandInput = {
-        reference: id,
-        to: PAYMENT_RECIPIENT,
-        tokens: [
-          {
-            symbol: transferDetails.miniKitSymbol,
-            token_amount: transferDetails.miniKitTokenAmount,
-          },
-        ],
-        description: "XP Pass",
-      }
+      if (paymentCurrency === "USDC") {
+        if (!transferDetails.miniKitTokenAmount) {
+          toast({
+            title: "Payment unavailable",
+            description: "Unable to prepare the payment amount. Please try again.",
+            variant: "destructive",
+          })
+          return
+        }
 
-      const { finalPayload } = await MiniKit.commandsAsync.pay(payload)
+        const payload: PayCommandInput = {
+          reference: id,
+          to: PAYMENT_RECIPIENT,
+          tokens: [
+            {
+              symbol: transferDetails.miniKitSymbol ?? Tokens.USDCE,
+              token_amount: transferDetails.miniKitTokenAmount,
+            },
+          ],
+          description: "XP Pass",
+        }
 
-      if (finalPayload.status == "success") {
-        await handlePurchaseXpPass()
+        const { finalPayload } = await MiniKit.commandsAsync.pay(payload)
+
+        if (finalPayload.status == "success") {
+          await handlePurchaseXpPass()
+        } else {
+          toast({
+            title: "Payment Failed",
+            description: "Failed to process payment. Please try again.",
+            variant: "destructive",
+          })
+        }
       } else {
-        toast({
-          title: "Payment Failed",
-          description: "Failed to process payment. Please try again.",
-          variant: "destructive",
+        const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+          transaction: [
+            {
+              address: transferDetails.tokenAddress,
+              abi: ERC20_TRANSFER_ABI,
+              functionName: "transfer",
+              args: [PAYMENT_RECIPIENT, transferDetails.rawAmount],
+            },
+          ],
         })
+
+        if (finalPayload.status === "success") {
+          await handlePurchaseXpPass()
+        } else {
+          toast({
+            title: "Payment Failed",
+            description: "Failed to process payment. Please try again.",
+            variant: "destructive",
+          })
+        }
       }
     } catch (error) {
       console.error("Error in sendXpPayment:", error)
@@ -807,6 +883,14 @@ const handlePurchaseXpPass = async () => {
       })
       return
     }
+    if (paymentCurrency === "ANIX" && (!anixPrice || anixPrice <= 0)) {
+      toast({
+        title: "Price unavailable",
+        description: "Unable to load ANIX price. Please try again in a moment or switch currency.",
+        variant: "destructive",
+      })
+      return
+    }
 
     const transferDetails = resolvePriceDetails(PREMIUM_PASS_PRICE_USD)
     if (!transferDetails?.miniKitTokenAmount) {
@@ -833,28 +917,60 @@ const handlePurchaseXpPass = async () => {
 
     const { id } = await res.json()
 
-    const payload: PayCommandInput = {
-      reference: id,
-      to: PAYMENT_RECIPIENT,
-      tokens: [
-        {
-          symbol: transferDetails.miniKitSymbol,
-          token_amount: transferDetails.miniKitTokenAmount,
-        },
-      ],
-      description: "Premium Pass",
-    }
+    if (paymentCurrency === "USDC") {
+      if (!transferDetails?.miniKitTokenAmount) {
+        toast({
+          title: "Payment unavailable",
+          description: "Unable to prepare the payment amount. Please try again.",
+          variant: "destructive",
+        })
+        return
+      }
 
-    const { finalPayload } = await MiniKit.commandsAsync.pay(payload)
+      const payload: PayCommandInput = {
+        reference: id,
+        to: PAYMENT_RECIPIENT,
+        tokens: [
+          {
+            symbol: transferDetails.miniKitSymbol ?? Tokens.USDCE,
+            token_amount: transferDetails.miniKitTokenAmount,
+          },
+        ],
+        description: "Premium Pass",
+      }
 
-    if (finalPayload.status == "success") {
-      handlePurchasePremium()
+      const { finalPayload } = await MiniKit.commandsAsync.pay(payload)
+
+      if (finalPayload.status == "success") {
+        handlePurchasePremium()
+      } else {
+        toast({
+          title: "Payment Failed",
+          description: "Failed to process payment. Please try again.",
+          variant: "destructive",
+        })
+      }
     } else {
-      toast({
-        title: "Payment Failed",
-        description: "Failed to process payment. Please try again.",
-        variant: "destructive",
+      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [
+          {
+            address: transferDetails.tokenAddress,
+            abi: ERC20_TRANSFER_ABI,
+            functionName: "transfer",
+            args: [PAYMENT_RECIPIENT, transferDetails.rawAmount],
+          },
+        ],
       })
+
+      if (finalPayload.status === "success") {
+        handlePurchasePremium()
+      } else {
+        toast({
+          title: "Payment Failed",
+          description: "Failed to process payment. Please try again.",
+          variant: "destructive",
+        })
+      }
     }
   }
 
@@ -1052,9 +1168,9 @@ const handlePurchaseXpPass = async () => {
               </div>
             </div>
           </div>
-          <div className="flex justify-end">
+          {/* <div className="flex justify-end">
             <PaymentCurrencyToggle size="sm" className="shadow-sm" />
-          </div>
+          </div> */}
           {/* Back to Home Button mittig */}
           <div className="flex justify-center mt-2">
             <Link href="/">
