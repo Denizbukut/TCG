@@ -20,6 +20,7 @@ import ProtectedRoute from "@/components/protected-route"
 import { getSupabaseBrowserClient } from "@/lib/supabase"
 import { motion } from "framer-motion"
 import { useWldPrice } from "@/contexts/WldPriceContext"
+import { useRouter, useSearchParams } from "next/navigation"
 
 const PUF_CONTRACT_ADDRESS_1 = "0xc301BaCE6E9409B1876347a3dC94EC24D18C1FE4"
 const PUF_CONTRACT_ADDRESS_2 = "0x3140167E09d3cfB67b151C25d54fa356f644712D"
@@ -118,10 +119,34 @@ export default function TokensPage() {
   const { user } = useAuth()
   const { t } = useI18n()
   const { price: wldPrice } = useWldPrice()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [tokens, setTokens] = useState<TokenInfo[]>([])
   const [loading, setLoading] = useState(true)
   const [walletAddress, setWalletAddress] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState("listed")
+  useEffect(() => {
+    const tab = searchParams.get("tab")
+    if (tab === "create" && activeTab !== "create") {
+      setActiveTab("create")
+    } else if (tab === "listed" && activeTab !== "listed") {
+      setActiveTab("listed")
+    } else if (!tab && activeTab !== "listed") {
+      setActiveTab("listed")
+    }
+  }, [searchParams, activeTab])
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value)
+    const params = new URLSearchParams(searchParams)
+    if (value === "listed") {
+      params.delete("tab")
+    } else {
+      params.set("tab", value)
+    }
+    const queryString = params.toString()
+    router.replace(queryString ? `?${queryString}` : "?", { scroll: false })
+  }
   const [selectedToken, setSelectedToken] = useState<TokenInfo | null>(null)
   const [showCreateCard, setShowCreateCard] = useState(false)
   const [selectedRarity, setSelectedRarity] = useState<string>("common")
@@ -933,7 +958,7 @@ export default function TokensPage() {
                   </Card>
                 </motion.div>
               ) : (
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
                   <TabsList className="grid w-full grid-cols-2 mb-6">
                     <TabsTrigger value="listed">{t("tokens.listed_cards", "Listed Cards")}</TabsTrigger>
                     <TabsTrigger value="create">{t("tokens.create_card_tab", "Create Card")}</TabsTrigger>

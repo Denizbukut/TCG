@@ -1835,7 +1835,19 @@ export default function Home() {
         </header>
 
         <main className="w-full px-2 md:px-6 pb-16 flex-1 overflow-y-auto overscroll-contain"> {/* Padding hinzugefügt */}
-         
+          <Link href="/tokens?tab=create">
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="mt-3 mb-4 flex items-center gap-2 rounded-lg border-2 border-emerald-400 bg-gradient-to-r from-emerald-400 via-lime-400 to-emerald-500 px-3 py-2 text-sm font-semibold text-black shadow-[0_0_18px_rgba(16,185,129,0.55)] transition hover:scale-[1.02] hover:shadow-[0_0_28px_rgba(16,185,129,0.7)]"
+            >
+              <Sparkles className="h-4 w-4 text-black" />
+              <span>Create your own card and earn WLD</span>
+              <ArrowRight className="ml-auto h-4 w-4 text-black/80" />
+            </motion.div>
+          </Link>
+
           <div className="grid grid-cols-6 gap-3 mt-2 pb-4">
             {/* Profile */}
             <div className="col-span-3">
