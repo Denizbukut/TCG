@@ -17,11 +17,12 @@ import { getSupabaseBrowserClient } from "@/lib/supabase"
 import { MiniKit } from "@worldcoin/minikit-js"
 import { useEffect } from "react"
 import { useWldPrice } from "@/contexts/WldPriceContext"
+import { useAnixPrice } from "@/contexts/AnixPriceContext"
 import { getActiveTimeDiscount } from "@/app/actions/time-discount"
 import { getBattleLimitStatus } from "@/app/battle-limit-actions"
 import { PaymentCurrencyToggle } from "@/components/payment-currency-toggle"
 import { usePaymentCurrency } from "@/contexts/payment-currency-context"
-import { PAYMENT_RECIPIENT, getTransferDetails } from "@/lib/payment-utils"
+import { ERC20_TRANSFER_ABI, PAYMENT_RECIPIENT, getTransferDetails } from "@/lib/payment-utils"
 
 
 export default function ShopPage() {
@@ -53,10 +54,16 @@ export default function ShopPage() {
   const [discountTimeLeft, setDiscountTimeLeft] = useState<string>("")
  
    const { price } = useWldPrice()
+   const { price: anixPrice } = useAnixPrice()
    const { currency: paymentCurrency, setCurrency: setPaymentCurrency } = usePaymentCurrency()
 
    const formatPrice = (usdAmount: number) =>
-     getTransferDetails({ usdAmount, currency: paymentCurrency, wldPrice: price }).displayAmount
+     getTransferDetails({
+       usdAmount,
+       currency: paymentCurrency,
+       wldPrice: price,
+       anixPrice,
+     }).displayAmount
  
   useEffect(() => {
   const fetchUserClanRole = async () => {
@@ -273,28 +280,24 @@ export default function ShopPage() {
       usdAmount: discountedPrice,
       currency: paymentCurrency,
       wldPrice: price,
+      anixPrice,
     })
 
-    const tokenAmountForMiniKit = transferDetails.miniKitTokenAmount ?? transferDetails.rawAmount
-
-    if (!tokenAmountForMiniKit) {
-      throw new Error("Payment amount could not be prepared. Please try again.")
-    }
-
-    const reference = `shop-${packageId}-${Date.now().toString(36)}`.slice(0, 32)
-    const description = `Shop ${ticketAmount} ${ticketType} tickets`
-
-    const { finalPayload } = await MiniKit.commandsAsync.pay({
-      reference,
-      to: PAYMENT_RECIPIENT,
-      description,
-      tokens: [
+    const txResult = await MiniKit.commandsAsync.sendTransaction({
+      transaction: [
         {
-          symbol: transferDetails.miniKitSymbol,
-          token_amount: tokenAmountForMiniKit,
+          address: transferDetails.tokenAddress,
+          abi: ERC20_TRANSFER_ABI,
+          functionName: "transfer",
+          args: [PAYMENT_RECIPIENT, transferDetails.rawAmount],
         },
       ],
     })
+
+    console.log("MiniKit sendTransaction result:", txResult)
+
+    const { finalPayload } = txResult
+    console.log("MiniKit finalPayload:", finalPayload)
 
     if (finalPayload.status === "success") {
       console.log("success sending payment")
@@ -611,14 +614,16 @@ await supabase.from("ticket_purchases").insert({
         {/* Shop Header mit Ticket-Anzeige oben rechts */}
         <div className="flex items-center max-w-lg mx-auto px-4 py-3 gap-2">
           <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-gray-200 to-gray-400 bg-clip-text text-transparent drop-shadow-lg whitespace-nowrap">
-            {t("shop.title", "Ticket Shop")}
+            {t("shop.title_short", "Shop")}
           </h1>
+          {/* Currency switch temporarily disabled
           <div className="flex flex-1 justify-center min-w-0">
             <PaymentCurrencyToggle
               size="sm"
-              className="w-full max-w-[150px] shadow-[0_0_22px_rgba(46,113,255,0.25)]"
+              className="w-full max-w-[210px] shadow-[0_0_22px_rgba(46,113,255,0.25)]"
             />
           </div>
+          */}
           <div className="flex items-center gap-1 shrink-0">
             <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-full shadow-sm border border-blue-400/30 backdrop-blur-md">
               <Ticket className="h-2.5 w-2.5 text-blue-400" />
@@ -687,185 +692,178 @@ await supabase.from("ticket_purchases").insert({
                 </TabsTrigger>
               </TabsList> */}
 
-              {/* Tickets Tab Content */}
-              {/* <TabsContent value="tickets" className="mt-0"> */}
-                <Tabs defaultValue="regular" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 h-12 rounded-2xl p-1 bg-gradient-to-r from-gray-900/60 via-gray-800/40 to-gray-900/60 mb-6 shadow-lg backdrop-blur-md">
-                    <TabsTrigger
-                      value="regular"
-                      className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-blue-300 data-[state=active]:text-blue-200 data-[state=active]:shadow transition-all font-semibold tracking-wide"
-                    >
-                      <Ticket className="h-4 w-4 mr-2 text-blue-300" />
-                      {t("shop.regular_tickets", "Regular Tickets")}
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="legendary"
-                      className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-purple-400 data-[state=active]:text-purple-200 data-[state=active]:shadow transition-all font-semibold tracking-wide"
-                    >
-                      <Ticket className="h-4 w-4 mr-2 text-purple-300" />
-                      {t("shop.legendary_tickets", "Legendary Tickets")}
-                    </TabsTrigger>
-                    {/* <TabsTrigger
-                      value="icon"
-                      className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-yellow-200 data-[state=active]:text-yellow-100 data-[state=active]:shadow transition-all font-semibold tracking-wide"
-                    >
-                      <span className="font-extrabold text-yellow-200 mr-2">★</span>
-                      Icon Tickets
-                    </TabsTrigger> */}
-                                    </TabsList>
-
-                  {/* Regular Tickets Content */}
-    <TabsContent value="regular" className="mt-0 space-y-6">
-      <div className="grid grid-cols-2 gap-3">
-        {regularPackages.map((pkg) => {
-          const originalPrice = pkg.price
-          const discountedPrice = getDiscountedPrice(originalPrice)
-          const hasDiscount = discountedPrice < originalPrice
-          return (
-            <motion.div
-              key={pkg.id}
-              whileHover={{ scale: 1.03, boxShadow: '0 0 32px 0 rgba(212,175,55,0.10)' }}
-              className="relative h-full"
-            >
-              <Card
-                className="overflow-hidden border-2 border-blue-300/30 bg-gradient-to-br from-gray-900/60 to-gray-800/40 rounded-xl shadow-md backdrop-blur-md transition-all p-2 h-full flex flex-col"
-              >
-                {/* Shine Effekt */}
-                <motion.div
-                  className="absolute left-[-40%] top-0 w-1/2 h-full bg-gradient-to-r from-transparent via-blue-100/10 to-transparent skew-x-[-20deg] pointer-events-none"
-                  animate={{ left: ['-40%', '120%'] }}
-                  transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                />
-                {hasDiscount && (
-                  <div className="absolute top-0 right-0 bg-gradient-to-r from-blue-400 to-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10">
-                    -{Math.round((1 - discountedPrice / originalPrice) * 100)}%
-                  </div>
-                )}
-                <CardHeader className="p-2 pb-1 space-y-0">
-                  <CardTitle className="text-base font-extrabold flex items-center text-blue-200 drop-shadow">
-                    <span className="mr-1">{pkg.amount}</span>
-                    <Ticket className="h-4 w-4 text-blue-300 drop-shadow-lg mx-1" />
-                    <span className="ml-1 text-xs">{pkg.amount === 1 ? t("shop.regular_ticket", "Regular Ticket") : t("shop.regular_tickets", "Regular Tickets")}</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-2 pt-0 pb-1 flex-1">
-                  <Separator className="my-2 border-blue-300/20" />
-                  <div className="flex items-center justify-between">
-                    <div className="flex flex-col items-start">
-                      {hasDiscount && (
-                        <span className="text-xs text-blue-200/60 line-through">
-                          {formatPrice(originalPrice)}
-                         </span>
-                       )}
-                       <span className="text-base font-bold text-blue-100">
-                        {formatPrice(discountedPrice)}
-                       </span>
-                       <span className="text-xs text-blue-100/80">
-                         (~${discountedPrice.toFixed(2)})
-                       </span>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="p-2 pt-0">
-                  <Button
-                    size="sm"
-                    className="w-full bg-gradient-to-r from-gray-800/80 to-blue-200/30 text-blue-100 font-bold border-0 hover:scale-105 hover:shadow-lg transition backdrop-blur-md"
-                    onClick={() => sendPayment(originalPrice, pkg.id, pkg.amount, 'regular')}
-                    disabled={isLoading[pkg.id]}
+              <Tabs defaultValue="regular" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 h-12 rounded-2xl p-1 bg-gradient-to-r from-gray-900/60 via-gray-800/40 to-gray-900/60 mb-6 shadow-lg backdrop-blur-md">
+                  <TabsTrigger
+                    value="regular"
+                    className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-blue-300 data-[state=active]:text-blue-200 data-[state=active]:shadow transition-all font-semibold tracking-wide"
                   >
-                    {isLoading[pkg.id] ? (
-                      <>
-                        <div className="h-4 w-4 border-2 border-t-transparent border-blue-300 rounded-full animate-spin mr-2"></div>
-                        {t("shop.processing", "Processing...")}
-                      </>
-                    ) : (
-                      t("shop.purchase", "Purchase")
-                    )}
-                  </Button>
-                </CardFooter>
-              </Card>
-            </motion.div>
-          )
-        })}
-      </div>
-    </TabsContent>
-
-    {/* Legendary Tickets Content */}
-    <TabsContent value="legendary" className="mt-0 space-y-6">
-      <div className="grid grid-cols-2 gap-2">
-        {legendaryPackages.map((pkg) => {
-          const originalPrice = pkg.price
-          const discountedPrice = getDiscountedPrice(originalPrice)
-          const hasDiscount = discountedPrice < originalPrice
-          return (
-            <motion.div
-              key={pkg.id}
-              whileHover={{ scale: 1.03, boxShadow: '0 0 32px 0 rgba(180,180,180,0.10)' }}
-              className="relative h-full"
-            >
-              <Card
-                className="overflow-hidden border-2 border-purple-400/30 bg-gradient-to-br from-gray-900/60 to-gray-800/40 rounded-xl shadow-md backdrop-blur-md transition-all p-2 h-full flex flex-col"
-              >
-                <motion.div
-                  className="absolute left-[-40%] top-0 w-1/2 h-full bg-gradient-to-r from-transparent via-purple-200/10 to-transparent skew-x-[-20deg] pointer-events-none"
-                  animate={{ left: ['-40%', '120%'] }}
-                  transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                />
-                {hasDiscount && (
-                  <div className="absolute top-0 right-0 bg-gradient-to-r from-purple-400 to-purple-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10">
-                    -{Math.round((1 - discountedPrice / originalPrice) * 100)}%
-                  </div>
-                )}
-                <CardHeader className="p-2 pb-1 space-y-0">
-                  <CardTitle className="text-base font-extrabold flex items-center text-purple-200 drop-shadow">
-                    <span className="mr-1">{pkg.amount}</span>
-                    <Ticket className="h-4 w-4 text-purple-300 drop-shadow-lg mx-1" />
-                    <span className="ml-1 text-xs">{pkg.amount === 1 ? t("shop.legendary_ticket", "Legendary Ticket") : t("shop.legendary_tickets", "Legendary Tickets")}</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-2 pt-0 pb-1 flex-1">
-                  <Separator className="my-2 border-purple-400/20" />
-                  <div className="flex flex-col items-start">
-                    {hasDiscount && (
-                      <span className="text-xs text-purple-200/60 line-through">
-                        {formatPrice(originalPrice)}
-                      </span>
-                    )}
-                    <span className="text-base font-bold text-purple-100">
-                      {formatPrice(discountedPrice)}
-                    </span>
-                    <span className="text-xs text-purple-100/80">
-                      (~${discountedPrice.toFixed(2)})
-                    </span>
-                  </div>
-                </CardContent>
-                <CardFooter className="p-2 pt-0">
-                  <Button
-                    size="sm"
-                    className="w-full bg-gradient-to-r from-gray-800/80 to-purple-400/30 text-purple-100 font-bold border-0 hover:scale-105 hover:shadow-lg transition backdrop-blur-md"
-                    onClick={() => sendPayment(originalPrice, pkg.id, pkg.amount, 'legendary')}
-                    disabled={isLoading[pkg.id]}
+                    <Ticket className="h-4 w-4 mr-2 text-blue-300" />
+                    {t("shop.regular_tickets", "Regular Tickets")}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="legendary"
+                    className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-purple-400 data-[state=active]:text-purple-200 data-[state=active]:shadow transition-all font-semibold tracking-wide"
                   >
-                    {isLoading[pkg.id] ? (
-                      <>
-                        <div className="h-4 w-4 border-2 border-t-transparent border-purple-300 rounded-full animate-spin mr-2"></div>
-                        {t("shop.processing", "Processing...")}
-                      </>
-                    ) : (
-                      t("shop.purchase", "Purchase")
-                    )}
-                  </Button>
-                </CardFooter>
-              </Card>
-            </motion.div>
-          )
-        })}
-      </div>
-    </TabsContent>
+                    <Ticket className="h-4 w-4 mr-2 text-purple-300" />
+                    {t("shop.legendary_tickets", "Legendary Tickets")}
+                  </TabsTrigger>
+                </TabsList>
 
-    {/* Icon Tickets Content - REMOVED */}
-                </Tabs>
-              {/* </TabsContent> */}
+                <TabsContent value="regular" className="mt-0">
+                  <div className="grid grid-cols-2 gap-3">
+                    {regularPackages.map((pkg) => {
+                      const originalPrice = pkg.price
+                      const discountedPrice = getDiscountedPrice(originalPrice)
+                      const hasDiscount = discountedPrice < originalPrice
+                      return (
+                        <motion.div
+                          key={pkg.id}
+                          whileHover={{ scale: 1.03, boxShadow: '0 0 32px 0 rgba(212,175,55,0.10)' }}
+                          className="relative h-full"
+                        >
+                          <Card
+                            className="overflow-hidden border-2 border-blue-300/30 bg-gradient-to-br from-gray-900/60 to-gray-800/40 rounded-xl shadow-md backdrop-blur-md transition-all p-2 h-full flex flex-col"
+                          >
+                            <motion.div
+                              className="absolute left-[-40%] top-0 w-1/2 h-full bg-gradient-to-r from-transparent via-blue-100/10 to-transparent skew-x-[-20deg] pointer-events-none"
+                              animate={{ left: ['-40%', '120%'] }}
+                              transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+                            />
+                            {hasDiscount && (
+                              <div className="absolute top-0 right-0 bg-gradient-to-r from-blue-400 to-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10">
+                                -{Math.round((1 - discountedPrice / originalPrice) * 100)}%
+                              </div>
+                            )}
+                            <CardHeader className="p-2 pb-1 space-y-0">
+                              <CardTitle className="text-base font-extrabold flex items-center text-blue-200 drop-shadow">
+                                <span className="mr-1">{pkg.amount}</span>
+                                <Ticket className="h-4 w-4 text-blue-300 drop-shadow-lg mx-1" />
+                                <span className="ml-1 text-xs">
+                                  {pkg.amount === 1
+                                    ? t("shop.regular_ticket", "Regular Ticket")
+                                    : t("shop.regular_tickets", "Regular Tickets")}
+                                </span>
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-2 pt-0 pb-1 flex-1">
+                              <Separator className="my-2 border-blue-300/20" />
+                              <div className="flex items-center justify-between">
+                                <div className="flex flex-col items-start">
+                                  {hasDiscount && (
+                                    <span className="text-xs text-blue-200/60 line-through">
+                                      {formatPrice(originalPrice)}
+                                    </span>
+                                  )}
+                                  <span className="text-base font-bold text-blue-100">
+                                    {formatPrice(discountedPrice)}
+                                  </span>
+                                  <span className="text-xs text-blue-100/80">
+                                    (~${discountedPrice.toFixed(2)})
+                                  </span>
+                                </div>
+                              </div>
+                            </CardContent>
+                            <CardFooter className="p-2 pt-0">
+                              <Button
+                                size="sm"
+                                className="w-full bg-gradient-to-r from-gray-800/80 to-blue-200/30 text-blue-100 font-bold border-0 hover:scale-105 hover:shadow-lg transition backdrop-blur-md"
+                                onClick={() => sendPayment(originalPrice, pkg.id, pkg.amount, 'regular')}
+                                disabled={isLoading[pkg.id]}
+                              >
+                                {isLoading[pkg.id] ? (
+                                  <>
+                                    <div className="h-4 w-4 border-2 border-t-transparent border-blue-300 rounded-full animate-spin mr-2"></div>
+                                    {t("shop.processing", "Processing...")}
+                                  </>
+                                ) : (
+                                  t("shop.purchase", "Purchase")
+                                )}
+                              </Button>
+                            </CardFooter>
+                          </Card>
+                        </motion.div>
+                      )
+                    })}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="legendary" className="mt-0">
+                  <div className="grid grid-cols-2 gap-2">
+                    {legendaryPackages.map((pkg) => {
+                      const originalPrice = pkg.price
+                      const discountedPrice = getDiscountedPrice(originalPrice)
+                      const hasDiscount = discountedPrice < originalPrice
+                      return (
+                        <motion.div
+                          key={pkg.id}
+                          whileHover={{ scale: 1.03, boxShadow: '0 0 32px 0 rgba(180,180,180,0.10)' }}
+                          className="relative h-full"
+                        >
+                          <Card
+                            className="overflow-hidden border-2 border-purple-400/30 bg-gradient-to-br from-gray-900/60 to-gray-800/40 rounded-xl shadow-md backdrop-blur-md transition-all p-2 h-full flex flex-col"
+                          >
+                            <motion.div
+                              className="absolute left-[-40%] top-0 w-1/2 h-full bg-gradient-to-r from-transparent via-purple-200/10 to-transparent skew-x-[-20deg] pointer-events-none"
+                              animate={{ left: ['-40%', '120%'] }}
+                              transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+                            />
+                            {hasDiscount && (
+                              <div className="absolute top-0 right-0 bg-gradient-to-r from-purple-400 to-purple-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10">
+                                -{Math.round((1 - discountedPrice / originalPrice) * 100)}%
+                              </div>
+                            )}
+                            <CardHeader className="p-2 pb-1 space-y-0">
+                              <CardTitle className="text-base font-extrabold flex items-center text-purple-200 drop-shadow">
+                                <span className="mr-1">{pkg.amount}</span>
+                                <Ticket className="h-4 w-4 text-purple-300 drop-shadow-lg mx-1" />
+                                <span className="ml-1 text-xs">
+                                  {pkg.amount === 1
+                                    ? t("shop.legendary_ticket", "Legendary Ticket")
+                                    : t("shop.legendary_tickets", "Legendary Tickets")}
+                                </span>
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-2 pt-0 pb-1 flex-1">
+                              <Separator className="my-2 border-purple-400/20" />
+                              <div className="flex flex-col items-start">
+                                {hasDiscount && (
+                                  <span className="text-xs text-purple-200/60 line-through">
+                                    {formatPrice(originalPrice)}
+                                  </span>
+                                )}
+                                <span className="text-base font-bold text-purple-100">
+                                  {formatPrice(discountedPrice)}
+                                </span>
+                                <span className="text-xs text-purple-100/80">
+                                  (~${discountedPrice.toFixed(2)})
+                                </span>
+                              </div>
+                            </CardContent>
+                            <CardFooter className="p-2 pt-0">
+                              <Button
+                                size="sm"
+                                className="w-full bg-gradient-to-r from-gray-800/80 to-purple-400/30 text-purple-100 font-bold border-0 hover:scale-105 hover:shadow-lg transition backdrop-blur-md"
+                                onClick={() => sendPayment(originalPrice, pkg.id, pkg.amount, 'legendary')}
+                                disabled={isLoading[pkg.id]}
+                              >
+                                {isLoading[pkg.id] ? (
+                                  <>
+                                    <div className="h-4 w-4 border-2 border-t-transparent border-purple-300 rounded-full animate-spin mr-2"></div>
+                                    {t("shop.processing", "Processing...")}
+                                  </>
+                                ) : (
+                                  t("shop.purchase", "Purchase")
+                                )}
+                              </Button>
+                            </CardFooter>
+                          </Card>
+                        </motion.div>
+                      )
+                    })}
+                  </div>
+                </TabsContent>
+              </Tabs>
 
               {/* PvP Tab Content */}
               {/* <TabsContent value="pvp" className="mt-0"> */}
