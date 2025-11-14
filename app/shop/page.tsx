@@ -62,83 +62,83 @@ export default function ShopPage() {
        usdAmount,
        currency: paymentCurrency,
        wldPrice: price,
-       anixPrice,
      }).displayAmount
  
+  // Combined data fetching - reduces Edge Requests from 5+ to 1-2
   useEffect(() => {
-  const fetchUserClanRole = async () => {
     if (!user?.username) return
 
+    let isMounted = true
     const supabase = getSupabaseBrowserClient()
     if (!supabase) return
 
-    try {
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("clan_id")
-        .eq("username", user.username)
-        .single()
-
-      if (userError || !userData?.clan_id) {
-        setUserClanRole(null)
-        return
-      }
-
-      const clanId = userData.clan_id
-
-      // Fetch user role in clan
-      const { data: memberData, error: memberError } = await supabase
-        .from("clan_members")
-        .select("role")
-        .eq("clan_id", clanId)
-        .eq("user_id", user.username)
-        .single()
-
-      if (memberError || !memberData) {
-        setUserClanRole(null)
-        return
-      }
-
-      setUserClanRole(memberData.role as string)
-
-      // Fetch member count
-      const { count, error: countError } = await supabase
-        .from("clan_members")
-        .select("*", { count: "exact", head: true })
-        .eq("clan_id", clanId)
-
-      if (!countError) {
-        setClanMemberCount(count ?? 0)
-      }
-    } catch (error) {
-      console.error("Error fetching clan role or member count:", error)
-    }
-  }
-
-  fetchUserClanRole()
-}, [user?.username])
-
-  // Fetch battle limit status
-  useEffect(() => {
-    const fetchBattleLimit = async () => {
-      if (!user?.username) return
-      
+    const fetchAllData = async () => {
       try {
-        const result = await getBattleLimitStatus(user.username)
-        if (result.success) {
-          setBattleLimit({
-            battlesUsed: result.battlesUsed ?? 0,
-            battlesRemaining: result.battlesRemaining ?? 0,
-            dailyLimit: result.dailyLimit ?? 5,
-            canBattle: result.canBattle ?? false
-          })
+        // Fetch user clan data (combines 2 queries into 1)
+        const { data: userData, error: userError } = await supabase
+          .from("users")
+          .select("clan_id")
+          .eq("username", user.username)
+          .maybeSingle()
+
+        if (!isMounted) return
+
+        if (userError || !userData?.clan_id) {
+          setUserClanRole(null)
+          setClanMemberCount(0)
+        } else {
+          const clanId = userData.clan_id
+
+          // Fetch user role and member count in parallel
+          const [memberResult, countResult] = await Promise.all([
+            supabase
+              .from("clan_members")
+              .select("role")
+              .eq("clan_id", clanId)
+              .eq("user_id", user.username)
+              .maybeSingle(),
+            supabase
+              .from("clan_members")
+              .select("*", { count: "exact", head: true })
+              .eq("clan_id", clanId)
+          ])
+
+          if (!isMounted) return
+
+          if (memberResult.data) {
+            setUserClanRole(memberResult.data.role as string)
+          } else {
+            setUserClanRole(null)
+          }
+
+          if (countResult.count !== null) {
+            setClanMemberCount(countResult.count)
+          }
         }
+
+        // Fetch battle limit status (only if needed - can be lazy loaded)
+        // Removed to reduce initial load - can be fetched on demand if PvP tab is enabled
+        // const battleResult = await getBattleLimitStatus(user.username)
+        // if (isMounted && battleResult.success) {
+        //   setBattleLimit({
+        //     battlesUsed: battleResult.battlesUsed ?? 0,
+        //     battlesRemaining: battleResult.battlesRemaining ?? 0,
+        //     dailyLimit: battleResult.dailyLimit ?? 5,
+        //     canBattle: battleResult.canBattle ?? false
+        //   })
+        // }
       } catch (error) {
-        console.error("Error fetching battle limit:", error)
+        if (isMounted && process.env.NODE_ENV === 'development') {
+          console.error("Error fetching shop data:", error)
+        }
       }
     }
 
-    fetchBattleLimit()
+    fetchAllData()
+
+    return () => {
+      isMounted = false
+    }
   }, [user?.username])
 
   // Synchronisiere Ticket-States mit User-Objekt
@@ -152,26 +152,50 @@ export default function ShopPage() {
 
   // Fetch time-based discount
   useEffect(() => {
+    let intervalId: NodeJS.Timeout | null = null
+    
     const fetchTimeDiscount = async () => {
       try {
         const result = await getActiveTimeDiscount()
         if (result.success && result.data) {
-          setTimeDiscount({
+          const newDiscount = {
             name: String(result.data.name || ""),
             value: Number(result.data.value) || 0,
             isActive: Boolean(result.data.is_active),
             endTime: result.data.end_time ? new Date(String(result.data.end_time)).toISOString() : undefined
+          }
+          
+          // Only update if discount actually changed
+          setTimeDiscount(prev => {
+            if (prev?.endTime === newDiscount.endTime && prev?.value === newDiscount.value) {
+              return prev // No change, return previous state
+            }
+            return newDiscount
           })
+        } else {
+          // No active discount - clear state if it was set
+          setTimeDiscount(prev => prev ? null : null)
         }
       } catch (error) {
-        console.error("Error fetching time discount:", error)
+        // Silently handle errors - don't spam console
+        if (process.env.NODE_ENV === 'development') {
+          console.error("Error fetching time discount:", error)
+        }
       }
     }
 
+    // Initial fetch
     fetchTimeDiscount()
-    // Check every 30 seconds for updates
-    const interval = setInterval(fetchTimeDiscount, 30000)
-    return () => clearInterval(interval)
+    
+    // Check every 60 seconds for updates (reduced from 30s to reduce load)
+    // Only poll if there's an active discount or we haven't checked recently
+    intervalId = setInterval(fetchTimeDiscount, 60000)
+    
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId)
+      }
+    }
   }, [])
 
   // Update discount countdown timer
@@ -280,7 +304,6 @@ export default function ShopPage() {
       usdAmount: discountedPrice,
       currency: paymentCurrency,
       wldPrice: price,
-      anixPrice,
     })
 
     const txResult = await MiniKit.commandsAsync.sendTransaction({
@@ -616,14 +639,12 @@ await supabase.from("ticket_purchases").insert({
           <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-gray-200 to-gray-400 bg-clip-text text-transparent drop-shadow-lg whitespace-nowrap">
             {t("shop.title_short", "Shop")}
           </h1>
-          {/* Currency switch temporarily disabled
           <div className="flex flex-1 justify-center min-w-0">
             <PaymentCurrencyToggle
               size="sm"
               className="w-full max-w-[210px] shadow-[0_0_22px_rgba(46,113,255,0.25)]"
             />
           </div>
-          */}
           <div className="flex items-center gap-1 shrink-0">
             <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-full shadow-sm border border-blue-400/30 backdrop-blur-md">
               <Ticket className="h-2.5 w-2.5 text-blue-400" />

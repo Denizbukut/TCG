@@ -12,20 +12,22 @@ export async function getActiveTimeDiscount() {
   try {
     const supabase = createSupabaseServer()
     
+    // Use maybeSingle() instead of single() to handle 0 rows gracefully
     const { data, error } = await supabase
       .from("discount_configs")
       .select("*")
       .eq("name", "time_based_15_percent_4h")
       .eq("is_active", true)
-      .single()
+      .maybeSingle()
 
-    if (error) {
+    // Only log errors that are not "no rows found" (PGRST116)
+    if (error && error.code !== 'PGRST116') {
       console.log("Database error:", error)
       return { success: false, data: null }
     }
 
     if (!data) {
-      console.log("No discount found")
+      // No discount found - this is normal, don't log as error
       return { success: false, data: null }
     }
 

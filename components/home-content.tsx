@@ -359,34 +359,25 @@ export default function Home() {
 
     let isActive = true
 
-    const fetchMissionSummary = async () => {
+    const checkMissions = async () => {
       try {
-        const res = await fetch("/api/daily-missions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ walletAddress: user.wallet_address }),
-        })
-        const data = await res.json()
+        // Use client-side function instead of API call
+        const { checkClaimableMissions } = await import("@/lib/client-mission-utils")
+        const claimable = await checkClaimableMissions(user.wallet_address)
+        
         if (!isActive) return
-
-        if (data?.success && Array.isArray(data.missions)) {
-          const claimable = data.missions.some(
-            (mission: { progress: number; goal: number; reward_claimed: boolean }) =>
-              Number(mission.progress) >= Number(mission.goal) && !mission.reward_claimed,
-          )
-          setHasClaimableMission(claimable)
-        } else {
-          setHasClaimableMission(false)
-        }
+        setHasClaimableMission(claimable)
       } catch (error) {
         if (isActive) {
-          console.error("Failed to fetch mission summary:", error)
+          if (process.env.NODE_ENV === 'development') {
+            console.error("Failed to check claimable missions:", error)
+          }
           setHasClaimableMission(false)
         }
       }
     }
 
-    fetchMissionSummary()
+    checkMissions()
 
     return () => {
       isActive = false
@@ -547,10 +538,17 @@ export default function Home() {
           }
 
           // Get referrals for this user
+          type ReferralRow = {
+            id: number
+            referred_wallet_address: string
+            rewards_claimed: boolean
+            created_at: string
+          }
+          
           const { data: referralsData, error: referralsError } = await supabase
             .from("referrals")
             .select("id, referred_wallet_address, rewards_claimed, created_at")
-            .eq("referrer_wallet_address", user.wallet_address)
+            .eq("referrer_wallet_address", user.wallet_address) as { data: ReferralRow[] | null; error: any }
 
           if (referralsError || !referralsData || referralsData.length === 0) {
             setReferredUsers([])
@@ -558,24 +556,27 @@ export default function Home() {
           }
 
           // Get user levels in a single query for better performance
-          const referredWalletAddresses = referralsData.map(ref => ref.referred_wallet_address)
+          const referredWalletAddresses = referralsData
+            .map((ref) => ref.referred_wallet_address)
+            .filter((addr): addr is string => !!addr)
+          
           const { data: userLevels, error: userLevelsError } = await supabase
             .from("users")
             .select("wallet_address, username, level")
             .in("wallet_address", referredWalletAddresses)
 
           // Create maps for quick lookup
-          const levelMap = new Map()
-          const usernameMap = new Map()
+          const levelMap = new Map<string, number>()
+          const usernameMap = new Map<string, string>()
           if (userLevels) {
-            userLevels.forEach(user => {
+            userLevels.forEach((user: { wallet_address: string; username: string; level: number }) => {
               levelMap.set(user.wallet_address, user.level)
               usernameMap.set(user.wallet_address, user.username)
             })
           }
 
           // Create detailed referrals array
-          const detailed = referralsData.map((ref) => {
+          const detailed = referralsData.map((ref: { id: number; referred_wallet_address: string; rewards_claimed: boolean }) => {
             const level = levelMap.get(ref.referred_wallet_address) || 1
             const username = usernameMap.get(ref.referred_wallet_address)
             
@@ -2073,8 +2074,7 @@ export default function Home() {
                       <Target className="h-5 w-5 text-white drop-shadow-lg" />
                     </div>
                     <div className="text-sm font-bold text-yellow-100">{t("daily_missions.header.title", "Daily Missions")}</div>
-                    <div className="text-xs text-sky-400">{t("daily_missions.cta", "Complete tasks and earn rewards")}</div>
-                  </motion.div>
+                   </motion.div>
                 </Link>
               </div>
 
@@ -2109,7 +2109,7 @@ export default function Home() {
                     }`}>{t("ticket_shop.title", "Shop")}</div>
                     <div className={`text-xs font-semibold mt-0.5 ${
                       hasActiveDiscount ? 'text-red-200' : 'text-sky-400'
-                    }`}>{t("home.shop_exclusive_packs", "Exclusive Packs")}</div>
+                    }`}></div>
                   </motion.div>
                 </Link>
               </div>
