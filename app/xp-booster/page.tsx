@@ -1,14 +1,18 @@
 'use client'
 import { Sparkles, CheckCircle, Clock, Zap, Home, Star, TrendingUp, Target, Award } from "lucide-react";
-import { useState, useContext, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
-import { MiniKit, Tokens, tokenToDecimals } from "@worldcoin/minikit-js";
+import { MiniKit } from "@worldcoin/minikit-js";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/supabase-browser";
 import { useWldPrice } from "@/contexts/WldPriceContext"
 import { useI18n } from "@/contexts/i18n-context"
+import { PaymentCurrencyToggle } from "@/components/payment-currency-toggle"
+import { usePaymentCurrency } from "@/contexts/payment-currency-context"
+import { ERC20_TRANSFER_ABI, PAYMENT_RECIPIENT, getTransferDetails } from "@/lib/payment-utils"
+import { useAnixPrice } from "@/contexts/AnixPriceContext"
 
 const benefitList = [
   {
@@ -49,16 +53,28 @@ const featureList = [
 export default function XpBoosterPage() {
   const { user } = useAuth();
   const { price } = useWldPrice();
+  const { price: anixPrice } = useAnixPrice();
   const { t } = useI18n();
   const [buying, setBuying] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [hasXpPass, setHasXpPass] = useState(false);
   const [xpPassExpiryDate, setXpPassExpiryDate] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
+  const { currency: paymentCurrency } = usePaymentCurrency()
 
   // Calculate WLD amount based on fixed $5.00 USD price
   const fixedUsdPrice = 5.00;
-  const wldAmount = price ? fixedUsdPrice / price : 1; // Fallback to 1 WLD if price not available
+  const priceDetails = useMemo(() => {
+    if (paymentCurrency === "WLD" && (!price || price <= 0)) return null
+    if (paymentCurrency === "ANIX" && (!anixPrice || anixPrice <= 0)) return null
+    return getTransferDetails({
+      usdAmount: fixedUsdPrice,
+      currency: paymentCurrency,
+      wldPrice: price,
+      anixPrice,
+    })
+  }, [paymentCurrency, price, anixPrice])
+
+  const priceDisplay = priceDetails?.displayAmount ?? `$${fixedUsdPrice.toFixed(2)} USD`
 
   // Load XP pass status on component mount
   useEffect(() => {
@@ -128,23 +144,27 @@ export default function XpBoosterPage() {
       toast({ title: 'Login Required', description: 'Please log in to purchase XP Pass', variant: 'destructive' });
       return;
     }
+    if (!priceDetails) {
+      toast({
+        title: "Price unavailable",
+        description: "Unable to load the price for the selected currency. Please try again later.",
+        variant: "destructive",
+      })
+      return
+    }
 
     setBuying(true);
     try {
-      const recipient = "0xDb4D9195EAcE195440fbBf6f80cA954bf782468E";
-      const reference = `xp_pass_${Date.now()}`.slice(0, 36);
-      const payload = {
-        reference,
-        to: recipient,
-        tokens: [
+      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [
           {
-            symbol: Tokens.WLD,
-            token_amount: tokenToDecimals(wldAmount, Tokens.WLD).toString(),
+            address: priceDetails.tokenAddress,
+            abi: ERC20_TRANSFER_ABI,
+            functionName: "transfer",
+            args: [PAYMENT_RECIPIENT, priceDetails.rawAmount],
           },
         ],
-        description: 'XP Pass Purchase',
-      };
-      const { finalPayload } = await MiniKit.commandsAsync.pay(payload);
+      });
       
       if (finalPayload.status === "success") {
         // Payment successful, now save XP pass to database
@@ -156,7 +176,6 @@ export default function XpBoosterPage() {
         
         if (purchaseResult.success) {
           console.log("XP pass saved successfully");
-          setSuccess(true);
           setHasXpPass(true);
           setXpPassExpiryDate(new Date(purchaseResult.expiryDate || new Date().toISOString()));
           toast({ title: 'XP Pass Purchased!', description: 'Successfully activated!' });
@@ -274,9 +293,12 @@ export default function XpBoosterPage() {
               </div>
             ) : (
               <div className="text-center">
+                <div className="mb-4 flex justify-center">
+                  <PaymentCurrencyToggle size="sm" />
+                </div>
                 <div className="mb-4">
                   <div className="text-lg font-bold text-blue-700">
-                    {wldAmount.toFixed(3)} WLD
+                    {priceDisplay}
                   </div>
                   <div className="text-sm text-gray-600">
                     (~${fixedUsdPrice.toFixed(2)} USD)
@@ -284,8 +306,8 @@ export default function XpBoosterPage() {
                 </div>
                 <Button
                   onClick={handleBuy}
-                  disabled={buying}
-                  className="w-full py-3 text-lg font-bold rounded-full bg-gradient-to-r from-blue-600 to-cyan-400 hover:from-blue-700 hover:to-cyan-500 shadow-xl transition-all duration-150 animate-glow"
+                  disabled={buying || !priceDetails}
+                  className="w-full py-3 text-lg font-bold rounded-full bg-gradient-to-r from-blue-600 to-cyan-400 hover:from-blue-700 hover:to-cyan-500 shadow-xl transition-all duration-150 animate-glow disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {buying ? (
                     <span className="flex items-center gap-2">

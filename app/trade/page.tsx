@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
+import type { JSX } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import ProtectedRoute from "@/components/protected-route"
 import MobileNav from "@/components/mobile-nav"
@@ -58,9 +59,16 @@ import { getSupabaseBrowserClient } from "@/lib/supabase"
 // import { getDailyDeal } from "@/app/actions/deals"
 import { useI18n } from "@/contexts/i18n-context"
 import { getMarketRevenueSplit } from "@/lib/creator-revenue"
-
-// ABI für die transfer-Funktion des ERC20-Tokens
-const ERC20_ABI = ["function transfer(address to, uint256 amount) public returns (bool)"]
+import { PaymentCurrencyToggle } from "@/components/payment-currency-toggle"
+import { usePaymentCurrency } from "@/contexts/payment-currency-context"
+import { useWldPrice } from "@/contexts/WldPriceContext"
+import {
+  getTransferDetails,
+  ERC20_TRANSFER_ABI,
+  PAYMENT_RECIPIENT,
+  WLD_TOKEN_ADDRESS,
+  type PaymentCurrency,
+} from "@/lib/payment-utils"
 // Typen für die Marketplace-Daten
 type Card = {
   id: string
@@ -163,22 +171,48 @@ const getCardImageUrl = (imageUrl?: string) => {
 }
 
 // Helper component for market fee breakdown
-function MarketFeeBreakdown({ price, rarity, t }: { price: number; rarity?: string; t: any }) {
+function MarketFeeBreakdown({
+  price,
+  rarity,
+  t,
+  formatPrice,
+}: {
+  price: number
+  rarity?: string
+  t: any
+  formatPrice: (amountWld: number) => { primary: string; secondary?: string | null }
+}) {
   const rarity_lower = rarity?.toLowerCase() || "common"
   const split = getMarketRevenueSplit(rarity_lower as any)
   const totalFees = price * 0.1
   const devFees = price * split.devShare
   const creatorFees = price * split.creatorShare
+
+  const sellerShare = formatPrice(price * split.sellerShare)
+  const totalFeeDisplay = formatPrice(totalFees)
+  const devFeeDisplay = formatPrice(devFees)
+  const creatorFeeDisplay = formatPrice(creatorFees)
+  const renderSecondary = (secondary?: string | null) =>
+    secondary ? <span className="ml-2 text-xs text-amber-700">{secondary}</span> : null
   
   return (
     <>
       <p className="text-amber-800 mt-1">
-        <span className="font-medium">{t("trade.purchase_dialog.seller_receives", "Seller Receives")}:</span> {(price * split.sellerShare).toFixed(4)} WLD
+        <span className="font-medium">{t("trade.purchase_dialog.seller_receives", "Seller Receives")}:</span>{" "}
+        {sellerShare.primary}
+        {renderSecondary(sellerShare.secondary)}
       </p>
       <p className="text-amber-800 mt-1">
-        <span className="font-medium">{t("trade.purchase_dialog.market_fee", "Market Fee")}:</span> {totalFees.toFixed(4)} WLD
+        <span className="font-medium">{t("trade.purchase_dialog.market_fee", "Market Fee")}:</span>{" "}
+        {totalFeeDisplay.primary}
         <span className="text-xs text-amber-700 ml-2">
-          (Dev: {devFees.toFixed(4)} WLD, Creator: {creatorFees.toFixed(4)} WLD)
+          (
+          {t("trade.purchase_dialog.dev_share", "Dev")}: {devFeeDisplay.primary}
+          {renderSecondary(devFeeDisplay.secondary)}
+          ,&nbsp;
+          {t("trade.purchase_dialog.creator_share", "Creator")}: {creatorFeeDisplay.primary}
+          {renderSecondary(creatorFeeDisplay.secondary)}
+          )
         </span>
       </p>
     </>
@@ -188,8 +222,91 @@ function MarketFeeBreakdown({ price, rarity, t }: { price: number; rarity?: stri
 export default function TradePage() {
   const { user } = useAuth()
   const { t } = useI18n()
+  const { currency: paymentCurrency, setCurrency } = usePaymentCurrency()
+  const { price: wldPrice } = useWldPrice()
+  const allowedCurrencies = useMemo(() => ["WLD", "USDC"] as PaymentCurrency[], [])
+  useEffect(() => {
+    if (!allowedCurrencies.includes(paymentCurrency)) {
+      setCurrency("WLD")
+    }
+  }, [paymentCurrency, setCurrency, allowedCurrencies])
   const [activeTab, setActiveTab] = useState("marketplace")
   const [historyType, setHistoryType] = useState<"my" | "all">("my")
+
+  const currencyLabel = paymentCurrency === "USDC" ? "USDC" : "WLD"
+  const isPriceDataReady = paymentCurrency === "WLD" || !!(wldPrice && wldPrice > 0)
+
+  const formatPrice = useCallback(
+    (amountWld: number) => {
+      if (paymentCurrency === "USDC") {
+        if (!wldPrice || wldPrice <= 0) {
+          return {
+            primary: t("trade.price_loading", "Price loading..."),
+            secondary: `${amountWld.toFixed(2)} WLD`,
+          }
+        }
+        const details = getTransferDetails({
+          usdAmount: amountWld * wldPrice,
+          currency: "USDC",
+          wldPrice,
+        })
+        return {
+          primary: details.displayAmount,
+          secondary: `${amountWld.toFixed(2)} WLD`,
+        }
+      }
+      const usdApprox = wldPrice && wldPrice > 0 ? `≈ $${(amountWld * wldPrice).toFixed(2)}` : null
+      return {
+        primary: `${amountWld.toFixed(2)} WLD`,
+        secondary: usdApprox,
+      }
+    },
+    [paymentCurrency, wldPrice, t],
+  )
+
+  const renderPriceContent = useCallback(
+    (amount: number, primaryClass = "font-bold text-lg", secondaryClass = "text-xs text-gray-400"): JSX.Element => {
+      const price = formatPrice(amount)
+      return (
+        <div className="flex flex-col items-end leading-tight">
+          <span className={primaryClass}>{price.primary}</span>
+          {price.secondary ? <span className={secondaryClass}>{price.secondary}</span> : null}
+        </div>
+      )
+    },
+    [formatPrice],
+  )
+
+  const buildTransfer = useCallback(
+    (to: string, amountWld: number) => {
+      if (!to) {
+        throw new Error("Missing recipient address")
+      }
+      if (paymentCurrency === "USDC") {
+        if (!wldPrice || wldPrice <= 0) {
+          throw new Error("WLD price unavailable for USDC conversion")
+        }
+        const details = getTransferDetails({
+          usdAmount: amountWld * wldPrice,
+          currency: "USDC",
+          wldPrice,
+        })
+        return {
+          address: details.tokenAddress,
+          abi: ERC20_TRANSFER_ABI,
+          functionName: "transfer",
+          args: [to, details.rawAmount],
+        }
+      }
+      return {
+        address: WLD_TOKEN_ADDRESS,
+        abi: ERC20_TRANSFER_ABI,
+        functionName: "transfer",
+        args: [to, tokenToDecimals(parseFloat(amountWld.toFixed(6)), Tokens.WLD).toString()],
+      }
+    },
+    [paymentCurrency, wldPrice],
+  )
 
   // Helper function to translate rarity
   const getDisplayRarity = (rarity: string) => {
@@ -511,30 +628,6 @@ export default function TradePage() {
     loadRecentSales(newPage)
   }
 
-  const erc20TransferAbi = [{
-    type: "function",
-    name: "transfer",
-    stateMutability: "nonpayable",
-    inputs: [
-      { name: "to", type: "address" },
-      { name: "amount", type: "uint256" }
-    ],
-    outputs: [{ type: "bool" }]
-  }]
-  
-  const WLD_TOKEN = "0x2cFc85d8E48F8EAB294be644d9E25C3030863003" // WLD (World Chain)
-  
-  const toWei = (amount: number | string) => {
-    const [intStr, rawFrac = ""] = String(amount).replace(",", ".").split(".")
-    const fracStr = (rawFrac + "000000000000000000").slice(0, 18)
-  
-    const base = BigInt(intStr || "0") * BigInt("1000000000000000000")
-    const frac = BigInt(fracStr || "0")
-  
-    return (base + frac).toString()
-  }
-  
-
   const sendTransaction = async () => {
     console.log("sendTransaction called with:", {
       selectedListing: selectedListing,
@@ -561,7 +654,20 @@ export default function TradePage() {
     let unblockTimeout: NodeJS.Timeout | null = null
     
     try {
-      console.log("🔥 Starting WLD transaction...")
+      if (!selectedListing) {
+        return
+      }
+
+      if (!isPriceDataReady) {
+        toast({
+          title: t("trade.price_loading_title", "Price data not ready"),
+          description: t("trade.price_loading_desc", "Please wait a moment and try again."),
+          variant: "destructive",
+        })
+        return
+      }
+
+      console.log(`🔥 Starting ${currencyLabel} transaction...`)
       console.log("🔥 Listing ID:", selectedListing.id)
       console.log("🔥 Current listing status:", selectedListing.status)
       
@@ -576,7 +682,7 @@ export default function TradePage() {
         return
       }
       
-      console.log("🔒 Card is available, proceeding with WLD transaction...")
+      console.log(`🔒 Card is available, proceeding with ${currencyLabel} transaction...`)
       
       // TIMEOUT: Falls User abbricht, Karte nach 20 Sekunden freigeben
       unblockTimeout = setTimeout(async () => {
@@ -619,7 +725,7 @@ export default function TradePage() {
         const creatorAmount = price * split.creatorShare
         
         console.log('Marketplace Split payment:', {
-          total: price,
+          total: formatPrice(price),
           sellerShare: `${(split.sellerShare * 100).toFixed(1)}%`,
           devShare: `${(split.devShare * 100).toFixed(1)}%`,
           creatorShare: `${(split.creatorShare * 100).toFixed(1)}%`,
@@ -628,24 +734,9 @@ export default function TradePage() {
         
         // Three transfers: seller, dev, creator
         transactions = [
-          {
-            address: WLD_TOKEN,
-            abi: erc20TransferAbi,
-            functionName: "transfer",
-            args: [sellerAddress, tokenToDecimals(parseFloat(sellerAmount.toFixed(2)), Tokens.WLD).toString()],
-          },
-          {
-            address: WLD_TOKEN,
-            abi: erc20TransferAbi,
-            functionName: "transfer",
-            args: ["0xDb4D9195EAcE195440fbBf6f80cA954bf782468E", tokenToDecimals(parseFloat(devAmount.toFixed(2)), Tokens.WLD).toString()],
-          },
-          {
-            address: WLD_TOKEN,
-            abi: erc20TransferAbi,
-            functionName: "transfer",
-            args: [selectedListing.card.creator_address, tokenToDecimals(parseFloat(creatorAmount.toFixed(2)), Tokens.WLD).toString()],
-          },
+          buildTransfer(sellerAddress, sellerAmount),
+          buildTransfer(PAYMENT_RECIPIENT, devAmount),
+          buildTransfer(selectedListing.card.creator_address!, creatorAmount),
         ]
       } else {
         // Two transfers: seller and dev (90/10 split)
@@ -653,18 +744,8 @@ export default function TradePage() {
         const ninety = price * 0.9
         
         transactions = [
-          {
-            address: WLD_TOKEN,
-            abi: erc20TransferAbi,
-            functionName: "transfer",
-            args: ["0xDb4D9195EAcE195440fbBf6f80cA954bf782468E", tokenToDecimals(parseFloat(ten.toFixed(2)), Tokens.WLD).toString()],
-          },
-          {
-            address: WLD_TOKEN,
-            abi: erc20TransferAbi,
-            functionName: "transfer",
-            args: [sellerAddress, tokenToDecimals(parseFloat(ninety.toFixed(2)), Tokens.WLD).toString()],
-          },
+          buildTransfer(PAYMENT_RECIPIENT, ten),
+          buildTransfer(sellerAddress, ninety),
         ]
       }
       
@@ -681,7 +762,7 @@ export default function TradePage() {
       console.log("MiniKit transaction completed:", { commandPayload, finalPayload })
       
       if (finalPayload.status == "success") {
-        console.log("success sending payment")
+        console.log(`✅ ${currencyLabel} transaction successful`)
         
         // Save market fees directly to database (client-side) - will be updated by backend with creator split
         try {
@@ -718,7 +799,7 @@ export default function TradePage() {
         }
         
         // NUR nach erfolgreicher WLD-Transaktion den Backend-Kauf durchführen
-        console.log("🔥 WLD transaction successful, completing purchase...")
+        console.log(`🔥 ${currencyLabel} transaction successful, completing purchase...`)
         console.log("🔥 About to call handlePurchase...")
         
         // Timeout löschen da Kauf erfolgreich
@@ -1118,13 +1199,11 @@ export default function TradePage() {
         <header className="sticky top-0 z-10 bg-gradient-to-b from-black/90 to-black/60 border-b border-yellow-400">
           <div className="max-w-lg mx-auto px-4 py-3">
             <div className="flex justify-between items-center">
-              <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                <span className="inline-block bg-gradient-to-r from-yellow-400 to-yellow-600 text-black px-2 py-1 rounded mr-2">
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="10" fill="#FFD700"/></svg>
-                </span>
+              <h1 className="text-2xl font-bold text-yellow-400 flex items-center gap-2">
                 {t("trade.title", "Trade Market")}
               </h1>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+                <PaymentCurrencyToggle size="sm" currencies={allowedCurrencies} />
                 <div className="relative w-12 h-12">
                   <svg className="transform -rotate-90" width="48" height="48">
                     <circle cx="24" cy="24" r="18" stroke="#E5E7EB" strokeWidth="4" fill="transparent" />
@@ -1290,6 +1369,7 @@ export default function TradePage() {
                           onPurchase={() => handleBlockForPurchase(listing)}
                           onShowDetails={() => handleShowCardDetails(listing)}
                           purchaseLoading={purchaseLoading}
+                          renderPrice={renderPriceContent}
                         />
                       ))}
                     </div>
@@ -1408,6 +1488,7 @@ export default function TradePage() {
                           onCancel={() => handleCancelListing(listing.id)}
                           onUpdatePrice={() => handleUpdatePrice(listing)}
                           cancelLoading={cancelLoading}
+                          renderPrice={renderPriceContent}
                         />
                       ))}
                     </div>
@@ -1490,7 +1571,7 @@ export default function TradePage() {
                       <>
                         <div className="space-y-3">
                           {transactions.map((transaction) => (
-                            <TransactionCard key={transaction.id} transaction={transaction} />
+                            <TransactionCard key={transaction.id} transaction={transaction} renderPrice={renderPriceContent} />
                           ))}
                         </div>
 
@@ -1601,7 +1682,7 @@ export default function TradePage() {
                       <>
                         <div className="space-y-3">
                           {recentSales.map((sale) => (
-                            <RecentSaleCard key={sale.id} sale={sale} />
+                            <RecentSaleCard key={sale.id} sale={sale} renderPrice={renderPriceContent} />
                           ))}
                         </div>
 
@@ -1672,9 +1753,7 @@ export default function TradePage() {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-300">{t("trade.card_dialog.price", "Price:")}</span>
-                      <div className="flex items-center">
-                        <span className="font-bold text-lg">{selectedListing.price} WLD</span>
-                      </div>
+                    {renderPriceContent(selectedListing.price)}
                     </div>
                   </div>
 
@@ -1731,6 +1810,12 @@ export default function TradePage() {
               <DialogTitle>{t("trade.purchase_dialog.title", "Confirm Purchase")}</DialogTitle>
               <DialogDescription>{t("trade.purchase_dialog.desc", "You are about to purchase this card. This action cannot be undone.")}</DialogDescription>
             </DialogHeader>
+            <div className="flex justify-end">
+              <PaymentCurrencyToggle size="sm" currencies={allowedCurrencies} />
+            </div>
+            {!isPriceDataReady && paymentCurrency === "USDC" && (
+              <p className="text-xs text-amber-600 text-right">{t("trade.price_loading_notice", "USDC pricing is still loading. Please try again in a moment.")}</p>
+            )}
             {selectedListing && (
               <div className="space-y-4">
                 <div className="flex gap-4 items-center">
@@ -1773,8 +1858,8 @@ export default function TradePage() {
                         <span className="text-xs mr-1">Level {selectedListing.card_level}</span>
                       </div>
                     </div>
-                    <div className="flex items-center mt-2">
-                      <span className="font-bold text-lg">{selectedListing.price} WLD</span>
+                    <div className="mt-2">
+                      {renderPriceContent(selectedListing.price)}
                     </div>
                   </div>
                 </div>
@@ -1787,24 +1872,46 @@ export default function TradePage() {
                   </p>
                   
                   {selectedListing.card.creator_address && selectedListing.card.creator_address.trim() !== "" ? (
-                    <MarketFeeBreakdown 
-                      price={selectedListing.price} 
+                    <MarketFeeBreakdown
+                      price={selectedListing.price}
                       rarity={selectedListing.card.rarity}
                       t={t}
+                      formatPrice={formatPrice}
                     />
                   ) : (
                     <>
-                      <p className="text-amber-800 mt-1">
-                        <span className="font-medium">{t("trade.purchase_dialog.market_fee", "Market Fee")}:</span> {(selectedListing.price * 0.1).toFixed(2)} WLD (10%)
-                      </p>
-                      <p className="text-amber-800 mt-1">
-                        <span className="font-medium">{t("trade.purchase_dialog.seller_receives", "Seller Receives")}:</span> {(selectedListing.price * 0.9).toFixed(2)} WLD
-                      </p>
+                      {(() => {
+                        const totalFee = formatPrice(selectedListing.price * 0.1)
+                        const sellerShare = formatPrice(selectedListing.price * 0.9)
+                        return (
+                          <>
+                            <p className="text-amber-800 mt-1">
+                              <span className="font-medium">{t("trade.purchase_dialog.market_fee", "Market Fee")}:</span>{" "}
+                              <span className="font-semibold text-sm text-amber-700">{totalFee.primary}</span>
+                              {totalFee.secondary && (
+                                <span className="ml-2 text-xs text-amber-600">{totalFee.secondary}</span>
+                              )}
+                              <span className="ml-1 text-xs text-amber-700">(10%)</span>
+                            </p>
+                            <p className="text-amber-800 mt-1">
+                              <span className="font-medium">{t("trade.purchase_dialog.seller_receives", "Seller Receives")}:</span>{" "}
+                              <span className="font-semibold text-sm text-amber-700">{sellerShare.primary}</span>
+                              {sellerShare.secondary && (
+                                <span className="ml-2 text-xs text-amber-600">{sellerShare.secondary}</span>
+                              )}
+                            </p>
+                          </>
+                        )
+                      })()}
                     </>
                   )}
 
-                  {(user?.coins || 0) < selectedListing.price && (
-                    <p className="text-red-500 mt-1 font-medium">{t("trade.purchase_dialog.not_enough_wld", "You don't have enough WLD for this purchase!")}</p>
+                  {paymentCurrency === "WLD" && (user?.coins || 0) < selectedListing.price && (
+                    <p className="text-red-500 mt-1 font-medium">
+                      {t("trade.purchase_dialog.not_enough_currency", "You don't have enough {currency} for this purchase!", {
+                        currency: currencyLabel,
+                      })}
+                    </p>
                   )}
                   {selectedListing.seller_wallet_address === user?.wallet_address && (
                     <p className="text-red-500 mt-1 font-medium">{t("trade.purchase_dialog.cannot_buy_own", "You cannot buy your own card!")}</p>
@@ -1824,14 +1931,15 @@ export default function TradePage() {
                         })
                         return
                       }
-                      console.log("Buy with WLD button clicked")
+                      console.log(`Buy with ${currencyLabel} button clicked`)
                       sendTransaction()
                     }}
                     disabled={
                       purchaseLoading ||
-                      (user?.coins || 0) < selectedListing.price ||
+                      (paymentCurrency === "WLD" && (user?.coins || 0) < selectedListing.price) ||
                       selectedListing.seller_wallet_address === user?.wallet_address ||
-                      selectedListing.status === "blocked"
+                      selectedListing.status === "blocked" ||
+                      !isPriceDataReady
                     }
                     className={`${
                       selectedListing.status === "blocked" 
@@ -1852,7 +1960,7 @@ export default function TradePage() {
                     ) : (
                       <>
                         <ShoppingCart className="h-4 w-4 mr-2" />
-                        {t("trade.purchase_dialog.buy_now", "Buy Now")}
+                        {t("trade.purchase_dialog.buy_with_currency", "Buy with {currency}", { currency: currencyLabel })}
                       </>
                     )}
                   </Button>
@@ -1957,11 +2065,13 @@ function MarketplaceCard({
   onPurchase,
   onShowDetails,
   purchaseLoading = false,
+  renderPrice,
 }: {
   listing: MarketListing
   onPurchase: () => void
   onShowDetails: () => void
   purchaseLoading?: boolean
+  renderPrice: (amount: number, primaryClass?: string, secondaryClass?: string) => JSX.Element
 }) {
   const { user } = useAuth()
   const { t } = useI18n()
@@ -2082,7 +2192,7 @@ function MarketplaceCard({
           {isOwnListing && <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-red-500 text-white">My Listing</span>}
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xl font-bold text-yellow-400">{listing.price} WLD</span>
+          {renderPrice(listing.price, "text-xl font-bold text-yellow-400", "text-xs text-yellow-200")}
           {listing.status === "blocked" && (
             <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-orange-500 text-white">
               {t("trade.card_dialog.being_purchased", "Being Purchased")}
@@ -2108,11 +2218,13 @@ function MyListingCard({
   onCancel,
   onUpdatePrice,
   cancelLoading,
+  renderPrice,
 }: {
   listing: MarketListing
   onCancel: () => void
   onUpdatePrice: () => void
   cancelLoading: boolean
+  renderPrice: (amount: number, primaryClass?: string, secondaryClass?: string) => JSX.Element
 }) {
   const { t } = useI18n()
 
@@ -2227,7 +2339,7 @@ function MyListingCard({
 
             <div className="flex justify-between items-center mt-2">
               <div className="flex items-center">
-                <span className="font-bold text-yellow-400">{listing.price} WLD</span>
+                {renderPrice(listing.price, "font-bold text-yellow-400", "text-xs text-yellow-200")}
               </div>
               <div className="flex gap-2">
                 <Button
@@ -2265,7 +2377,13 @@ function MyListingCard({
 }
 
 // Transaction Card Component
-function TransactionCard({ transaction }: { transaction: Transaction }) {
+function TransactionCard({
+  transaction,
+  renderPrice,
+}: {
+  transaction: Transaction
+  renderPrice: (amount: number, primaryClass?: string, secondaryClass?: string) => JSX.Element
+}) {
   // Map rarity to color styles
   const rarityStyles = {
     basic: {
@@ -2373,7 +2491,7 @@ function TransactionCard({ transaction }: { transaction: Transaction }) {
 
             <div className="flex justify-between items-center mt-2">
               <div className="flex items-center">
-                <span className="font-bold text-yellow-400">{transaction.price} WLD</span>
+                {renderPrice(transaction.price, "font-bold text-yellow-400", "text-xs text-yellow-200")}
               </div>
               <div className="text-xs text-yellow-300">{formatDate(transaction.sold_at || "")}</div>
             </div>
@@ -2385,7 +2503,13 @@ function TransactionCard({ transaction }: { transaction: Transaction }) {
 }
 
 // Recent Sale Card Component
-function RecentSaleCard({ sale }: { sale: RecentSale }) {
+function RecentSaleCard({
+  sale,
+  renderPrice,
+}: {
+  sale: RecentSale
+  renderPrice: (amount: number, primaryClass?: string, secondaryClass?: string) => JSX.Element
+}) {
   const { t } = useI18n()
 
   const getDisplayRarity = (rarity: string) => {
@@ -2525,7 +2649,7 @@ function RecentSaleCard({ sale }: { sale: RecentSale }) {
 
             <div className="flex justify-between items-center mt-2">
               <div className="flex items-center">
-                <span className="font-bold text-yellow-400">{sale.price} WLD</span>
+                {renderPrice(sale.price, "font-bold text-yellow-400", "text-xs text-yellow-200")}
                 <Badge variant="outline" className="ml-2 bg-green-50 text-green-600 border-green-200">
                   <DollarSign className="h-3 w-3 mr-1" />
                   Sold

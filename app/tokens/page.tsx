@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, Suspense } from "react"
+import React, { useState, useEffect, Suspense, useMemo } from "react"
 import { ethers } from "ethers"
 import { MiniKit } from "@worldcoin/minikit-js"
 import { useAuth } from "@/contexts/auth-context"
@@ -17,6 +17,10 @@ import ImageEditor from "@/components/image-editor"
 import { toast } from "@/components/ui/use-toast"
 import { useI18n } from "@/contexts/i18n-context"
 import ProtectedRoute from "@/components/protected-route"
+import { PaymentCurrencyToggle } from "@/components/payment-currency-toggle"
+import { usePaymentCurrency } from "@/contexts/payment-currency-context"
+import { useAnixPrice } from "@/contexts/AnixPriceContext"
+import { ERC20_TRANSFER_ABI, PAYMENT_RECIPIENT, getTransferDetails } from "@/lib/payment-utils"
 import { getSupabaseBrowserClient } from "@/lib/supabase"
 import { motion } from "framer-motion"
 import { useWldPrice } from "@/contexts/WldPriceContext"
@@ -24,8 +28,6 @@ import { useRouter, useSearchParams } from "next/navigation"
 
 const PUF_CONTRACT_ADDRESS_1 = "0xc301BaCE6E9409B1876347a3dC94EC24D18C1FE4"
 const PUF_CONTRACT_ADDRESS_2 = "0x3140167E09d3cfB67b151C25d54fa356f644712D"
-const WLD_TOKEN = "0x2cFc85d8E48F8EAB294be644d9E25C3030863003" // WLD (World Chain)
-const DEV_WALLET = "0xDb4D9195EAcE195440fbBf6f80cA954bf782468E" // Dev wallet for receiving card creation payments
 
 const RPC_URL = "https://worldchain-mainnet.g.alchemy.com/public"
 
@@ -34,27 +36,6 @@ const provider = new ethers.JsonRpcProvider(
   { chainId: 480, name: "worldchain" },
   { staticNetwork: true },
 )
-
-const erc20TransferAbi = [{
-  type: "function",
-  name: "transfer",
-  stateMutability: "nonpayable",
-  inputs: [
-    { name: "to", type: "address" },
-    { name: "amount", type: "uint256" }
-  ],
-  outputs: [{ type: "bool" }]
-}]
-
-const toWei = (amount: number | string) => {
-  const [intStr, rawFrac = ""] = String(amount).replace(",", ".").split(".")
-  const fracStr = (rawFrac + "000000000000000000").slice(0, 18)
-
-  const base = BigInt(intStr || "0") * BigInt("1000000000000000000")
-  const frac = BigInt(fracStr || "0")
-
-  return (base + frac).toString()
-}
 
 function TokensPageSuspenseFallback() {
   return (
@@ -72,11 +53,11 @@ export default function TokensPage() {
   )
 }
 
-const CARD_CREATION_PRICES: Record<string, { usd: number; wld: number }> = {
-  common: { usd: 3, wld: 0 }, // WLD amount will be calculated based on price
-  rare: { usd: 10, wld: 0 },
-  epic: { usd: 25, wld: 0 },
-  legendary: { usd: 50, wld: 0 },
+const CARD_CREATION_PRICES: Record<string, { usd: number }> = {
+  common: { usd: 3 },
+  rare: { usd: 10 },
+  epic: { usd: 25 },
+  legendary: { usd: 50 },
 }
 
 // Contract 1 ABI (with virtual reserves)
@@ -135,6 +116,8 @@ function TokensPageContent() {
   const { user } = useAuth()
   const { t } = useI18n()
   const { price: wldPrice } = useWldPrice()
+  const { price: anixPrice } = useAnixPrice()
+  const { currency: paymentCurrency } = usePaymentCurrency()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [tokens, setTokens] = useState<TokenInfo[]>([])
@@ -232,6 +215,42 @@ function TokensPageContent() {
       base: formatUsd(baseUsd),
     })
   }
+
+  const selectedBaseUsdPrice = CARD_CREATION_PRICES[selectedRarity]?.usd ?? 0
+  const selectedDiscountedUsdPrice = useMemo(
+    () => getDiscountedUsdPrice(selectedRarity),
+    [selectedRarity, activeDiscountPercent],
+  )
+
+  const isCurrencyReady = useMemo(() => {
+    if (paymentCurrency === "ANIX") {
+      return Boolean(anixPrice && anixPrice > 0)
+    }
+    if (paymentCurrency === "WLD") {
+      return Boolean(wldPrice && wldPrice > 0)
+    }
+    return true
+  }, [paymentCurrency, anixPrice, wldPrice])
+
+  const selectedBasePriceDetails = useMemo(() => {
+    if (!isCurrencyReady || selectedBaseUsdPrice <= 0) return null
+    return getTransferDetails({
+      usdAmount: selectedBaseUsdPrice,
+      currency: paymentCurrency,
+      wldPrice,
+      anixPrice,
+    })
+  }, [isCurrencyReady, selectedBaseUsdPrice, paymentCurrency, wldPrice, anixPrice])
+
+  const selectedDiscountedPriceDetails = useMemo(() => {
+    if (!isCurrencyReady || selectedDiscountedUsdPrice <= 0) return null
+    return getTransferDetails({
+      usdAmount: selectedDiscountedUsdPrice,
+      currency: paymentCurrency,
+      wldPrice,
+      anixPrice,
+    })
+  }, [isCurrencyReady, selectedDiscountedUsdPrice, paymentCurrency, wldPrice, anixPrice])
 
   useEffect(() => {
     const loadWalletAddress = async () => {
@@ -566,11 +585,6 @@ function TokensPageContent() {
       setCreatingCard(true)
       setCreateCardError(null)
 
-      // Calculate WLD amount based on current price
-      if (!wldPrice) {
-        throw new Error('WLD price not available. Please try again.')
-      }
-
       const priceInfo = CARD_CREATION_PRICES[selectedRarity]
       if (!priceInfo) {
         throw new Error('Invalid rarity selected')
@@ -581,21 +595,35 @@ function TokensPageContent() {
       const discountedUsdPrice =
         discountPercent > 0 ? Number((baseUsdPrice * (1 - discountPercent / 100)).toFixed(2)) : baseUsdPrice
 
-      const wldAmount = discountedUsdPrice / wldPrice
-      const wldAmountWei = toWei(wldAmount)
+      if (paymentCurrency === "WLD" && (!wldPrice || wldPrice <= 0)) {
+        throw new Error("WLD price not available. Please try again.")
+      }
+      if (paymentCurrency === "ANIX" && (!anixPrice || anixPrice <= 0)) {
+        throw new Error("ANIX price not available. Please try again.")
+      }
+      if (paymentCurrency !== "WLD" && (!wldPrice || wldPrice <= 0)) {
+        throw new Error("WLD price not available for conversion. Please try again.")
+      }
 
-      console.log('=== Card Creation Payment ===')
-      console.log('Rarity:', selectedRarity)
-      console.log('USD Price (Base):', baseUsdPrice)
-      console.log('Discount Percent:', discountPercent)
-      console.log('USD Price (Discounted):', discountedUsdPrice)
-      console.log('WLD Price:', wldPrice)
-      console.log('WLD Amount:', wldAmount)
-      console.log('WLD Amount (Wei):', wldAmountWei)
-      console.log('Dev Wallet:', DEV_WALLET)
-      console.log('============================')
+      const transferDetails = getTransferDetails({
+        usdAmount: discountedUsdPrice,
+        currency: paymentCurrency,
+        wldPrice,
+        anixPrice,
+      })
 
-      // Send WLD payment to dev wallet
+      console.log("=== Card Creation Payment ===")
+      console.log("Rarity:", selectedRarity)
+      console.log("USD Price (Base):", baseUsdPrice)
+      console.log("Discount Percent:", discountPercent)
+      console.log("USD Price (Discounted):", discountedUsdPrice)
+      console.log("Currency:", paymentCurrency)
+      console.log("Token Amount:", transferDetails.numericAmount)
+      console.log("Token Address:", transferDetails.tokenAddress)
+      console.log("Recipient:", PAYMENT_RECIPIENT)
+      console.log("============================")
+
+      // Send payment to recipient
       if (!MiniKit || !MiniKit.commandsAsync) {
         throw new Error("MiniKit is not available")
       }
@@ -603,10 +631,10 @@ function TokensPageContent() {
       const { commandPayload, finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
           {
-            address: WLD_TOKEN,
-            abi: erc20TransferAbi,
+            address: transferDetails.tokenAddress,
+            abi: ERC20_TRANSFER_ABI,
             functionName: "transfer",
-            args: [DEV_WALLET, wldAmountWei.toString()],
+            args: [PAYMENT_RECIPIENT, transferDetails.rawAmount],
           },
         ],
       })
@@ -676,11 +704,13 @@ function TokensPageContent() {
       }
 
       // Save card creation record to database
+      const wldEquivalent = Number((discountedUsdPrice / (wldPrice as number)).toFixed(6))
+
       const { error: creationError } = await (supabase.from('card_creations') as any).insert({
         wallet_address: walletAddress.toLowerCase(),
         token_address: selectedToken.tokenAddress.toLowerCase(),
         rarity: selectedRarity,
-        price_wld: wldAmount,
+        price_wld: wldEquivalent,
         price_usd: discountedUsdPrice,
         image_url: uploadData.path,
         discount_percent: discountPercent > 0 ? discountPercent : null,
@@ -694,8 +724,8 @@ function TokensPageContent() {
       toast({
         title: "Success",
         description: discountPercent > 0
-          ? `Card created successfully! You paid ${wldAmount.toFixed(4)} WLD ($${discountedUsdPrice.toFixed(2)}) after ${discountPercent}% discount`
-          : `Card created successfully! You paid ${wldAmount.toFixed(4)} WLD ($${discountedUsdPrice.toFixed(2)})`,
+          ? `Card created successfully! You paid ${transferDetails.displayAmount} ($${discountedUsdPrice.toFixed(2)}) after ${discountPercent}% discount`
+          : `Card created successfully! You paid ${transferDetails.displayAmount} ($${discountedUsdPrice.toFixed(2)})`,
       })
 
       // Reset form
@@ -1146,6 +1176,34 @@ function TokensPageContent() {
                               </Button>
                             </div>
 
+                            {/* Payment currency and price overview */}
+                            <div className="flex flex-col gap-4 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4 sm:flex-row sm:items-center sm:justify-between">
+                              <div className="flex flex-col gap-1">
+                                <span className="text-sm font-medium text-indigo-700">
+                                  {t("tokens.payment_currency_label", "Payment Currency")}
+                                </span>
+                                <PaymentCurrencyToggle size="sm" className="max-w-[220px]" />
+                              </div>
+                              <div className="text-right">
+                                <p className="text-sm font-medium text-indigo-700">
+                                  {t("tokens.total_price", "Total Price")}
+                                </p>
+                                <div className="text-lg font-bold text-indigo-600">
+                                  {selectedDiscountedPriceDetails
+                                    ? selectedDiscountedPriceDetails.displayAmount
+                                    : t("tokens.price_loading", "Calculating...")}
+                                </div>
+                                {activeDiscountPercent > 0 && selectedBasePriceDetails && (
+                                  <div className="text-xs text-gray-500 line-through">
+                                    {selectedBasePriceDetails.displayAmount}
+                                  </div>
+                                )}
+                                <div className="text-xs text-gray-500">
+                                  ≈ ${selectedDiscountedUsdPrice.toFixed(2)}
+                                </div>
+                              </div>
+                            </div>
+
                             {/* Rarity Selection */}
                             <div>
                               <label className="block text-sm font-medium mb-2">{t("tokens.rarity", "Rarity")}</label>
@@ -1261,7 +1319,7 @@ function TokensPageContent() {
                             <Button
                               className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
                               onClick={handleCreateCard}
-                              disabled={!selectedImage || creatingCard}
+                              disabled={!selectedImage || creatingCard || !selectedDiscountedPriceDetails}
                             >
                               {creatingCard ? (
                                 <>

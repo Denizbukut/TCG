@@ -27,12 +27,18 @@ export function getSupabaseBrowserClient() {
 
 // Server-side client function
 export function getSupabaseServerClient() {
-  const supabaseUrl = process.env.SUPABASE_URL
+  // Try server-side env vars first, fallback to public vars if needed
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-  if (!supabaseUrl || !supabaseServiceKey) {
-    console.error("Supabase URL or Service Role Key is missing")
-    throw new Error("Supabase configuration is missing")
+  if (!supabaseUrl) {
+    console.error("Supabase URL is missing. Missing environment variables: SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL")
+    throw new Error(`Supabase URL is missing. Please set SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL in your environment variables.`)
+  }
+
+  if (!supabaseServiceKey) {
+    console.error("Supabase Service Role Key is missing. Please set SUPABASE_SERVICE_ROLE_KEY in your environment variables.")
+    throw new Error(`Supabase Service Role Key is missing. Please set SUPABASE_SERVICE_ROLE_KEY in your environment variables.`)
   }
 
   return createClient(supabaseUrl, supabaseServiceKey, {

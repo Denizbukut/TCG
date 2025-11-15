@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { Inter } from "next/font/google"
 import { AppProvider } from "@/contexts/auth-context"
 import { WldPriceProvider } from "@/contexts/WldPriceContext"
+import { AnixPriceProvider } from "@/contexts/AnixPriceContext"
 import { Poppins } from "next/font/google"
 import { I18nProvider } from "@/contexts/i18n-context"
 import { PaymentCurrencyProvider } from "@/contexts/payment-currency-context"
@@ -33,9 +34,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <I18nProvider>
               <AppProvider>
                 <WldPriceProvider>
-                  <PaymentCurrencyProvider>
-                    {children}
-                  </PaymentCurrencyProvider>
+                  <AnixPriceProvider>
+                    <PaymentCurrencyProvider>
+                      {children}
+                    </PaymentCurrencyProvider>
+                  </AnixPriceProvider>
                 </WldPriceProvider>
               </AppProvider>
             </I18nProvider>

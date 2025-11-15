@@ -9,6 +9,7 @@ interface PaymentCurrencyToggleProps {
   onChange?: (currency: PaymentCurrency) => void
   size?: "sm" | "md"
   className?: string
+  currencies?: PaymentCurrency[]
 }
 
 const sizeClasses: Record<NonNullable<PaymentCurrencyToggleProps["size"]>, string> = {
@@ -32,6 +33,11 @@ const currencyStyles: Record<PaymentCurrency, { active: string; inactive: string
       "bg-gradient-to-r from-emerald-300 via-teal-400 to-sky-500 text-slate-900 shadow-[0_0_18px_rgba(66,211,173,0.35)]",
     inactive: "text-emerald-200/80 hover:text-emerald-50",
   },
+  ANIX: {
+    active:
+      "bg-gradient-to-r from-lime-300 via-emerald-400 to-green-500 text-black shadow-[0_0_20px_rgba(74,222,128,0.45)]",
+    inactive: "text-emerald-200/80 hover:text-emerald-50",
+  },
 }
 
 export const PaymentCurrencyToggle = ({
@@ -39,10 +45,13 @@ export const PaymentCurrencyToggle = ({
   onChange,
   size = "md",
   className,
+  currencies = PAYMENT_CURRENCIES,
 }: PaymentCurrencyToggleProps) => {
   const context = usePaymentCurrency()
   const currency = value ?? context.currency
   const handleChange = onChange ?? context.setCurrency
+  const options = currencies.length > 0 ? currencies : PAYMENT_CURRENCIES
+  const effectiveCurrency = options.includes(currency) ? currency : options[0]
 
   return (
     <div
@@ -52,8 +61,8 @@ export const PaymentCurrencyToggle = ({
         className,
       )}
     >
-      {PAYMENT_CURRENCIES.map((option) => {
-        const isActive = option === currency
+      {options.map((option) => {
+        const isActive = option === effectiveCurrency
         const styles = currencyStyles[option]
 
         return (

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useI18n } from "@/contexts/i18n-context"
 import ProtectedRoute from "@/components/protected-route"
@@ -22,7 +22,8 @@ import { getActiveTimeDiscount } from "@/app/actions/time-discount"
 import { getBattleLimitStatus } from "@/app/battle-limit-actions"
 import { PaymentCurrencyToggle } from "@/components/payment-currency-toggle"
 import { usePaymentCurrency } from "@/contexts/payment-currency-context"
-import { ERC20_TRANSFER_ABI, PAYMENT_RECIPIENT, getTransferDetails } from "@/lib/payment-utils"
+import { ERC20_TRANSFER_ABI, PAYMENT_RECIPIENT, getTransferDetails, WLD_TOKEN_ADDRESS, USDC_TOKEN_ADDRESS, ANIX_TOKEN_ADDRESS, USDC_DECIMALS, ANIX_DECIMALS } from "@/lib/payment-utils"
+import { ethers } from "ethers"
 
 
 export default function ShopPage() {
@@ -52,93 +53,213 @@ export default function ShopPage() {
     endTime?: string
   } | null>(null)
   const [discountTimeLeft, setDiscountTimeLeft] = useState<string>("")
+  const [tokenBalances, setTokenBalances] = useState<{
+    WLD: string | null
+    USDC: string | null
+    ANIX: string | null
+  }>({
+    WLD: null,
+    USDC: null,
+    ANIX: null,
+  })
  
    const { price } = useWldPrice()
    const { price: anixPrice } = useAnixPrice()
    const { currency: paymentCurrency, setCurrency: setPaymentCurrency } = usePaymentCurrency()
 
-   const formatPrice = (usdAmount: number) =>
-     getTransferDetails({
+  // Track if token balances have been loaded to prevent duplicate calls
+  const tokenBalancesLoadedRef = useRef<string | null>(null)
+
+  // Load token balances
+  useEffect(() => {
+    if (!user?.wallet_address) {
+      // Reset balances when user logs out
+      setTokenBalances({ WLD: null, USDC: null, ANIX: null })
+      tokenBalancesLoadedRef.current = null
+      return
+    }
+
+    // Prevent duplicate fetches for the same wallet address
+    if (tokenBalancesLoadedRef.current === user.wallet_address) {
+      return // Already loaded, skip
+    }
+    
+    tokenBalancesLoadedRef.current = user.wallet_address
+
+    const loadTokenBalances = async () => {
+      if (!user?.wallet_address) return
+
+      const provider = new ethers.JsonRpcProvider(
+        "https://worldchain-mainnet.g.alchemy.com/public",
+        { chainId: 480, name: "worldchain" },
+        { staticNetwork: true }
+      )
+
+      const ERC20_ABI = [
+        "function balanceOf(address) view returns (uint256)",
+        "function decimals() view returns (uint8)"
+      ]
+
+      try {
+        // Load WLD balance
+        try {
+          const wldContract = new ethers.Contract(WLD_TOKEN_ADDRESS, ERC20_ABI, provider)
+          const [wldBalance, wldDecimals] = await Promise.all([
+            wldContract.balanceOf(user.wallet_address),
+            wldContract.decimals(),
+          ])
+          const wldFormatted = parseFloat(ethers.formatUnits(wldBalance, wldDecimals)).toFixed(2)
+          setTokenBalances(prev => ({ ...prev, WLD: wldFormatted }))
+        } catch (err) {
+          console.error("Error loading WLD balance:", err)
+        }
+
+        // Load USDC balance
+        try {
+          const usdcContract = new ethers.Contract(USDC_TOKEN_ADDRESS, ERC20_ABI, provider)
+          const [usdcBalance] = await Promise.all([
+            usdcContract.balanceOf(user.wallet_address),
+          ])
+          const usdcFormatted = parseFloat(ethers.formatUnits(usdcBalance, USDC_DECIMALS)).toFixed(2)
+          setTokenBalances(prev => ({ ...prev, USDC: usdcFormatted }))
+        } catch (err) {
+          console.error("Error loading USDC balance:", err)
+        }
+
+        // Load ANIX balance
+        try {
+          const anixContract = new ethers.Contract(ANIX_TOKEN_ADDRESS, ERC20_ABI, provider)
+          const [anixBalance] = await Promise.all([
+            anixContract.balanceOf(user.wallet_address),
+          ])
+          const anixFormatted = parseFloat(ethers.formatUnits(anixBalance, ANIX_DECIMALS)).toFixed(2)
+          setTokenBalances(prev => ({ ...prev, ANIX: anixFormatted }))
+        } catch (err) {
+          console.error("Error loading ANIX balance:", err)
+        }
+      } catch (error) {
+        console.error("Error loading token balances:", error)
+      }
+    }
+
+    loadTokenBalances()
+    // Refresh balances every 30 seconds
+    const interval = setInterval(loadTokenBalances, 30000)
+    return () => clearInterval(interval)
+  }, [user?.wallet_address])
+
+   const formatPrice = (usdAmount: number) => {
+     const details = getTransferDetails({
        usdAmount,
        currency: paymentCurrency,
        wldPrice: price,
-     }).displayAmount
+       anixPrice,
+     })
+     // For ANIX, format with 2 decimal places
+     if (paymentCurrency === "ANIX") {
+       const formatted = details.numericAmount.toFixed(2)
+       return `${formatted} ANIX`
+     }
+     return details.displayAmount
+   }
  
-  // Combined data fetching - reduces Edge Requests from 5+ to 1-2
+  // Track if clan role has been fetched to prevent duplicate calls
+  const clanRoleFetchedRef = useRef<string | null>(null)
+
+  // Fetch user clan role
   useEffect(() => {
-    if (!user?.username) return
+    if (!user?.username) {
+      // Reset when user logs out
+      clanRoleFetchedRef.current = null
+      return
+    }
+    // Prevent duplicate fetches for the same username
+    if (clanRoleFetchedRef.current === user.username) return
+    
+    clanRoleFetchedRef.current = user.username
 
-    let isMounted = true
-    const supabase = getSupabaseBrowserClient()
-    if (!supabase) return
+    const fetchUserClanRole = async () => {
+      const supabase = getSupabaseBrowserClient()
+      if (!supabase) return
 
-    const fetchAllData = async () => {
       try {
-        // Fetch user clan data (combines 2 queries into 1)
         const { data: userData, error: userError } = await supabase
           .from("users")
           .select("clan_id")
           .eq("username", user.username)
-          .maybeSingle()
-
-        if (!isMounted) return
+          .single()
 
         if (userError || !userData?.clan_id) {
           setUserClanRole(null)
-          setClanMemberCount(0)
-        } else {
-          const clanId = userData.clan_id
-
-          // Fetch user role and member count in parallel
-          const [memberResult, countResult] = await Promise.all([
-            supabase
-              .from("clan_members")
-              .select("role")
-              .eq("clan_id", clanId)
-              .eq("user_id", user.username)
-              .maybeSingle(),
-            supabase
-              .from("clan_members")
-              .select("*", { count: "exact", head: true })
-              .eq("clan_id", clanId)
-          ])
-
-          if (!isMounted) return
-
-          if (memberResult.data) {
-            setUserClanRole(memberResult.data.role as string)
-          } else {
-            setUserClanRole(null)
-          }
-
-          if (countResult.count !== null) {
-            setClanMemberCount(countResult.count)
-          }
+          return
         }
 
-        // Fetch battle limit status (only if needed - can be lazy loaded)
-        // Removed to reduce initial load - can be fetched on demand if PvP tab is enabled
-        // const battleResult = await getBattleLimitStatus(user.username)
-        // if (isMounted && battleResult.success) {
-        //   setBattleLimit({
-        //     battlesUsed: battleResult.battlesUsed ?? 0,
-        //     battlesRemaining: battleResult.battlesRemaining ?? 0,
-        //     dailyLimit: battleResult.dailyLimit ?? 5,
-        //     canBattle: battleResult.canBattle ?? false
-        //   })
-        // }
+        const clanId = userData.clan_id
+
+        // Fetch user role in clan
+        const { data: memberData, error: memberError } = await supabase
+          .from("clan_members")
+          .select("role")
+          .eq("clan_id", clanId)
+          .eq("user_id", user.username)
+          .single()
+
+        if (memberError || !memberData) {
+          setUserClanRole(null)
+          return
+        }
+
+        setUserClanRole(memberData.role as string)
+
+        // Fetch member count
+        const { count, error: countError } = await supabase
+          .from("clan_members")
+          .select("*", { count: "exact", head: true })
+          .eq("clan_id", clanId)
+
+        if (!countError) {
+          setClanMemberCount(count ?? 0)
+        }
       } catch (error) {
-        if (isMounted && process.env.NODE_ENV === 'development') {
-          console.error("Error fetching shop data:", error)
-        }
+        console.error("Error fetching clan role or member count:", error)
       }
     }
 
-    fetchAllData()
+    fetchUserClanRole()
+  }, [user?.username])
 
-    return () => {
-      isMounted = false
+  // Track if battle limit has been fetched to prevent duplicate calls
+  const battleLimitFetchedRef = useRef<string | null>(null)
+
+  // Fetch battle limit status
+  useEffect(() => {
+    if (!user?.username) {
+      // Reset when user logs out
+      battleLimitFetchedRef.current = null
+      return
     }
+    // Prevent duplicate fetches for the same username
+    if (battleLimitFetchedRef.current === user.username) return
+    
+    battleLimitFetchedRef.current = user.username
+
+    const fetchBattleLimit = async () => {
+      try {
+        const result = await getBattleLimitStatus(user.username)
+        if (result.success) {
+          setBattleLimit({
+            battlesUsed: result.battlesUsed ?? 0,
+            battlesRemaining: result.battlesRemaining ?? 0,
+            dailyLimit: result.dailyLimit ?? 5,
+            canBattle: result.canBattle ?? false
+          })
+        }
+      } catch (error) {
+        console.error("Error fetching battle limit:", error)
+      }
+    }
+
+    fetchBattleLimit()
   }, [user?.username])
 
   // Synchronisiere Ticket-States mit User-Objekt
@@ -150,52 +271,35 @@ export default function ShopPage() {
     }
   }, [user])
 
+  // Track if time discount has been fetched to prevent duplicate calls
+  const timeDiscountFetchedRef = useRef(false)
+
   // Fetch time-based discount
   useEffect(() => {
-    let intervalId: NodeJS.Timeout | null = null
-    
+    // Prevent duplicate initial fetch
+    if (timeDiscountFetchedRef.current) return
+    timeDiscountFetchedRef.current = true
+
     const fetchTimeDiscount = async () => {
       try {
         const result = await getActiveTimeDiscount()
         if (result.success && result.data) {
-          const newDiscount = {
+          setTimeDiscount({
             name: String(result.data.name || ""),
             value: Number(result.data.value) || 0,
             isActive: Boolean(result.data.is_active),
             endTime: result.data.end_time ? new Date(String(result.data.end_time)).toISOString() : undefined
-          }
-          
-          // Only update if discount actually changed
-          setTimeDiscount(prev => {
-            if (prev?.endTime === newDiscount.endTime && prev?.value === newDiscount.value) {
-              return prev // No change, return previous state
-            }
-            return newDiscount
           })
-        } else {
-          // No active discount - clear state if it was set
-          setTimeDiscount(prev => prev ? null : null)
         }
       } catch (error) {
-        // Silently handle errors - don't spam console
-        if (process.env.NODE_ENV === 'development') {
-          console.error("Error fetching time discount:", error)
-        }
+        console.error("Error fetching time discount:", error)
       }
     }
 
-    // Initial fetch
     fetchTimeDiscount()
-    
-    // Check every 60 seconds for updates (reduced from 30s to reduce load)
-    // Only poll if there's an active discount or we haven't checked recently
-    intervalId = setInterval(fetchTimeDiscount, 60000)
-    
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId)
-      }
-    }
+    // Check every 30 seconds for updates
+    const interval = setInterval(fetchTimeDiscount, 30000)
+    return () => clearInterval(interval)
   }, [])
 
   // Update discount countdown timer
@@ -244,6 +348,11 @@ export default function ShopPage() {
 
   if (qualifiesForExistingDiscount && !discountApplied) {
     finalPrice = originalPrice * 0.9
+  }
+
+  // ANIX Rabatt: 10% dauerhafter Rabatt wenn mit ANIX bezahlt wird
+  if (paymentCurrency === "ANIX") {
+    finalPrice = finalPrice * 0.9
   }
 
   return finalPrice
@@ -304,6 +413,7 @@ export default function ShopPage() {
       usdAmount: discountedPrice,
       currency: paymentCurrency,
       wldPrice: price,
+      anixPrice,
     })
 
     const txResult = await MiniKit.commandsAsync.sendTransaction({
@@ -634,31 +744,36 @@ await supabase.from("ticket_purchases").insert({
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-b from-[#181a20] to-[#23262f] pb-20 text-white">
-        {/* Shop Header mit Ticket-Anzeige oben rechts */}
-        <div className="flex items-center max-w-lg mx-auto px-4 py-3 gap-2">
-          <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-gray-200 to-gray-400 bg-clip-text text-transparent drop-shadow-lg whitespace-nowrap">
-            {t("shop.title_short", "Shop")}
-          </h1>
-          <div className="flex flex-1 justify-center min-w-0">
+        {/* Shop Header mit Ticket-Anzeige */}
+        <div className="flex flex-col max-w-lg mx-auto px-4 py-3 gap-2">
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-gray-200 to-gray-400 bg-clip-text text-transparent drop-shadow-lg whitespace-nowrap">
+              {t("shop.title_short", "Shop")}
+            </h1>
+            <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-full shadow-sm border border-blue-400/30 backdrop-blur-md">
+                <Ticket className="h-2.5 w-2.5 text-blue-400" />
+                <span className="font-medium text-[11px] text-blue-100">{tickets}</span>
+              </div>
+              <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-full shadow-sm border border-purple-400/30 backdrop-blur-md">
+                <Ticket className="h-2.5 w-2.5 text-purple-400" />
+                <span className="font-medium text-[11px] text-purple-100">{eliteTickets}</span>
+              </div>
+            </div>
+          </div>
+          {/* Currency Toggle and Balance - Under Shop */}
+          <div className="flex items-center gap-2">
             <PaymentCurrencyToggle
               size="sm"
-              className="w-full max-w-[210px] shadow-[0_0_22px_rgba(46,113,255,0.25)]"
+              className="max-w-[210px] shadow-[0_0_22px_rgba(46,113,255,0.25)]"
             />
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-full shadow-sm border border-blue-400/30 backdrop-blur-md">
-              <Ticket className="h-2.5 w-2.5 text-blue-400" />
-              <span className="font-medium text-[11px] text-blue-100">{tickets}</span>
-            </div>
-            <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-full shadow-sm border border-purple-400/30 backdrop-blur-md">
-              <Ticket className="h-2.5 w-2.5 text-purple-400" />
-                              <span className="font-medium text-[11px] text-purple-100">{eliteTickets}</span>
-            </div>
-            {/* Icon Tickets - COMMENTED OUT */}
-            {/* <div className="flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded-full shadow-sm border border-gray-400/30 backdrop-blur-md">
-              <Crown className="h-3.5 w-3.5 text-yellow-200" />
-              <span className="font-medium text-sm text-gray-100">{iconTickets}</span>
-            </div> */}
+            {tokenBalances[paymentCurrency] !== null && (
+              <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-full shadow-sm border border-gray-400/30 backdrop-blur-md">
+                <span className="font-medium text-[11px] text-gray-100">
+                  {tokenBalances[paymentCurrency]} {paymentCurrency}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -713,178 +828,185 @@ await supabase.from("ticket_purchases").insert({
                 </TabsTrigger>
               </TabsList> */}
 
-              <Tabs defaultValue="regular" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 h-12 rounded-2xl p-1 bg-gradient-to-r from-gray-900/60 via-gray-800/40 to-gray-900/60 mb-6 shadow-lg backdrop-blur-md">
-                  <TabsTrigger
-                    value="regular"
-                    className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-blue-300 data-[state=active]:text-blue-200 data-[state=active]:shadow transition-all font-semibold tracking-wide"
-                  >
-                    <Ticket className="h-4 w-4 mr-2 text-blue-300" />
-                    {t("shop.regular_tickets", "Regular Tickets")}
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="legendary"
-                    className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-purple-400 data-[state=active]:text-purple-200 data-[state=active]:shadow transition-all font-semibold tracking-wide"
-                  >
-                    <Ticket className="h-4 w-4 mr-2 text-purple-300" />
-                    {t("shop.legendary_tickets", "Legendary Tickets")}
-                  </TabsTrigger>
-                </TabsList>
+              {/* Tickets Tab Content */}
+              {/* <TabsContent value="tickets" className="mt-0"> */}
+                <Tabs defaultValue="regular" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 h-12 rounded-2xl p-1 bg-gradient-to-r from-gray-900/60 via-gray-800/40 to-gray-900/60 mb-6 shadow-lg backdrop-blur-md">
+                    <TabsTrigger
+                      value="regular"
+                      className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-blue-300 data-[state=active]:text-blue-200 data-[state=active]:shadow transition-all font-semibold tracking-wide"
+                    >
+                      <Ticket className="h-[18px] w-[18px] mr-2 text-blue-300 flex-shrink-0" />
+                      {t("shop.regular_tickets", "Regular Tickets")}
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="legendary"
+                      className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-purple-400 data-[state=active]:text-purple-200 data-[state=active]:shadow transition-all font-semibold tracking-wide"
+                    >
+                      <Crown className="h-[18px] w-[18px] mr-2 text-purple-300 flex-shrink-0" />
+                      {t("shop.legendary_tickets", "Legendary Tickets")}
+                    </TabsTrigger>
+                    {/* <TabsTrigger
+                      value="icon"
+                      className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-yellow-200 data-[state=active]:text-yellow-100 data-[state=active]:shadow transition-all font-semibold tracking-wide"
+                    >
+                      <span className="font-extrabold text-yellow-200 mr-2">★</span>
+                      Icon Tickets
+                    </TabsTrigger> */}
+                                    </TabsList>
 
-                <TabsContent value="regular" className="mt-0">
-                  <div className="grid grid-cols-2 gap-3">
-                    {regularPackages.map((pkg) => {
-                      const originalPrice = pkg.price
-                      const discountedPrice = getDiscountedPrice(originalPrice)
-                      const hasDiscount = discountedPrice < originalPrice
-                      return (
-                        <motion.div
-                          key={pkg.id}
-                          whileHover={{ scale: 1.03, boxShadow: '0 0 32px 0 rgba(212,175,55,0.10)' }}
-                          className="relative h-full"
-                        >
-                          <Card
-                            className="overflow-hidden border-2 border-blue-300/30 bg-gradient-to-br from-gray-900/60 to-gray-800/40 rounded-xl shadow-md backdrop-blur-md transition-all p-2 h-full flex flex-col"
-                          >
-                            <motion.div
-                              className="absolute left-[-40%] top-0 w-1/2 h-full bg-gradient-to-r from-transparent via-blue-100/10 to-transparent skew-x-[-20deg] pointer-events-none"
-                              animate={{ left: ['-40%', '120%'] }}
-                              transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                            />
-                            {hasDiscount && (
-                              <div className="absolute top-0 right-0 bg-gradient-to-r from-blue-400 to-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10">
-                                -{Math.round((1 - discountedPrice / originalPrice) * 100)}%
-                              </div>
-                            )}
-                            <CardHeader className="p-2 pb-1 space-y-0">
-                              <CardTitle className="text-base font-extrabold flex items-center text-blue-200 drop-shadow">
-                                <span className="mr-1">{pkg.amount}</span>
-                                <Ticket className="h-4 w-4 text-blue-300 drop-shadow-lg mx-1" />
-                                <span className="ml-1 text-xs">
-                                  {pkg.amount === 1
-                                    ? t("shop.regular_ticket", "Regular Ticket")
-                                    : t("shop.regular_tickets", "Regular Tickets")}
-                                </span>
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-2 pt-0 pb-1 flex-1">
-                              <Separator className="my-2 border-blue-300/20" />
-                              <div className="flex items-center justify-between">
-                                <div className="flex flex-col items-start">
-                                  {hasDiscount && (
-                                    <span className="text-xs text-blue-200/60 line-through">
-                                      {formatPrice(originalPrice)}
-                                    </span>
-                                  )}
-                                  <span className="text-base font-bold text-blue-100">
-                                    {formatPrice(discountedPrice)}
-                                  </span>
-                                  <span className="text-xs text-blue-100/80">
-                                    (~${discountedPrice.toFixed(2)})
-                                  </span>
-                                </div>
-                              </div>
-                            </CardContent>
-                            <CardFooter className="p-2 pt-0">
-                              <Button
-                                size="sm"
-                                className="w-full bg-gradient-to-r from-gray-800/80 to-blue-200/30 text-blue-100 font-bold border-0 hover:scale-105 hover:shadow-lg transition backdrop-blur-md"
-                                onClick={() => sendPayment(originalPrice, pkg.id, pkg.amount, 'regular')}
-                                disabled={isLoading[pkg.id]}
-                              >
-                                {isLoading[pkg.id] ? (
-                                  <>
-                                    <div className="h-4 w-4 border-2 border-t-transparent border-blue-300 rounded-full animate-spin mr-2"></div>
-                                    {t("shop.processing", "Processing...")}
-                                  </>
-                                ) : (
-                                  t("shop.purchase", "Purchase")
-                                )}
-                              </Button>
-                            </CardFooter>
-                          </Card>
-                        </motion.div>
-                      )
-                    })}
+                  {/* Regular Tickets Content */}
+    <TabsContent value="regular" className="mt-0 space-y-6">
+      <div className="grid grid-cols-2 gap-3">
+        {regularPackages.map((pkg) => {
+          const originalPrice = pkg.price
+          const discountedPrice = getDiscountedPrice(originalPrice)
+          const hasDiscount = discountedPrice < originalPrice
+          return (
+            <motion.div
+              key={pkg.id}
+              whileHover={{ scale: 1.03, boxShadow: '0 0 32px 0 rgba(212,175,55,0.10)' }}
+              className="relative h-full"
+            >
+              <Card
+                className="overflow-hidden border-2 border-blue-300/30 bg-gradient-to-br from-gray-900/60 to-gray-800/40 rounded-xl shadow-md backdrop-blur-md transition-all p-2 h-full flex flex-col"
+              >
+                {/* Shine Effekt */}
+                <motion.div
+                  className="absolute left-[-40%] top-0 w-1/2 h-full bg-gradient-to-r from-transparent via-blue-100/10 to-transparent skew-x-[-20deg] pointer-events-none"
+                  animate={{ left: ['-40%', '120%'] }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                {hasDiscount && (
+                  <div className="absolute top-0 right-0 bg-gradient-to-r from-blue-400 to-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10">
+                    -{Math.round((1 - discountedPrice / originalPrice) * 100)}%
                   </div>
-                </TabsContent>
+                )}
+                <CardHeader className="p-2 pb-1 space-y-0">
+                  <CardTitle className="text-base font-extrabold flex items-center text-blue-200 drop-shadow">
+                    <span className="mr-1">{pkg.amount}</span>
+                    <Ticket className="h-4 w-4 text-blue-300 drop-shadow-lg mx-1" />
+                    <span className="ml-1 text-xs">{pkg.amount === 1 ? t("shop.regular_ticket", "Regular Ticket") : t("shop.regular_tickets", "Regular Tickets")}</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-2 pt-0 pb-1 flex-1">
+                  <Separator className="my-2 border-blue-300/20" />
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col items-start">
+                      {hasDiscount && (
+                        <span className="text-xs text-blue-200/60 line-through">
+                          {formatPrice(originalPrice)}
+                         </span>
+                       )}
+                       <span className="text-base font-bold text-blue-100">
+                        {formatPrice(discountedPrice)}
+                       </span>
+                       <span className="text-xs text-blue-100/80">
+                         (~${discountedPrice.toFixed(2)})
+                       </span>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="p-2 pt-0">
+                  <Button
+                    size="sm"
+                    className="w-full bg-gradient-to-r from-gray-800/80 to-blue-200/30 text-blue-100 font-bold border-0 hover:scale-105 hover:shadow-lg transition backdrop-blur-md"
+                    onClick={() => sendPayment(originalPrice, pkg.id, pkg.amount, 'regular')}
+                    disabled={isLoading[pkg.id]}
+                  >
+                    {isLoading[pkg.id] ? (
+                      <>
+                        <div className="h-4 w-4 border-2 border-t-transparent border-blue-300 rounded-full animate-spin mr-2"></div>
+                        {t("shop.processing", "Processing...")}
+                      </>
+                    ) : (
+                      t("shop.purchase", "Purchase")
+                    )}
+                  </Button>
+                </CardFooter>
+              </Card>
+            </motion.div>
+          )
+        })}
+      </div>
+    </TabsContent>
 
-                <TabsContent value="legendary" className="mt-0">
-                  <div className="grid grid-cols-2 gap-2">
-                    {legendaryPackages.map((pkg) => {
-                      const originalPrice = pkg.price
-                      const discountedPrice = getDiscountedPrice(originalPrice)
-                      const hasDiscount = discountedPrice < originalPrice
-                      return (
-                        <motion.div
-                          key={pkg.id}
-                          whileHover={{ scale: 1.03, boxShadow: '0 0 32px 0 rgba(180,180,180,0.10)' }}
-                          className="relative h-full"
-                        >
-                          <Card
-                            className="overflow-hidden border-2 border-purple-400/30 bg-gradient-to-br from-gray-900/60 to-gray-800/40 rounded-xl shadow-md backdrop-blur-md transition-all p-2 h-full flex flex-col"
-                          >
-                            <motion.div
-                              className="absolute left-[-40%] top-0 w-1/2 h-full bg-gradient-to-r from-transparent via-purple-200/10 to-transparent skew-x-[-20deg] pointer-events-none"
-                              animate={{ left: ['-40%', '120%'] }}
-                              transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                            />
-                            {hasDiscount && (
-                              <div className="absolute top-0 right-0 bg-gradient-to-r from-purple-400 to-purple-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10">
-                                -{Math.round((1 - discountedPrice / originalPrice) * 100)}%
-                              </div>
-                            )}
-                            <CardHeader className="p-2 pb-1 space-y-0">
-                              <CardTitle className="text-base font-extrabold flex items-center text-purple-200 drop-shadow">
-                                <span className="mr-1">{pkg.amount}</span>
-                                <Ticket className="h-4 w-4 text-purple-300 drop-shadow-lg mx-1" />
-                                <span className="ml-1 text-xs">
-                                  {pkg.amount === 1
-                                    ? t("shop.legendary_ticket", "Legendary Ticket")
-                                    : t("shop.legendary_tickets", "Legendary Tickets")}
-                                </span>
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-2 pt-0 pb-1 flex-1">
-                              <Separator className="my-2 border-purple-400/20" />
-                              <div className="flex flex-col items-start">
-                                {hasDiscount && (
-                                  <span className="text-xs text-purple-200/60 line-through">
-                                    {formatPrice(originalPrice)}
-                                  </span>
-                                )}
-                                <span className="text-base font-bold text-purple-100">
-                                  {formatPrice(discountedPrice)}
-                                </span>
-                                <span className="text-xs text-purple-100/80">
-                                  (~${discountedPrice.toFixed(2)})
-                                </span>
-                              </div>
-                            </CardContent>
-                            <CardFooter className="p-2 pt-0">
-                              <Button
-                                size="sm"
-                                className="w-full bg-gradient-to-r from-gray-800/80 to-purple-400/30 text-purple-100 font-bold border-0 hover:scale-105 hover:shadow-lg transition backdrop-blur-md"
-                                onClick={() => sendPayment(originalPrice, pkg.id, pkg.amount, 'legendary')}
-                                disabled={isLoading[pkg.id]}
-                              >
-                                {isLoading[pkg.id] ? (
-                                  <>
-                                    <div className="h-4 w-4 border-2 border-t-transparent border-purple-300 rounded-full animate-spin mr-2"></div>
-                                    {t("shop.processing", "Processing...")}
-                                  </>
-                                ) : (
-                                  t("shop.purchase", "Purchase")
-                                )}
-                              </Button>
-                            </CardFooter>
-                          </Card>
-                        </motion.div>
-                      )
-                    })}
+    {/* Legendary Tickets Content */}
+    <TabsContent value="legendary" className="mt-0 space-y-6">
+      <div className="grid grid-cols-2 gap-2">
+        {legendaryPackages.map((pkg) => {
+          const originalPrice = pkg.price
+          const discountedPrice = getDiscountedPrice(originalPrice)
+          const hasDiscount = discountedPrice < originalPrice
+          return (
+            <motion.div
+              key={pkg.id}
+              whileHover={{ scale: 1.03, boxShadow: '0 0 32px 0 rgba(180,180,180,0.10)' }}
+              className="relative h-full"
+            >
+              <Card
+                className="overflow-hidden border-2 border-purple-400/30 bg-gradient-to-br from-gray-900/60 to-gray-800/40 rounded-xl shadow-md backdrop-blur-md transition-all p-2 h-full flex flex-col"
+              >
+                <motion.div
+                  className="absolute left-[-40%] top-0 w-1/2 h-full bg-gradient-to-r from-transparent via-purple-200/10 to-transparent skew-x-[-20deg] pointer-events-none"
+                  animate={{ left: ['-40%', '120%'] }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                {hasDiscount && (
+                  <div className="absolute top-0 right-0 bg-gradient-to-r from-purple-400 to-purple-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10">
+                    -{Math.round((1 - discountedPrice / originalPrice) * 100)}%
                   </div>
-                </TabsContent>
-              </Tabs>
+                )}
+                <CardHeader className="p-2 pb-1 space-y-0">
+                  <CardTitle className="text-base font-extrabold flex items-center text-purple-200 drop-shadow">
+                    <span className="mr-1">{pkg.amount}</span>
+                    <Crown className="h-4 w-4 text-purple-300 drop-shadow-lg mx-1" />
+                    <span className="ml-1 text-xs">{pkg.amount === 1 ? t("shop.legendary_ticket", "Legendary Ticket") : t("shop.legendary_tickets", "Legendary Tickets")}</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-2 pt-0 pb-1 flex-1">
+                  <Separator className="my-2 border-purple-400/20" />
+                  <div className="flex flex-col items-start">
+                    {hasDiscount && (
+                      <span className="text-xs text-purple-200/60 line-through">
+                        {formatPrice(originalPrice)}
+                      </span>
+                    )}
+                    <span className="text-base font-bold text-purple-100">
+                      {formatPrice(discountedPrice)}
+                    </span>
+                    <span className="text-xs text-purple-100/80">
+                      (~${discountedPrice.toFixed(2)})
+                    </span>
+                  </div>
+                </CardContent>
+                <CardFooter className="p-2 pt-0">
+                  <Button
+                    size="sm"
+                    className="w-full bg-gradient-to-r from-gray-800/80 to-purple-400/30 text-purple-100 font-bold border-0 hover:scale-105 hover:shadow-lg transition backdrop-blur-md"
+                    onClick={() => sendPayment(originalPrice, pkg.id, pkg.amount, 'legendary')}
+                    disabled={isLoading[pkg.id]}
+                  >
+                    {isLoading[pkg.id] ? (
+                      <>
+                        <div className="h-4 w-4 border-2 border-t-transparent border-purple-300 rounded-full animate-spin mr-2"></div>
+                        {t("shop.processing", "Processing...")}
+                      </>
+                    ) : (
+                      t("shop.purchase", "Purchase")
+                    )}
+                  </Button>
+                </CardFooter>
+              </Card>
+            </motion.div>
+          )
+        })}
+      </div>
+    </TabsContent>
+
+    {/* Icon Tickets Content - REMOVED */}
+                </Tabs>
+              {/* </TabsContent> */}
 
               {/* PvP Tab Content */}
               {/* <TabsContent value="pvp" className="mt-0"> */}

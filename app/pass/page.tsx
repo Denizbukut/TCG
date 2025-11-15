@@ -29,7 +29,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import type { PremiumPass, ClaimedReward } from "@/types/database"
-import { MiniKit, Tokens, type PayCommandInput } from "@worldcoin/minikit-js"
+import { MiniKit } from "@worldcoin/minikit-js"
 import Link from "next/link"
 import { PaymentCurrencyToggle } from "@/components/payment-currency-toggle"
 import { usePaymentCurrency } from "@/contexts/payment-currency-context"
@@ -256,62 +256,27 @@ useEffect(() => {
         throw new Error(`Payment initiation failed: ${res.status}`)
       }
 
-      const { id } = await res.json()
+      await res.json()
 
-      if (paymentCurrency === "USDC") {
-        if (!transferDetails.miniKitTokenAmount) {
-          toast({
-            title: "Payment unavailable",
-            description: "Unable to prepare the payment amount. Please try again.",
-            variant: "destructive",
-          })
-          return
-        }
+      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [
+          {
+            address: transferDetails.tokenAddress,
+            abi: ERC20_TRANSFER_ABI,
+            functionName: "transfer",
+            args: [PAYMENT_RECIPIENT, transferDetails.rawAmount],
+          },
+        ],
+      })
 
-        const payload: PayCommandInput = {
-          reference: id,
-          to: PAYMENT_RECIPIENT,
-          tokens: [
-            {
-              symbol: transferDetails.miniKitSymbol ?? Tokens.USDCE,
-              token_amount: transferDetails.miniKitTokenAmount,
-            },
-          ],
-          description: "XP Pass",
-        }
-
-        const { finalPayload } = await MiniKit.commandsAsync.pay(payload)
-
-        if (finalPayload.status == "success") {
-          await handlePurchaseXpPass()
-        } else {
-          toast({
-            title: "Payment Failed",
-            description: "Failed to process payment. Please try again.",
-            variant: "destructive",
-          })
-        }
+      if (finalPayload.status === "success") {
+        await handlePurchaseXpPass()
       } else {
-        const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
-          transaction: [
-            {
-              address: transferDetails.tokenAddress,
-              abi: ERC20_TRANSFER_ABI,
-              functionName: "transfer",
-              args: [PAYMENT_RECIPIENT, transferDetails.rawAmount],
-            },
-          ],
+        toast({
+          title: "Payment Failed",
+          description: "Failed to process payment. Please try again.",
+          variant: "destructive",
         })
-
-        if (finalPayload.status === "success") {
-          await handlePurchaseXpPass()
-        } else {
-          toast({
-            title: "Payment Failed",
-            description: "Failed to process payment. Please try again.",
-            variant: "destructive",
-          })
-        }
       }
     } catch (error) {
       console.error("Error in sendXpPayment:", error)
@@ -915,62 +880,27 @@ const handlePurchaseXpPass = async () => {
       return
     }
 
-    const { id } = await res.json()
+    await res.json()
 
-    if (paymentCurrency === "USDC") {
-      if (!transferDetails?.miniKitTokenAmount) {
-        toast({
-          title: "Payment unavailable",
-          description: "Unable to prepare the payment amount. Please try again.",
-          variant: "destructive",
-        })
-        return
-      }
+    const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+      transaction: [
+        {
+          address: transferDetails.tokenAddress,
+          abi: ERC20_TRANSFER_ABI,
+          functionName: "transfer",
+          args: [PAYMENT_RECIPIENT, transferDetails.rawAmount],
+        },
+      ],
+    })
 
-      const payload: PayCommandInput = {
-        reference: id,
-        to: PAYMENT_RECIPIENT,
-        tokens: [
-          {
-            symbol: transferDetails.miniKitSymbol ?? Tokens.USDCE,
-            token_amount: transferDetails.miniKitTokenAmount,
-          },
-        ],
-        description: "Premium Pass",
-      }
-
-      const { finalPayload } = await MiniKit.commandsAsync.pay(payload)
-
-      if (finalPayload.status == "success") {
-        handlePurchasePremium()
-      } else {
-        toast({
-          title: "Payment Failed",
-          description: "Failed to process payment. Please try again.",
-          variant: "destructive",
-        })
-      }
+    if (finalPayload.status === "success") {
+      handlePurchasePremium()
     } else {
-      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
-        transaction: [
-          {
-            address: transferDetails.tokenAddress,
-            abi: ERC20_TRANSFER_ABI,
-            functionName: "transfer",
-            args: [PAYMENT_RECIPIENT, transferDetails.rawAmount],
-          },
-        ],
+      toast({
+        title: "Payment Failed",
+        description: "Failed to process payment. Please try again.",
+        variant: "destructive",
       })
-
-      if (finalPayload.status === "success") {
-        handlePurchasePremium()
-      } else {
-        toast({
-          title: "Payment Failed",
-          description: "Failed to process payment. Please try again.",
-          variant: "destructive",
-        })
-      }
     }
   }
 
@@ -1168,9 +1098,9 @@ const handlePurchaseXpPass = async () => {
               </div>
             </div>
           </div>
-          {/* <div className="flex justify-end">
+          <div className="flex justify-end">
             <PaymentCurrencyToggle size="sm" className="shadow-sm" />
-          </div> */}
+          </div>
           {/* Back to Home Button mittig */}
           <div className="flex justify-center mt-2">
             <Link href="/">

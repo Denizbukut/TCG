@@ -33,6 +33,7 @@ export default function CollectionPage() {
   const [selectedEpoch, setSelectedEpoch] = useState<number | "all">("all")
   const [availableEpochs, setAvailableEpochs] = useState<number[]>([])
   const [showSquad, setShowSquad] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0) // Add refresh key to force reload
 
   // Debug: Log user info
   console.log("=== COLLECTION PAGE DEBUG ===")
@@ -96,10 +97,39 @@ export default function CollectionPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showSquad, user?.username, userCards]);
 
+  // Listen for storage events to refresh collection when cards are added
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'collection_refresh' || e.key === 'card_added') {
+        setRefreshKey(prev => prev + 1)
+      }
+    }
+
+    const handleFocus = () => {
+      // Refresh collection when page comes into focus (user might have added cards in another tab)
+      setRefreshKey(prev => prev + 1)
+    }
+
+    const handleCollectionUpdated = (e: CustomEvent) => {
+      console.log("Collection updated event detected, refreshing collection...", e.detail)
+      setRefreshKey(prev => prev + 1)
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener('collectionUpdated', handleCollectionUpdated as EventListener)
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('collectionUpdated', handleCollectionUpdated as EventListener)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [])
+
   // Fetch user's cards
   useEffect(() => {
     async function fetchUserCards() {
-      if (!user?.username) {
+      if (!user?.username || !user?.wallet_address) {
         console.log("No user found, redirecting to login")
         // Sanftere Weiterleitung statt sofortiger Redirect
         setTimeout(() => {
@@ -118,24 +148,50 @@ export default function CollectionPage() {
           setLoading(false)
           return
         }
-        // Use individual card instances instead of user_cards
-        const { data: userCardsData, error: userCardsError } = await supabase
-          .from("user_card_instances")
-          .select(`id, card_id, level, favorite, obtained_at`)
-          .eq("wallet_address", user.wallet_address)
-          .order('obtained_at', { ascending: false })
 
-        if (userCardsError) {
-          console.error("Error fetching user cards:", userCardsError)
+        // Validate wallet_address
+        if (!user.wallet_address) {
+          console.error("No wallet_address found for user:", user)
           toast({
             title: "Error",
-            description: "Failed to load your card collection",
+            description: "User wallet address not found",
             variant: "destructive",
           })
           setUserCards([])
           setLoading(false)
           return
         }
+
+        console.log("Fetching user cards for wallet_address:", user.wallet_address)
+
+        // Use individual card instances instead of user_cards
+        // Add a small delay to ensure database consistency after insert
+        const { data: userCardsData, error: userCardsError } = await supabase
+          .from("user_card_instances")
+          .select(`id, card_id, level, favorite, obtained_at`)
+          .eq("wallet_address", user.wallet_address.toLowerCase()) // Normalize wallet address to lowercase
+          .order('obtained_at', { ascending: false })
+
+        if (userCardsError) {
+          console.error("Error fetching user cards:", userCardsError)
+          console.error("Error details:", {
+            message: userCardsError.message,
+            code: userCardsError.code,
+            details: userCardsError.details,
+            hint: userCardsError.hint,
+            wallet_address: user.wallet_address,
+          })
+          toast({
+            title: "Error",
+            description: `Failed to load your card collection: ${userCardsError.message || "Unknown error"}`,
+            variant: "destructive",
+          })
+          setUserCards([])
+          setLoading(false)
+          return
+        }
+
+        console.log("Successfully fetched user cards:", userCardsData?.length || 0, "instances")
 
         if (!userCardsData || userCardsData.length === 0) {
           console.log("No user cards found for:", user.username)
@@ -176,8 +232,18 @@ export default function CollectionPage() {
 
         const uniqueUserCards = Array.from(groupedCards.values())
 
-        // 3. Get the card IDs to fetch
-        const cardIds = uniqueUserCards.map((uc) => uc.card_id)
+        // 3. Get the card IDs to fetch (filter out any null/undefined values)
+        const cardIds = uniqueUserCards.map((uc) => uc.card_id).filter(Boolean)
+        
+        if (cardIds.length === 0) {
+          console.log("No card IDs found - user has no cards")
+          setUserCards([])
+          setAvailableEpochs([])
+          setLoading(false)
+          return
+        }
+
+        console.log("Fetching card details for", cardIds.length, "unique cards")
 
         // 4. Fetch the card details including epoch
         const { data: cardsData, error: cardsError } = await supabase
@@ -187,12 +253,34 @@ export default function CollectionPage() {
 
         if (cardsError) {
           console.error("Error fetching card details:", cardsError)
+          console.error("Error details:", {
+            message: cardsError.message,
+            code: cardsError.code,
+            details: cardsError.details,
+            hint: cardsError.hint,
+            cardIds: cardIds,
+          })
           toast({
             title: "Error",
-            description: "Failed to load card details",
+            description: `Failed to load card details: ${cardsError.message || "Unknown error"}`,
             variant: "destructive",
           })
           setUserCards([])
+          setAvailableEpochs([])
+          setLoading(false)
+          return
+        }
+
+        if (!cardsData || cardsData.length === 0) {
+          console.error("No card details found for card IDs:", cardIds)
+          console.error("User has card instances but no matching card details in cards table")
+          toast({
+            title: "Warning",
+            description: "Cards found but details not available. Some cards may be missing from the database.",
+            variant: "destructive",
+          })
+          setUserCards([])
+          setAvailableEpochs([])
           setLoading(false)
           return
         }
@@ -210,12 +298,18 @@ export default function CollectionPage() {
         const processedCards = uniqueUserCards
           .map((userCard) => {
             const details = cardMap.get(userCard.card_id)
-            if (!details) return null
+            if (!details) {
+              console.warn(`Card details not found for card_id: ${userCard.card_id}`)
+              return null
+            }
+            // Use the first instance ID as the main ID
+            const firstInstance = userCard.instances[0]
             return {
-              id: userCard.id,
+              id: firstInstance?.id || userCard.card_id, // Use instance ID or fallback to card_id
               cardId: userCard.card_id,
               quantity: userCard.quantity,
               level: userCard.level || 1,
+              favorite: userCard.favorite,
               ...details,
               imageUrl: details.image_url, // <-- wichtig für CardItem
             }
@@ -235,8 +329,15 @@ export default function CollectionPage() {
       }
     }
 
-    fetchUserCards()
-  }, [user?.username])
+    // Add a small delay to allow database consistency after inserts
+    const timeoutId = setTimeout(() => {
+      fetchUserCards()
+    }, 100) // Small delay to ensure database consistency
+
+    return () => {
+      clearTimeout(timeoutId)
+    }
+  }, [user?.username, user?.wallet_address, refreshKey])
 
   // Filter cards based on active tab, search term, and epoch
   const filteredCards = userCards.filter((card) => {

@@ -60,6 +60,7 @@ import {
   PAYMENT_RECIPIENT,
   getTransferDetails,
 } from "@/lib/payment-utils"
+import { useAnixPrice } from "@/contexts/AnixPriceContext"
 
 // Add the Cloudflare URL function
 const getCloudflareImageUrl = (imagePath?: string) => {
@@ -331,10 +332,23 @@ export default function Home() {
   const [walletAddress, setWalletAddress] = useState<string>("")
   const [isChatOpen, setIsChatOpen] = useState(false)
   const { price } = useWldPrice()
+  const { price: anixPrice } = useAnixPrice()
   const { currency: paymentCurrency, setCurrency: setPaymentCurrency } = usePaymentCurrency()
 
-  const formatPrice = (usdAmount: number) =>
-    getTransferDetails({ usdAmount, currency: paymentCurrency, wldPrice: price }).displayAmount
+  const formatPrice = (usdAmount: number) => {
+    const details = getTransferDetails({
+      usdAmount,
+      currency: paymentCurrency,
+      wldPrice: price,
+      anixPrice,
+    })
+    // For ANIX, format with 2 decimal places for deals
+    if (paymentCurrency === "ANIX") {
+      const formatted = details.numericAmount.toFixed(2)
+      return `${formatted} ANIX`
+    }
+    return details.displayAmount
+  }
 
   const specialDealHasDiscount = Boolean(
     specialDeal?.discount_percentage && specialDeal.discount_percentage > 0,
@@ -397,6 +411,7 @@ export default function Home() {
         usdAmount: dollarPrice,
         currency: paymentCurrency,
         wldPrice: price,
+        anixPrice,
       })
 
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
@@ -569,9 +584,12 @@ export default function Home() {
           const levelMap = new Map<string, number>()
           const usernameMap = new Map<string, string>()
           if (userLevels) {
-            userLevels.forEach((user: { wallet_address: string; username: string; level: number }) => {
-              levelMap.set(user.wallet_address, user.level)
-              usernameMap.set(user.wallet_address, user.username)
+            userLevels.forEach((user: any) => {
+              const walletAddress = String(user.wallet_address || "")
+              const level = Number(user.level || 1)
+              const username = String(user.username || "")
+              levelMap.set(walletAddress, level)
+              usernameMap.set(walletAddress, username)
             })
           }
 
@@ -1508,12 +1526,14 @@ export default function Home() {
           usdAmount: discountedPrice * split.devShare,
           currency: paymentCurrency,
           wldPrice: price,
+        anixPrice,
         })
 
         const creatorTransfer = getTransferDetails({
           usdAmount: discountedPrice * split.creatorShare,
           currency: paymentCurrency,
           wldPrice: price,
+        anixPrice,
         })
 
         console.log("Special Deal Split payment:", {
@@ -1543,6 +1563,7 @@ export default function Home() {
           usdAmount: discountedPrice,
           currency: paymentCurrency,
           wldPrice: price,
+      anixPrice,
         })
 
         transactions = [
@@ -1844,11 +1865,11 @@ export default function Home() {
               className="mt-3 mb-4 flex items-center gap-2 rounded-lg border-2 border-emerald-400 bg-gradient-to-r from-emerald-400 via-lime-400 to-emerald-500 px-3 py-2 text-sm font-semibold text-black shadow-[0_0_18px_rgba(16,185,129,0.55)] transition hover:scale-[1.02] hover:shadow-[0_0_28px_rgba(16,185,129,0.7)]"
             >
               <Sparkles className="h-4 w-4 text-black" />
-              <span>Create your own card and earn WLD</span>
+              <span>{t("home.create_card_banner", "Create your own card and earn WLD")}</span>
               <ArrowRight className="ml-auto h-4 w-4 text-black/80" />
             </motion.div>
           </Link>
-
+         
           <div className="grid grid-cols-6 gap-3 mt-2 pb-4">
             {/* Profile */}
             <div className="col-span-3">
@@ -2215,7 +2236,11 @@ export default function Home() {
                         </span>
                       )}
                     </div>
-                    <div className="text-lg font-bold text-center mb-1">{price ? `${(dailyDeal.price / price).toFixed(2)} WLD` : `$${dailyDeal.price.toFixed(2)} USD`}</div>
+                    <div className="mt-1 w-full flex flex-col items-center gap-1">
+                      <div className="text-lg font-bold text-center text-white">
+                        {formatPrice(dailyDeal.price)}
+                      </div>
+                    </div>
                   </>
                 ) : (
                   <div className="flex flex-1 items-center justify-center h-full text-white/70">{t("deals.no_deal", "No deal available")}</div>
@@ -2280,23 +2305,23 @@ export default function Home() {
                         </span>
                       )} */}
                     </div>
-                    <div className="text-lg font-bold text-center mb-1">
+                    <div className="flex flex-col items-center gap-1 mb-1">
                       {specialDeal.discount_percentage && specialDeal.discount_percentage > 0 ? (
-                        <div className="flex flex-col items-center">
-                          <div className="flex items-center gap-2">
+                        <>
                             <span className="text-sm line-through text-gray-400">
-                              {price ? `${(specialDeal.price / price).toFixed(2)} WLD` : `$${specialDeal.price.toFixed(2)} USD`}
+                            {formatPrice(specialDeal.price)}
                             </span>
                             <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">
                               -{specialDeal.discount_percentage}%
                             </span>
-                          </div>
-                          <span className="text-green-400">
-                            {price ? `${((specialDeal.price * (1 - specialDeal.discount_percentage / 100)) / price).toFixed(2)} WLD` : `$${(specialDeal.price * (1 - specialDeal.discount_percentage / 100)).toFixed(2)} USD`}
+                          <span className="text-white font-semibold">
+                            {formatPrice(specialDeal.price * (1 - specialDeal.discount_percentage / 100))}
                           </span>
-                        </div>
+                        </>
                       ) : (
-                        <span>{price ? `${(specialDeal.price / price).toFixed(2)} WLD` : `$${specialDeal.price.toFixed(2)} USD`}</span>
+                        <span className="text-lg font-bold text-white">
+                          {formatPrice(specialDeal.price)}
+                        </span>
                       )}
                     </div>
                   </>
@@ -2467,12 +2492,15 @@ export default function Home() {
                       )}
                       {/* Price and Action */}
                       <div className="flex items-center justify-between">
-                        <div>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
                           <p className="text-sm text-gray-400">{t("common.price", "Price")}</p>
+                            <PaymentCurrencyToggle size="sm" className="max-w-[160px]" />
+                          </div>
                           {specialDealHasDiscount && specialDealDiscountedPrice !== null ? (
                             <div>
                               <p className="text-lg line-through text-gray-500">{formatPrice(specialDeal.price)}</p>
-                              <p className="text-2xl font-bold text-green-400">{formatPrice(specialDealDiscountedPrice)}</p>
+                              <p className="text-2xl font-bold text-[#3DAEF5]">{formatPrice(specialDealDiscountedPrice)}</p>
                               <p className="text-sm text-red-400 font-bold">-{specialDeal.discount_percentage}% off</p>
                             </div>
                           ) : (
@@ -2480,7 +2508,6 @@ export default function Home() {
                           )}
                         </div>
                         <div className="flex flex-col items-end gap-2">
-                          <PaymentCurrencyToggle size="sm" className="w-full max-w-[200px]" />
                           <Button
                             onClick={handleBuySpecialDeal}
                             disabled={buyingSpecialDeal}

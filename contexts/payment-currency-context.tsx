@@ -20,7 +20,7 @@ export const PaymentCurrencyProvider = ({ children }: { children: ReactNode }) =
   useEffect(() => {
     try {
       const stored = window.localStorage.getItem(STORAGE_KEY) as PaymentCurrency | null
-      if (stored === "WLD" || stored === "USDC") {
+      if (stored === "WLD" || stored === "USDC" || stored === "ANIX") {
         setCurrencyState(stored)
       }
     } catch (error) {

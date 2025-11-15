@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { ShoppingBag, X, Ticket, Sparkles, Crown, Users } from "lucide-react"
@@ -11,9 +11,13 @@ import { purchaseDeal } from "@/app/actions/deals"
 import { getSupabaseBrowserClient } from "@/lib/supabase"
 import { renderStars } from "@/utils/card-stars"
 import { motion, AnimatePresence } from "framer-motion"
-import { MiniKit, tokenToDecimals, Tokens, type PayCommandInput } from "@worldcoin/minikit-js"
+import { MiniKit } from "@worldcoin/minikit-js"
 import { useWldPrice } from "@/contexts/WldPriceContext"
 import { useI18n } from "@/contexts/i18n-context"
+import { PaymentCurrencyToggle } from "@/components/payment-currency-toggle"
+import { usePaymentCurrency } from "@/contexts/payment-currency-context"
+import { useAnixPrice } from "@/contexts/AnixPriceContext"
+import { ERC20_TRANSFER_ABI, PAYMENT_RECIPIENT, getTransferDetails } from "@/lib/payment-utils"
 
 interface DailyDeal {
   id: number
@@ -55,12 +59,40 @@ export default function DealOfTheDayDialog({
   onPurchaseSuccess,
 }: DealOfTheDayDialogProps) {
   const { t } = useI18n()
+  const { price: wldPrice } = useWldPrice()
+  const { price: anixPrice } = useAnixPrice()
+  const { currency: paymentCurrency } = usePaymentCurrency()
   const [isPurchasing, setIsPurchasing] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const hasMarkedAsSeen = useRef(false)
   const [hasOpened, setHasOpened] = useState(false)
   const [shouldMarkAsSeen, setShouldMarkAsSeen] = useState(false)
   const [creatorPercentage, setCreatorPercentage] = useState<number | null>(null)
+  const priceDetails = useMemo(() => {
+    if (paymentCurrency === "WLD" && (!wldPrice || wldPrice <= 0)) return null
+    if (paymentCurrency === "ANIX" && (!anixPrice || anixPrice <= 0)) return null
+    return getTransferDetails({
+      usdAmount: deal.price,
+      currency: paymentCurrency,
+      wldPrice,
+      anixPrice,
+    })
+  }, [deal.price, paymentCurrency, wldPrice, anixPrice])
+
+  const formatPrice = (usdAmount: number) => {
+    const details = getTransferDetails({
+      usdAmount,
+      currency: paymentCurrency,
+      wldPrice,
+      anixPrice,
+    })
+    // For ANIX, format with 2 decimal places for deals
+    if (paymentCurrency === "ANIX") {
+      const formatted = details.numericAmount.toFixed(2)
+      return `${formatted} ANIX`
+    }
+    return details.displayAmount
+  }
   
   // Calculate creator percentage when deal changes
   useEffect(() => {
@@ -210,78 +242,79 @@ export default function DealOfTheDayDialog({
       onClose()
     }
   }
-  const erc20TransferAbi = [{
-    type: "function",
-    name: "transfer",
-    stateMutability: "nonpayable",
-    inputs: [
-      { name: "to", type: "address" },
-      { name: "amount", type: "uint256" }
-    ],
-    outputs: [{ type: "bool" }]
-  }]
-
-  const WLD_TOKEN = "0x2cFc85d8E48F8EAB294be644d9E25C3030863003" // WLD (World Chain)
   // Update the sendPayment function to reflect the promotional price
   
   const sendPayment = async () => {
-    const dollarAmount = deal.price
-    const fallbackWldAmount = deal.price
-    const wldAmount = price ? dollarAmount / price : fallbackWldAmount
-    
+    if (!priceDetails) {
+      toast({
+        title: t("deals.payment_unavailable", "Payment unavailable"),
+        description: t("deals.failed_process_payment", "Failed to process payment"),
+        variant: "destructive",
+      })
+      return
+    }
+
     try {
-      // Check if card has a creator that needs payment
       const hasCreator = deal.creator_address && deal.creator_address.trim() !== ""
-      
+
       let transactions: any[] = []
-      
+
       if (hasCreator && deal.card_rarity) {
-        // Calculate split payment for dev and creator
         const { getDealRevenueSplit } = await import("@/lib/creator-revenue")
         const split = getDealRevenueSplit(deal.card_rarity as any)
-        
-        const devAmount = wldAmount * split.devShare
-        const creatorAmount = wldAmount * split.creatorShare
-        
-        console.log('Split payment:', {
-          total: wldAmount,
-          devShare: `${(split.devShare * 100).toFixed(1)}% = ${devAmount.toFixed(4)} WLD`,
-          creatorShare: `${(split.creatorShare * 100).toFixed(1)}% = ${creatorAmount.toFixed(4)} WLD`,
-          creatorAddress: deal.creator_address
+
+        const devTransfer = getTransferDetails({
+          usdAmount: deal.price * split.devShare,
+          currency: paymentCurrency,
+          wldPrice,
+          anixPrice,
         })
-        
-        // Two transfers: one to dev, one to creator
+
+        const creatorTransfer = getTransferDetails({
+          usdAmount: deal.price * split.creatorShare,
+          currency: paymentCurrency,
+          wldPrice,
+          anixPrice,
+        })
+
+        console.log("Split payment:", {
+          totalUsd: deal.price,
+          currency: paymentCurrency,
+          devShare: `${(split.devShare * 100).toFixed(1)}% = ${devTransfer.displayAmount}`,
+          creatorShare: `${(split.creatorShare * 100).toFixed(1)}% = ${creatorTransfer.displayAmount}`,
+          creatorAddress: deal.creator_address,
+        })
+
         transactions = [
           {
-            address: WLD_TOKEN,
-            abi: erc20TransferAbi,
+            address: devTransfer.tokenAddress,
+            abi: ERC20_TRANSFER_ABI,
             functionName: "transfer",
-            args: ["0xDb4D9195EAcE195440fbBf6f80cA954bf782468E", tokenToDecimals(parseFloat(devAmount.toFixed(2)), Tokens.WLD).toString()],
+            args: [PAYMENT_RECIPIENT, devTransfer.rawAmount],
           },
           {
-            address: WLD_TOKEN,
-            abi: erc20TransferAbi,
+            address: creatorTransfer.tokenAddress,
+            abi: ERC20_TRANSFER_ABI,
             functionName: "transfer",
-            args: [deal.creator_address, tokenToDecimals(parseFloat(creatorAmount.toFixed(2)), Tokens.WLD).toString()],
+            args: [deal.creator_address, creatorTransfer.rawAmount],
           },
         ]
       } else {
-        // Single transfer to dev wallet only
         transactions = [
           {
-            address: WLD_TOKEN,
-            abi: erc20TransferAbi,
+            address: priceDetails.tokenAddress,
+            abi: ERC20_TRANSFER_ABI,
             functionName: "transfer",
-            args: ["0xDb4D9195EAcE195440fbBf6f80cA954bf782468E", tokenToDecimals(parseFloat(wldAmount.toFixed(2)), Tokens.WLD).toString()],
+            args: [PAYMENT_RECIPIENT, priceDetails.rawAmount],
           },
         ]
       }
-      
-      const {commandPayload, finalPayload} = await MiniKit.commandsAsync.sendTransaction({
+
+      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: transactions,
       })
-     
-      if (finalPayload.status == "success") {
+
+      if (finalPayload.status === "success") {
         handlePurchase()
       } else {
         console.error("Payment failed:", finalPayload)
@@ -567,19 +600,22 @@ export default function DealOfTheDayDialog({
                 )}
 
                 {/* Price and Action */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-400">{t("common.price", "Price")}</p>
-                    <p className="text-2xl font-bold text-violet-400">{price
-    ? `${(deal.price / price).toFixed(2)} WLD`
-    : `$${deal.price.toFixed(2)} USD`}</p>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex flex-col items-start gap-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-gray-400">{t("common.price", "Price")}</p>
+                      <PaymentCurrencyToggle size="sm" className="max-w-[150px]" />
+                    </div>
+                    <p className="text-2xl font-bold text-violet-400">
+                      {priceDetails ? formatPrice(deal.price) : `$${deal.price.toFixed(2)} USD`}
+                    </p>
                   </div>
 
                   <Button
                     onClick={sendPayment}
-                    disabled={isPurchasing}
+                    disabled={isPurchasing || !priceDetails}
                     size="lg"
-                    className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white rounded-full shadow-lg shadow-violet-900/30"
+                    className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white rounded-full shadow-lg shadow-violet-900/30 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {isPurchasing ? (
                       <>
