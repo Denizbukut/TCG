@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { updateScoreForCards, updateScoreForLevelUp } from "@/app/actions/update-score"
 import ProtectedRoute from "@/components/protected-route"
@@ -164,7 +164,6 @@ const getCloudflareImageUrl = (imagePath?: string) => {
 
 export default function DrawPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const { user, updateUserTickets, updateUserExp, refreshUserData, updateUserScore } = useAuth()
   const { t } = useI18n()
   const [isDrawing, setIsDrawing] = useState(false)
@@ -173,11 +172,14 @@ export default function DrawPage() {
   
   // Check URL parameter for tab on mount
   useEffect(() => {
-    const tabParam = searchParams.get("tab")
-    if (tabParam === "wheel") {
-      setActiveTab("wheel")
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search)
+      const tabParam = urlParams.get("tab")
+      if (tabParam === "wheel") {
+        setActiveTab("wheel")
+      }
     }
-  }, [searchParams])
+  }, [])
   const [legendaryTickets, setLegendaryTickets] = useState(2)
   const [eliteTickets, setEliteTickets] = useState(0)
   const [tickets, setTickets] = useState(0)
@@ -2429,9 +2431,12 @@ const [showInfo, setShowInfo] = useState(false)
                     {/* Wheel Type Switcher */}
                     <div className="flex items-center justify-center gap-2 mb-4">
                       <button
-                        onClick={() => setActiveWheelType("standard")}
+                        onClick={() => !wheelSpinning && setActiveWheelType("standard")}
+                        disabled={wheelSpinning}
                         className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                          activeWheelType === "standard"
+                          wheelSpinning
+                            ? "opacity-50 cursor-not-allowed bg-black/30 text-gray-500 border border-gray-600"
+                            : activeWheelType === "standard"
                             ? "bg-gradient-to-r from-yellow-400 to-yellow-500 text-black"
                             : "bg-black/50 text-yellow-200 border border-yellow-400/30"
                         }`}
@@ -2439,9 +2444,12 @@ const [showInfo, setShowInfo] = useState(false)
                         {t("draw.lucky_wheel_standard", "Standard")}
                       </button>
                       <button
-                        onClick={() => setActiveWheelType("premium")}
+                        onClick={() => !wheelSpinning && setActiveWheelType("premium")}
+                        disabled={wheelSpinning}
                         className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                          activeWheelType === "premium"
+                          wheelSpinning
+                            ? "opacity-50 cursor-not-allowed bg-black/30 text-gray-500 border border-gray-600"
+                            : activeWheelType === "premium"
                             ? "bg-gradient-to-r from-yellow-400 to-yellow-500 text-black"
                             : "bg-black/50 text-yellow-200 border border-yellow-400/30"
                         }`}
