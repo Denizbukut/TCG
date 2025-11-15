@@ -224,10 +224,10 @@ const [showInfo, setShowInfo] = useState(false)
       { label: t("draw.lucky_wheel_reward_legendary", "Legendary Card"), color: "#F59E0B", dropRate: 6, reward: { type: "card", rarity: "legendary" as const } },
       { label: t("draw.lucky_wheel_reward_regular_25", "+25 Regular Tickets"), color: "#3B82F6", dropRate: 6, reward: { type: "tickets", ticketType: "regular" as const, amount: 25 } },
       { label: t("draw.lucky_wheel_reward_legendary_25", "+25 Legendary Tickets"), color: "#A855F7", dropRate: 6, reward: { type: "tickets", ticketType: "legendary" as const, amount: 25 } },
-      { label: t("draw.lucky_wheel_reward_game_pass", "Game Pass Unlock"), color: "#10B981", dropRate: 1, reward: { type: "pass", pass: "premium" as const } },
+      { label: t("draw.lucky_wheel_reward_game_pass", "Game Pass Unlock +7 days"), color: "#10B981", dropRate: 1, reward: { type: "pass", pass: "premium" as const } },
       { label: t("draw.lucky_wheel_reward_regular_50", "+50 Regular Tickets"), color: "#3B82F6", dropRate: 0.5, reward: { type: "tickets", ticketType: "regular" as const, amount: 50 } },
       { label: t("draw.lucky_wheel_reward_legendary_50", "+50 Legendary Tickets"), color: "#A855F7", dropRate: 0.5, reward: { type: "tickets", ticketType: "legendary" as const, amount: 50 } },
-      { label: t("draw.lucky_wheel_reward_xp_pass", "XP Pass Unlock"), color: "#F87171", dropRate: 1, reward: { type: "pass", pass: "xp" as const } },
+      { label: t("draw.lucky_wheel_reward_xp_pass", "XP Pass Unlock +7 days"), color: "#F87171", dropRate: 1, reward: { type: "pass", pass: "xp" as const } },
       { label: t("draw.lucky_wheel_reward_special_deal", "Special Deal Bundle"), color: "#EC4899", dropRate: 1, reward: { type: "deal", deal: "special" as const } },
     ],
     [t],
@@ -269,12 +269,23 @@ const [showInfo, setShowInfo] = useState(false)
     if (paymentCurrency === "WLD" && (!price || price <= 0)) return null
     if (paymentCurrency === "ANIX" && (!anixPrice || anixPrice <= 0)) return null
     try {
-      return getTransferDetails({
+      const details = getTransferDetails({
         usdAmount: 1.65,
         currency: paymentCurrency,
         wldPrice: price,
         anixPrice,
       })
+      
+      // Format ANIX price to 2 decimal places for lucky wheel
+      if (paymentCurrency === "ANIX" && details) {
+        const formattedAmount = details.numericAmount.toFixed(2)
+        return {
+          ...details,
+          displayAmount: `${formattedAmount} ANIX`,
+        }
+      }
+      
+      return details
     } catch (error) {
       console.error("Failed to compute lucky wheel cost", error)
       return null
@@ -1344,10 +1355,17 @@ const [showInfo, setShowInfo] = useState(false)
               ? t("draw.wheel_reward_pass_premium", "Premium Pass")
               : t("draw.wheel_reward_pass_xp", "XP Pass")
 
+            // Update elite tickets in frontend (7 Legendary Tickets bonus)
+            if (data.legendaryTicketsAdded === 7) {
+              const newEliteTickets = eliteTickets + 7
+              setEliteTickets(newEliteTickets)
+              await updateUserTickets?.(tickets, newEliteTickets)
+            }
+
             setLastWheelCard(null)
             toast({
               title: t("draw.wheel_reward_pass_success_title", "Pass Activated!"),
-              description: t("draw.wheel_reward_pass_success_desc", "You have unlocked the {passType}! It expires in 7 days.", {
+              description: t("draw.wheel_reward_pass_success_desc", "You have unlocked the {passType}! It expires in 7 days. You also received 7 Legendary Tickets!", {
                 passType: passTypeDisplay,
               }),
             })
@@ -2585,11 +2603,19 @@ const [showInfo, setShowInfo] = useState(false)
                               </div>
                             )}
                             {wheelReward.type === "pass" && (
-                              <div className="flex items-center justify-center gap-3">
-                                <Star className="h-8 w-8 text-yellow-400" />
-                                <span className="text-xl font-bold text-yellow-200">
-                                  {wheelReward.label}
-                                </span>
+                              <div className="flex flex-col items-center justify-center gap-2">
+                                <div className="flex items-center justify-center gap-3">
+                                  <Star className="h-8 w-8 text-yellow-400" />
+                                  <span className="text-xl font-bold text-yellow-200">
+                                    {wheelReward.label}
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-center gap-2 mt-2">
+                                  <Crown className="h-6 w-6 text-purple-400" />
+                                  <span className="text-lg font-semibold text-purple-300">
+                                    +7 {t("draw.legendary_tickets", "Legendary Tickets")}
+                                  </span>
+                                </div>
                               </div>
                             )}
                             {wheelReward.type === "deal" && (

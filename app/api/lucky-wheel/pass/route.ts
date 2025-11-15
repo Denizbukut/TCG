@@ -119,11 +119,32 @@ export async function POST(req: Request) {
       }
     }
 
+    // Give 7 Legendary Tickets as bonus when winning a pass
+    const { data: userData } = await supabase
+      .from("users")
+      .select("elite_tickets")
+      .eq("wallet_address", walletAddress)
+      .single()
+
+    if (userData) {
+      const newEliteTickets = (userData.elite_tickets || 0) + 7
+      const { error: ticketUpdateError } = await supabase
+        .from("users")
+        .update({ elite_tickets: newEliteTickets })
+        .eq("wallet_address", walletAddress)
+
+      if (ticketUpdateError) {
+        console.error("Error updating elite tickets for pass reward:", ticketUpdateError)
+        // Don't fail the entire operation, just log it
+      }
+    }
+
     return NextResponse.json({
       success: true,
       passType,
       expiryDate: expiryDate.toISOString(),
       message: `${passType === "premium" ? "Premium" : "XP"} Pass activated successfully`,
+      legendaryTicketsAdded: 7,
     })
   } catch (error) {
     console.error("Lucky wheel pass reward error:", error)
