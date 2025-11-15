@@ -1857,7 +1857,7 @@ export default function Home() {
         </header>
 
         <main className="w-full px-2 md:px-6 pb-16 flex-1 overflow-y-auto overscroll-contain"> {/* Padding hinzugefügt */}
-          <Link href="/tokens?tab=create">
+          <Link href="/draw">
             <motion.div
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1865,7 +1865,7 @@ export default function Home() {
               className="mt-3 mb-4 flex items-center gap-2 rounded-lg border-2 border-emerald-400 bg-gradient-to-r from-emerald-400 via-lime-400 to-emerald-500 px-3 py-2 text-sm font-semibold text-black shadow-[0_0_18px_rgba(16,185,129,0.55)] transition hover:scale-[1.02] hover:shadow-[0_0_28px_rgba(16,185,129,0.7)]"
             >
               <Sparkles className="h-4 w-4 text-black" />
-              <span>{t("home.create_card_banner", "Create your own card and earn WLD")}</span>
+              <span>{t("home.lucky_wheel_banner", "Spin the Lucky Wheel and win amazing rewards!")}</span>
               <ArrowRight className="ml-auto h-4 w-4 text-black/80" />
             </motion.div>
           </Link>

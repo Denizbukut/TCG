@@ -180,6 +180,7 @@ export default function DrawPage() {
   const [isBulkDraw, setIsBulkDraw] = useState(false)
   const [showBulkLoading, setShowBulkLoading] = useState(false)
   const { currency: paymentCurrency, setCurrency: setPaymentCurrency } = usePaymentCurrency()
+  const [activeWheelType, setActiveWheelType] = useState<"premium" | "standard">("standard")
 
   // Animation states
   const [showPackSelection, setShowPackSelection] = useState(true)
@@ -212,7 +213,9 @@ const [showInfo, setShowInfo] = useState(false)
   const [hasIconPass, setHasIconPass] = useState(false)
   const { price } = useWldPrice()
   const { price: anixPrice } = useAnixPrice()
-  const luckyWheelSegments = useMemo(
+  
+  // Premium Wheel Segments (original)
+  const premiumWheelSegments = useMemo(
     () => [
       // Mix tickets and other rewards for better color distribution
       { label: t("draw.lucky_wheel_reward_epic", "Epic Card"), color: "#8B5CF6", dropRate: 19, reward: { type: "card", rarity: "epic" as const } },
@@ -231,6 +234,40 @@ const [showInfo, setShowInfo] = useState(false)
       { label: t("draw.lucky_wheel_reward_special_deal", "Special Deal Bundle"), color: "#EC4899", dropRate: 1, reward: { type: "deal", deal: "special" as const } },
     ],
     [t],
+  )
+
+  // Standard Wheel Segments (new - with tickets 1-3 and all card rarities)
+  // Most common: Tickets 1 (Regular + Legendary) and Common Cards
+  // Maximum tickets: 3 (Tickets 4 and 5 removed)
+  const standardWheelSegments = useMemo(
+    () => [
+      // Tickets 1 (most common - 30% each = 60% total)
+      { label: t("draw.lucky_wheel_reward_regular_1", "+1 Regular Ticket"), color: "#3B82F6", dropRate: 30, reward: { type: "tickets", ticketType: "regular" as const, amount: 1 } },
+      { label: t("draw.lucky_wheel_reward_legendary_1", "+1 Legendary Ticket"), color: "#A855F7", dropRate: 30, reward: { type: "tickets", ticketType: "legendary" as const, amount: 1 } },
+      // Common Cards (26%)
+      { label: t("draw.lucky_wheel_reward_common", "Common Card"), color: "#9CA3AF", dropRate: 26, reward: { type: "card", rarity: "common" as const } },
+      // Tickets 2 (2.5% each = 5% total)
+      { label: t("draw.lucky_wheel_reward_regular_2", "+2 Regular Tickets"), color: "#3B82F6", dropRate: 2.5, reward: { type: "tickets", ticketType: "regular" as const, amount: 2 } },
+      { label: t("draw.lucky_wheel_reward_legendary_2", "+2 Legendary Tickets"), color: "#A855F7", dropRate: 2.5, reward: { type: "tickets", ticketType: "legendary" as const, amount: 2 } },
+      // Tickets 3 (2% each = 4% total)
+      { label: t("draw.lucky_wheel_reward_regular_3", "+3 Regular Tickets"), color: "#3B82F6", dropRate: 2, reward: { type: "tickets", ticketType: "regular" as const, amount: 3 } },
+      { label: t("draw.lucky_wheel_reward_legendary_3", "+3 Legendary Tickets"), color: "#A855F7", dropRate: 2, reward: { type: "tickets", ticketType: "legendary" as const, amount: 3 } },
+      // Rare Cards (2.5%)
+      { label: t("draw.lucky_wheel_reward_rare", "Rare Card"), color: "#3B82F6", dropRate: 2.5, reward: { type: "card", rarity: "rare" as const } },
+      // Epic Cards (1.5%)
+      { label: t("draw.lucky_wheel_reward_epic_standard", "Epic Card"), color: "#8B5CF6", dropRate: 1.5, reward: { type: "card", rarity: "epic" as const } },
+      // Legendary Cards (0.5%)
+      { label: t("draw.lucky_wheel_reward_legendary_standard", "Legendary Card"), color: "#F59E0B", dropRate: 0.5, reward: { type: "card", rarity: "legendary" as const } },
+      // Deal of the Day (0.5%)
+      { label: t("draw.lucky_wheel_reward_deal_day_standard", "Deal of the Day Bundle"), color: "#FBBF24", dropRate: 0.5, reward: { type: "deal", deal: "daily" as const } },
+    ],
+    [t],
+  )
+
+  // Select active wheel segments based on wheel type
+  const luckyWheelSegments = useMemo(
+    () => activeWheelType === "premium" ? premiumWheelSegments : standardWheelSegments,
+    [activeWheelType, premiumWheelSegments, standardWheelSegments]
   )
   const segmentAngle = useMemo(() => 360 / luckyWheelSegments.length, [luckyWheelSegments.length])
   
@@ -269,8 +306,11 @@ const [showInfo, setShowInfo] = useState(false)
     if (paymentCurrency === "WLD" && (!price || price <= 0)) return null
     if (paymentCurrency === "ANIX" && (!anixPrice || anixPrice <= 0)) return null
     try {
+      // Different prices for Premium (1.65 USD) and Standard (0.18 USD) wheels
+      const usdAmount = activeWheelType === "premium" ? 1.65 : 0.18
+      
       const details = getTransferDetails({
-        usdAmount: 1.65,
+        usdAmount,
         currency: paymentCurrency,
         wldPrice: price,
         anixPrice,
@@ -290,7 +330,7 @@ const [showInfo, setShowInfo] = useState(false)
       console.error("Failed to compute lucky wheel cost", error)
       return null
     }
-  }, [price, anixPrice, paymentCurrency])
+  }, [price, anixPrice, paymentCurrency, activeWheelType])
 
   // Helper function to refresh wheel limit
   const refreshWheelLimit = useCallback(async () => {
@@ -1334,6 +1374,7 @@ const [showInfo, setShowInfo] = useState(false)
         }
         case "pass": {
           try {
+            const passReward = reward as { type: "pass"; pass: "premium" | "xp" }
             const response = await fetch("/api/lucky-wheel/pass", {
               method: "POST",
               headers: {
@@ -1341,7 +1382,7 @@ const [showInfo, setShowInfo] = useState(false)
               },
               body: JSON.stringify({
                 walletAddress: user.wallet_address,
-                passType: reward.pass,
+                passType: passReward.pass,
               }),
             })
 
@@ -1351,7 +1392,7 @@ const [showInfo, setShowInfo] = useState(false)
             }
 
             const data = await response.json()
-            const passTypeDisplay = reward.pass === "premium" 
+            const passTypeDisplay = passReward.pass === "premium" 
               ? t("draw.wheel_reward_pass_premium", "Premium Pass")
               : t("draw.wheel_reward_pass_xp", "XP Pass")
 
@@ -1782,8 +1823,8 @@ const [showInfo, setShowInfo] = useState(false)
       return
     }
 
-    // Check global daily limit before spinning
-    if (wheelLimit && !wheelLimit.canSpin) {
+    // Check global daily limit before spinning (only for Premium Wheel)
+    if (activeWheelType === "premium" && wheelLimit && !wheelLimit.canSpin) {
       toast({
         title: t("draw.wheel_spin_limit_reached_title", "Daily limit reached"),
         description: t(
@@ -1826,10 +1867,16 @@ const [showInfo, setShowInfo] = useState(false)
       }
 
       // Step 2: Spin after successful payment (check limit and get reward)
+      // Calculate USD price for database tracking
+      const usdPrice = activeWheelType === "premium" ? 1.65 : 0.18
       const spinResponse = await fetch("/api/lucky-wheel/spin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ walletAddress: user.wallet_address }),
+        body: JSON.stringify({ 
+          walletAddress: user.wallet_address,
+          wheelType: activeWheelType,
+          pricePaid: usdPrice,
+        }),
       })
 
       if (!spinResponse.ok) {
@@ -2056,7 +2103,7 @@ const [showInfo, setShowInfo] = useState(false)
       })
       setWheelSpinning(false)
     }
-  }, [applyWheelReward, luckyWheelSegments, segmentAngle, spinCostDetails, t, user?.wallet_address, wheelSpinning, wheelLimit])
+  }, [applyWheelReward, luckyWheelSegments, segmentAngle, spinCostDetails, t, user?.wallet_address, wheelSpinning, wheelLimit, activeWheelType])
 
   const resetStates = () => {
     setPackOpened(false)
@@ -2370,8 +2417,32 @@ const [showInfo, setShowInfo] = useState(false)
                 
                 {activeTab === "wheel" && (
                   <div className="space-y-6">
-                    {/* Lucky Wheel Global Daily Limit Display */}
-                    {wheelLimit && (
+                    {/* Wheel Type Switcher */}
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                      <button
+                        onClick={() => setActiveWheelType("standard")}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                          activeWheelType === "standard"
+                            ? "bg-gradient-to-r from-yellow-400 to-yellow-500 text-black"
+                            : "bg-black/50 text-yellow-200 border border-yellow-400/30"
+                        }`}
+                      >
+                        {t("draw.lucky_wheel_standard", "Standard")}
+                      </button>
+                      <button
+                        onClick={() => setActiveWheelType("premium")}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                          activeWheelType === "premium"
+                            ? "bg-gradient-to-r from-yellow-400 to-yellow-500 text-black"
+                            : "bg-black/50 text-yellow-200 border border-yellow-400/30"
+                        }`}
+                      >
+                        {t("draw.lucky_wheel_premium", "Premium")}
+                      </button>
+                    </div>
+
+                    {/* Lucky Wheel Global Daily Limit Display (only for Premium Wheel) */}
+                    {activeWheelType === "premium" && wheelLimit && (
                       <div className="mb-4 space-y-2">
                         {/* Global Limit */}
                         <div
@@ -2388,6 +2459,14 @@ const [showInfo, setShowInfo] = useState(false)
                               {t("draw.lucky_wheel_global_limit_reached", "Global limit reached for all users!")}
                             </span>
                           )}
+                        </div>
+                      </div>
+                    )}
+                    {/* Standard Wheel - No Limit Info */}
+                    {activeWheelType === "standard" && (
+                      <div className="mb-4 space-y-2">
+                        <div className="text-center text-sm font-medium px-4 py-2 rounded-xl bg-black/70 text-green-300 border border-green-400">
+                          ✨ {t("draw.lucky_wheel_no_limit", "Standard Wheel - No Daily Limit!")}
                         </div>
                       </div>
                     )}
@@ -2412,7 +2491,7 @@ const [showInfo, setShowInfo] = useState(false)
                         disabled={
                           wheelSpinning || 
                           !spinCostDetails || 
-                          (wheelLimit !== null && (!wheelLimit.canSpin || wheelLimit.hasPendingSpin === true))
+                          (activeWheelType === "premium" && wheelLimit !== null && (!wheelLimit.canSpin || wheelLimit.hasPendingSpin === true))
                         }
                         title={
                           wheelLimit !== null
