@@ -1857,7 +1857,7 @@ export default function Home() {
         </header>
 
         <main className="w-full px-2 md:px-6 pb-16 flex-1 overflow-y-auto overscroll-contain"> {/* Padding hinzugefügt */}
-          <Link href="/draw">
+          <Link href="/draw?tab=wheel">
             <motion.div
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}

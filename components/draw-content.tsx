@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { updateScoreForCards, updateScoreForLevelUp } from "@/app/actions/update-score"
 import ProtectedRoute from "@/components/protected-route"
@@ -164,11 +164,20 @@ const getCloudflareImageUrl = (imagePath?: string) => {
 
 export default function DrawPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user, updateUserTickets, updateUserExp, refreshUserData, updateUserScore } = useAuth()
   const { t } = useI18n()
   const [isDrawing, setIsDrawing] = useState(false)
   const [drawnCards, setDrawnCards] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<"regular" | "legendary" | "god" | "icon" | "wheel">("regular")
+  
+  // Check URL parameter for tab on mount
+  useEffect(() => {
+    const tabParam = searchParams.get("tab")
+    if (tabParam === "wheel") {
+      setActiveTab("wheel")
+    }
+  }, [searchParams])
   const [legendaryTickets, setLegendaryTickets] = useState(2)
   const [eliteTickets, setEliteTickets] = useState(0)
   const [tickets, setTickets] = useState(0)
