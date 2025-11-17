@@ -392,7 +392,8 @@
     "ticket_shop": "Comprar Tickets en la Tienda",
     "legendary_cards_equals_points": "Cartas Legendarias = 15 Puntos",
     "trade_market_rules_title": "Importante: Reglas del Mercado",
-    "trade_market_rules_desc": "Los puntos solo se cuentan al comprar cartas de diferentes usuarios. Cada 24 horas, solo puedes comprar una carta del mismo usuario una vez y recibir puntos."
+    "trade_market_rules_desc": "Los puntos solo se cuentan al comprar cartas de diferentes usuarios. Cada 24 horas, solo puedes comprar una carta del mismo usuario una vez y recibir puntos.",
+    "bonus_hint": "¡Hasta 2x Puntos de Bonificación!"
   },
   "ticket_shop": {
     "title": "Tienda de Tickets",

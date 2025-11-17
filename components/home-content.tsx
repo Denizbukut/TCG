@@ -2004,6 +2004,7 @@ export default function Home() {
       </div>
       <h3 className="text-xl font-bold text-yellow-100 mb-1">{t("contest.title", "Weekly Contest")}</h3>
       <p className="text-sm text-white/80 font-medium">{t("contest.subtitle", "Compete for the top spot!")}</p>
+      <p className="text-xs text-green-400 font-semibold mt-1">✨ {t("contest.bonus_hint", "Up to 2x Bonus Points!")}</p>
       {isContestActive() && (() => {
         const timeLeft = formatContestCountdown(contestCountdown)
         return timeLeft ? (

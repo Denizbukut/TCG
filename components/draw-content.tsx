@@ -927,8 +927,8 @@ const [showInfo, setShowInfo] = useState(false)
               
               let totalPoints = 0
               totalPoints += rareCards.length * 2
-              totalPoints += epicCards.length * 4
-              totalPoints += legendaryCards.length * 15
+              totalPoints += epicCards.length * 8
+              totalPoints += legendaryCards.length * 30
               
               if (totalPoints > 0) {
                 // Check if contest is active

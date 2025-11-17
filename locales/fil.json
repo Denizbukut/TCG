@@ -392,7 +392,8 @@
     "ticket_shop": "Bumili ng mga Ticket sa Shop",
     "legendary_cards_equals_points": "Mga Alamat na Kard = 15 Puntos",
     "trade_market_rules_title": "Mahalaga: Mga Tuntunin sa Trade Market",
-    "trade_market_rules_desc": "Ang mga puntos ay binibilang lamang kapag bumibili ng mga kard mula sa iba't ibang user. Bawat 24 na oras, maaari ka lamang bumili ng isang kard mula sa parehong user nang isang beses at makatanggap ng puntos."
+    "trade_market_rules_desc": "Ang mga puntos ay binibilang lamang kapag bumibili ng mga kard mula sa iba't ibang user. Bawat 24 na oras, maaari ka lamang bumili ng isang kard mula sa parehong user nang isang beses at makatanggap ng puntos.",
+    "bonus_hint": "Hanggang 2x Bonus na Puntos!"
   },
   "ticket_shop": {
     "title": "Tindahan ng Tiket",

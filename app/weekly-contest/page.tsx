@@ -191,10 +191,10 @@ export default function WeeklyContestPage() {
             <div className="text-sm text-yellow-100 space-y-1">
               <div>• {t("contest.rare_cards", "Rare Cards")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
               <div>• {t("contest.ticket_shop", "Buying Tickets in Shop")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
-              <div>• {t("contest.epic_cards", "Epic Cards")} = <span className="font-bold text-yellow-400">4 {t("contest.points", "Points")}</span></div>
+              <div>• {t("contest.epic_cards", "Epic Cards")} = <span className="font-bold text-yellow-400">8 {t("contest.points", "Points")}</span> <span className="text-green-400 text-xs">(2x Bonus)</span></div>
               <div>• {t("contest.referrals", "Referrals")} = <span className="font-bold text-yellow-400">5 {t("contest.points", "Points")}</span></div>
               <div>• {t("contest.trade_market", "Buying Cards on Trade Market")} = <span className="font-bold text-yellow-400">6 {t("contest.points", "Points")}</span></div>
-              <div>• {t("contest.legendary_cards", "Legendary Cards")} = <span className="font-bold text-yellow-400">15 {t("contest.points", "Points")}</span></div>
+              <div>• {t("contest.legendary_cards", "Legendary Cards")} = <span className="font-bold text-yellow-400">30 {t("contest.points", "Points")}</span> <span className="text-green-400 text-xs">(2x Bonus)</span></div>
             </div>
             <div className="mt-3 pt-3 border-t border-yellow-400/30">
               <p className="text-xs text-yellow-200 font-semibold mb-1">{t("contest.trade_market_rules_title", "Important: Trade Market Rules")}</p>

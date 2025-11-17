@@ -392,7 +392,8 @@
     "ticket_shop": "Buying Tickets in Shop",
     "legendary_cards_equals_points": "Legendary Cards = 15 Points",
     "trade_market_rules_title": "Important: Trade Market Rules",
-    "trade_market_rules_desc": "Points are only counted when buying cards from different users. Every 24 hours, you can only buy a card from the same user once and receive points."
+    "trade_market_rules_desc": "Points are only counted when buying cards from different users. Every 24 hours, you can only buy a card from the same user once and receive points.",
+    "bonus_hint": "Up to 2x Bonus Points!"
   },
   "ticket_shop": {
     "title": "Ticket Shop",
