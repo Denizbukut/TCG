@@ -170,6 +170,10 @@ function TokensPageContent() {
 
   const getDiscountedUsdPrice = (rarity: string) => {
     const basePrice = CARD_CREATION_PRICES[rarity]?.usd ?? 0
+    // WICHTIG: Bei ANIX wird KEIN Discount angewendet, da ANIX bereits 10% Rabatt hat
+    if (paymentCurrency === "ANIX") {
+      return basePrice
+    }
     if (!activeDiscountPercent) return basePrice
     const discounted = basePrice * (1 - activeDiscountPercent / 100)
     return Number(discounted.toFixed(2))
@@ -591,7 +595,8 @@ function TokensPageContent() {
       }
 
       const baseUsdPrice = priceInfo.usd
-      const discountPercent = activeDiscountPercent
+      // WICHTIG: Bei ANIX wird KEIN Discount angewendet, da ANIX bereits 10% Rabatt hat
+      const discountPercent = paymentCurrency === "ANIX" ? 0 : activeDiscountPercent
       const discountedUsdPrice =
         discountPercent > 0 ? Number((baseUsdPrice * (1 - discountPercent / 100)).toFixed(2)) : baseUsdPrice
 

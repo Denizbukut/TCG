@@ -335,24 +335,25 @@ export default function ShopPage() {
   let finalPrice = originalPrice
   let discountApplied = false
 
-  // Zeitbasierter Rabatt (höchste Priorität)
+  // ANIX Rabatt: 10% dauerhafter Rabatt wenn mit ANIX bezahlt wird
+  // WICHTIG: Bei ANIX wird KEIN Time-Based Discount angewendet, da ANIX bereits 10% Rabatt hat
+  if (paymentCurrency === "ANIX") {
+    return originalPrice * 0.9
+  }
+
+  // Zeitbasierter Rabatt (höchste Priorität) - nur für WLD/USDC
   if (timeDiscount?.isActive && timeDiscount.value > 0) {
     finalPrice = originalPrice * (1 - timeDiscount.value)
     discountApplied = true
   }
   
-  // Bestehende Rabatte (niedrigere Priorität)
+  // Bestehende Rabatte (niedrigere Priorität) - nur für WLD/USDC
   const qualifiesForExistingDiscount =
     userClanRole === "cheap_hustler" ||
     (userClanRole === "leader" && clanMemberCount >= 30)
 
   if (qualifiesForExistingDiscount && !discountApplied) {
     finalPrice = originalPrice * 0.9
-  }
-
-  // ANIX Rabatt: 10% dauerhafter Rabatt wenn mit ANIX bezahlt wird
-  if (paymentCurrency === "ANIX") {
-    finalPrice = finalPrice * 0.9
   }
 
   return finalPrice
