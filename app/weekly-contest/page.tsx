@@ -3,12 +3,17 @@
 import { useEffect, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Trophy } from "lucide-react"
+import { ArrowLeft, Trophy, ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import CardItem from "@/components/card-item"
 import { WEEKLY_CONTEST_CONFIG, getContestEndTimestamp, getTimeUntilContestEnd } from "@/lib/weekly-contest-config"
 import { useI18n } from "@/contexts/i18n-context"
 import { getSupabaseBrowserClient } from "@/lib/supabase"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 
 const WEEKLY_PRIZE_POOL = WEEKLY_CONTEST_CONFIG.prizePool
 
@@ -32,6 +37,10 @@ export default function WeeklyContestPage() {
   const [userStats, setUserStats] = useState<UserStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [countdown, setCountdown] = useState(getTimeUntilContestEnd())
+  const [isTradeMarketOpen, setIsTradeMarketOpen] = useState(false)
+  const [isDrawCardsOpen, setIsDrawCardsOpen] = useState(false)
+  const [isWheelSpinsOpen, setIsWheelSpinsOpen] = useState(false)
+  const [isOtherOpen, setIsOtherOpen] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -189,12 +198,67 @@ export default function WeeklyContestPage() {
           </div> */}
           
             <div className="text-sm text-yellow-100 space-y-1">
-              <div>• {t("contest.rare_cards", "Rare Cards")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
-              <div>• {t("contest.ticket_shop", "Buying Tickets in Shop")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
-              <div>• {t("contest.epic_cards", "Epic Cards")} = <span className="font-bold text-yellow-400">8 {t("contest.points", "Points")}</span> <span className="text-green-400 text-xs">(2x Bonus)</span></div>
-              <div>• {t("contest.referrals", "Referrals")} = <span className="font-bold text-yellow-400">5 {t("contest.points", "Points")}</span></div>
-              <div>• {t("contest.trade_market", "Buying Cards on Trade Market")} = <span className="font-bold text-yellow-400">6 {t("contest.points", "Points")}</span></div>
-              <div>• {t("contest.legendary_cards", "Legendary Cards")} = <span className="font-bold text-yellow-400">30 {t("contest.points", "Points")}</span> <span className="text-green-400 text-xs">(2x Bonus)</span></div>
+              <Collapsible className="w-full" open={isDrawCardsOpen} onOpenChange={setIsDrawCardsOpen}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity py-0.5">
+                  <span>• {t("contest.draw_cards", "Draw Cards")}</span>
+                  {isDrawCardsOpen ? (
+                    <ChevronUp className="h-4 w-4 text-yellow-400" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-yellow-400" />
+                  )}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-1 space-y-1 text-xs pl-0 text-left">
+                  <div className="text-left">• {t("contest.common_cards", "Common Cards")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.rare_cards", "Rare Cards")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.epic_cards", "Epic Cards")} = <span className="font-bold text-yellow-400">5 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.legendary_cards", "Legendary Cards")} = <span className="font-bold text-yellow-400">20 {t("contest.points", "Points")}</span></div>
+                </CollapsibleContent>
+              </Collapsible>
+              <Collapsible className="w-full" open={isTradeMarketOpen} onOpenChange={setIsTradeMarketOpen}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity py-0.5">
+                  <span>• {t("contest.trade_market", "Buying Cards on Trade Market")}</span>
+                  {isTradeMarketOpen ? (
+                    <ChevronUp className="h-4 w-4 text-yellow-400" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-yellow-400" />
+                  )}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-1 space-y-1 text-xs pl-0 text-left">
+                  <div className="text-left">• {t("contest.common_cards", "Common Cards")} = <span className="font-bold text-yellow-400">1 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.rare_cards", "Rare Cards")} = <span className="font-bold text-yellow-400">4 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.epic_cards", "Epic Cards")} = <span className="font-bold text-yellow-400">6 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.legendary_cards", "Legendary Cards")} = <span className="font-bold text-yellow-400">10 {t("contest.points", "Points")}</span></div>
+                </CollapsibleContent>
+              </Collapsible>
+              <Collapsible className="w-full" open={isWheelSpinsOpen} onOpenChange={setIsWheelSpinsOpen}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity py-0.5">
+                  <span>• {t("contest.lucky_wheel_spins", "Lucky Wheel Spins")}</span>
+                  {isWheelSpinsOpen ? (
+                    <ChevronUp className="h-4 w-4 text-yellow-400" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-yellow-400" />
+                  )}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-1 space-y-1 text-xs pl-0 text-left">
+                  <div className="text-left">• {t("contest.standard_wheel", "Standard Lucky Wheel Spin")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.premium_wheel", "Premium Lucky Wheel Spin")} = <span className="font-bold text-yellow-400">12 {t("contest.points", "Points")}</span></div>
+                </CollapsibleContent>
+              </Collapsible>
+              <Collapsible className="w-full" open={isOtherOpen} onOpenChange={setIsOtherOpen}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity py-0.5">
+                  <span>• {t("contest.other", "Other")}</span>
+                  {isOtherOpen ? (
+                    <ChevronUp className="h-4 w-4 text-yellow-400" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-yellow-400" />
+                  )}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-1 space-y-1 text-xs pl-0 text-left">
+                  <div className="text-left">• {t("contest.ticket_shop", "Buying Tickets in Shop")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.referrals", "Referrals")} = <span className="font-bold text-yellow-400">5 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.special_deal", "Buying Special Deal")} = <span className="font-bold text-yellow-400">15 {t("contest.points", "Points")}</span></div>
+                </CollapsibleContent>
+              </Collapsible>
             </div>
             <div className="mt-3 pt-3 border-t border-yellow-400/30">
               <p className="text-xs text-yellow-200 font-semibold mb-1">{t("contest.trade_market_rules_title", "Important: Trade Market Rules")}</p>

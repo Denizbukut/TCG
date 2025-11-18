@@ -920,15 +920,17 @@ const [showInfo, setShowInfo] = useState(false)
           try {
             const supabase = getSupabaseBrowserClient()
             if (supabase) {
-              // Calculate points: Rare = 2, Epic = 4, Legendary = 15
+              // Calculate points: Common = 2, Rare = 2, Epic = 5, Legendary = 20
+              const commonCards = result.cards.filter((card: any) => card.rarity === "common")
               const rareCards = result.cards.filter((card: any) => card.rarity === "rare")
               const epicCards = result.cards.filter((card: any) => card.rarity === "epic")
               const legendaryCards = result.cards.filter((card: any) => card.rarity === "legendary")
               
               let totalPoints = 0
+              totalPoints += commonCards.length * 2
               totalPoints += rareCards.length * 2
-              totalPoints += epicCards.length * 8
-              totalPoints += legendaryCards.length * 30
+              totalPoints += epicCards.length * 5
+              totalPoints += legendaryCards.length * 20
               
               if (totalPoints > 0) {
                 // Check if contest is active

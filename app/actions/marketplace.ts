@@ -1223,16 +1223,16 @@ export async function purchaseCard(walletAddress: string, listingId: string) {
         })
     }
     
-    // 9. Weekly Contest: Trade-Punkte vergeben (6 Punkte pro Kauf)
+    // 9. Weekly Contest: Trade-Punkte vergeben (Rarity-basiert: Common: 2, Rare: 4, Epic: 6, Legendary: 10)
     // WICHTIG: Muss VOR dem Einfügen des Trades passieren, damit die Betrugsprävention funktioniert
     // Nur wenn Contest aktiv ist und User von anderen Usern kauft (nicht von sich selbst)
-    console.log(`💰 [purchaseCard] Attempting to award trade points for purchase - buyer: ${walletAddress}, seller: ${listing.seller_wallet_address}`)
+    console.log(`💰 [purchaseCard] Attempting to award trade points for purchase - buyer: ${walletAddress}, seller: ${listing.seller_wallet_address}, rarity: ${cardDetails.rarity}`)
     try {
       const { incrementTradePoints } = await import("@/app/actions/weekly-contest")
       const tradePointsResult = await incrementTradePoints(
         walletAddress,
         listing.seller_wallet_address,
-        6
+        cardDetails.rarity
       )
       if (!tradePointsResult.success) {
         // Logge Fehler, aber lasse Kauf trotzdem erfolgreich sein

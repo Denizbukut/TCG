@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { getSupabaseServerClient } from "@/lib/supabase"
+import { incrementPremiumWheelPoints, incrementStandardWheelPoints } from "@/app/actions/weekly-contest"
 
 // Global daily limit (for all users combined)
 const GLOBAL_DAILY_LUCKY_WHEEL_LIMIT = 25
@@ -286,6 +287,23 @@ export async function POST(req: Request) {
 
     // Select winning segment based on drop rates (server-side)
     const { index: segmentIndex, reward } = selectSegment(SEGMENT_MAP)
+
+    // Award Weekly Contest points for Wheel spins
+    if (wheelType === "premium") {
+      try {
+        await incrementPremiumWheelPoints(normalizedWalletAddress, 12)
+      } catch (error) {
+        // Log error but don't fail the spin if contest points fail
+        console.error("Failed to award contest points for premium wheel spin:", error)
+      }
+    } else if (wheelType === "standard") {
+      try {
+        await incrementStandardWheelPoints(normalizedWalletAddress, 2)
+      } catch (error) {
+        // Log error but don't fail the spin if contest points fail
+        console.error("Failed to award contest points for standard wheel spin:", error)
+      }
+    }
 
     return NextResponse.json({
       success: true,

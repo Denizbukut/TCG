@@ -1624,7 +1624,21 @@ export default function Home() {
             // Trotz Fehler fortfahren, da der Kauf bereits bezahlt wurde
           }
 
-          // 2. Get card information including creator_address and contract_address for revenue calculation
+          // 2. Weekly Contest: Punkte für Special Deal Kauf vergeben
+          try {
+            const { incrementSpecialDealPoints } = await import("@/app/actions/weekly-contest");
+            const contestPointsResult = await incrementSpecialDealPoints(user.wallet_address, 15);
+            if (contestPointsResult.success) {
+              console.log("✅ [Special Deal] Weekly contest points awarded successfully");
+            } else {
+              console.warn("⚠️ [Special Deal] Failed to award contest points:", contestPointsResult.error);
+            }
+          } catch (error) {
+            console.error("❌ [Special Deal] Error awarding contest points:", error);
+            // Nicht kritisch, Kauf kann trotzdem fortgesetzt werden
+          }
+
+          // 3. Get card information including creator_address and contract_address for revenue calculation
           const { data: cardData } = await (supabase
             .from("cards")
             .select("creator_address, rarity, contract_address")
@@ -2000,11 +2014,10 @@ export default function Home() {
     </motion.div>
     <div>
       <div className="text-lg font-bold text-yellow-300 mb-1" style={{ letterSpacing: 1 }}>
-        {t("contest.prize_home", "Win $100 in WLD!")}
+        {t("contest.prize_home", "Win 100 WLD")}
       </div>
       <h3 className="text-xl font-bold text-yellow-100 mb-1">{t("contest.title", "Weekly Contest")}</h3>
       <p className="text-sm text-white/80 font-medium">{t("contest.subtitle", "Compete for the top spot!")}</p>
-      <p className="text-xs text-green-400 font-semibold mt-1">✨ {t("contest.bonus_hint", "Up to 2x Bonus Points!")}</p>
       {isContestActive() && (() => {
         const timeLeft = formatContestCountdown(contestCountdown)
         return timeLeft ? (
