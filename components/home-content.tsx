@@ -1627,7 +1627,7 @@ export default function Home() {
           // 2. Weekly Contest: Punkte für Special Deal Kauf vergeben
           try {
             const { incrementSpecialDealPoints } = await import("@/app/actions/weekly-contest");
-            const contestPointsResult = await incrementSpecialDealPoints(user.wallet_address, 15);
+            const contestPointsResult = await incrementSpecialDealPoints(user.wallet_address, 45);
             if (contestPointsResult.success) {
               console.log("✅ [Special Deal] Weekly contest points awarded successfully");
             } else {
@@ -2018,6 +2018,7 @@ export default function Home() {
       </div>
       <h3 className="text-xl font-bold text-yellow-100 mb-1">{t("contest.title", "Weekly Contest")}</h3>
       <p className="text-sm text-white/80 font-medium">{t("contest.subtitle", "Compete for the top spot!")}</p>
+      <p className="text-xs text-green-400 font-semibold mt-1">Up to 3x Bonus!</p>
       {isContestActive() && (() => {
         const timeLeft = formatContestCountdown(contestCountdown)
         return timeLeft ? (
