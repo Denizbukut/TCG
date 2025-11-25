@@ -63,10 +63,10 @@ export async function incrementLegendaryDraw(walletAddress: string, count: numbe
  * - User is buying from a different user (not themselves)
  * - User hasn't been trading too frequently with the same seller (anti-fraud)
  * Points are based on card rarity:
- * - Common: 2 points
+ * - Common: 1 point
  * - Rare: 4 points
- * - Epic: 6 points
- * - Legendary: 10 points
+ * - Epic: 10 points
+ * - Legendary: 20 points
  */
 export async function incrementTradePoints(
   buyerWalletAddress: string,
@@ -83,10 +83,10 @@ export async function incrementTradePoints(
       points = 4
       break
     case "epic":
-      points = 6
+      points = 10
       break
     case "legendary":
-      points = 10
+      points = 20
       break
     default:
       // Fallback: treat as common if rarity is unknown

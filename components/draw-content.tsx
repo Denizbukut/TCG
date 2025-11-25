@@ -920,7 +920,7 @@ const [showInfo, setShowInfo] = useState(false)
           try {
             const supabase = getSupabaseBrowserClient()
             if (supabase) {
-              // Calculate points: Common = 2, Rare = 2, Epic = 5, Legendary = 20
+              // Calculate points: Common = 2, Rare = 2, Epic = 15, Legendary = 20
               const commonCards = result.cards.filter((card: any) => card.rarity === "common")
               const rareCards = result.cards.filter((card: any) => card.rarity === "rare")
               const epicCards = result.cards.filter((card: any) => card.rarity === "epic")
@@ -929,7 +929,7 @@ const [showInfo, setShowInfo] = useState(false)
               let totalPoints = 0
               totalPoints += commonCards.length * 2
               totalPoints += rareCards.length * 2
-              totalPoints += epicCards.length * 5
+              totalPoints += epicCards.length * 15
               totalPoints += legendaryCards.length * 20
               
               if (totalPoints > 0) {
