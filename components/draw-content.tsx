@@ -13,7 +13,7 @@ import { toast } from "@/components/ui/use-toast"
 import { motion, AnimatePresence, useAnimation, useMotionValue, useTransform } from "framer-motion"
 // Removed Next.js Image import - using regular img tags
 import { getSupabaseBrowserClient } from "@/lib/supabase"
-import { WEEKLY_CONTEST_CONFIG, getContestEndDate } from "@/lib/weekly-contest-config"
+import { WEEKLY_CONTEST_CONFIG, getContestEndDate, getContestStartDate } from "@/lib/weekly-contest-config"
 import { MiniKit, Tokens } from "@worldcoin/minikit-js"
 import { useWldPrice } from "@/contexts/WldPriceContext"
 import { useAnixPrice } from "@/contexts/AnixPriceContext"
@@ -920,7 +920,7 @@ const [showInfo, setShowInfo] = useState(false)
           try {
             const supabase = getSupabaseBrowserClient()
             if (supabase) {
-              // Calculate points: Common = 2, Rare = 2, Epic = 15, Legendary = 20
+              // Calculate points: Common = 2, Rare = 2, Epic = 15, Legendary = 40
               const commonCards = result.cards.filter((card: any) => card.rarity === "common")
               const rareCards = result.cards.filter((card: any) => card.rarity === "rare")
               const epicCards = result.cards.filter((card: any) => card.rarity === "epic")
@@ -930,27 +930,33 @@ const [showInfo, setShowInfo] = useState(false)
               totalPoints += commonCards.length * 2
               totalPoints += rareCards.length * 2
               totalPoints += epicCards.length * 15
-              totalPoints += legendaryCards.length * 20
+              totalPoints += legendaryCards.length * 40
+              
+              console.log(`[Weekly Contest] Cards drawn - Common: ${commonCards.length}, Rare: ${rareCards.length}, Epic: ${epicCards.length}, Legendary: ${legendaryCards.length}, Total Points: ${totalPoints}`)
               
               if (totalPoints > 0) {
                 // Check if contest is active
                 const weekStart = WEEKLY_CONTEST_CONFIG.weekStart
+                const contestStart = getContestStartDate()
                 const contestEnd = getContestEndDate()
                 const now = new Date()
 
-                if (now <= contestEnd) {
+                if (now >= contestStart && now <= contestEnd) {
+                  // Normalize wallet address for consistency
+                  const normalizedWalletAddress = user.wallet_address.toLowerCase()
+                  
                   // Check if entry exists
                   const { data: existingEntry, error: fetchError } = await (supabase
                     .from("weekly_contest_entries")
                     .select("legendary_count")
-                    .eq("wallet_address", user.wallet_address)
+                    .eq("wallet_address", normalizedWalletAddress)
                     .eq("week_start_date", weekStart)
                     .maybeSingle() as any)
 
                   if (!existingEntry || (fetchError && (fetchError as any).code === "PGRST116")) {
                     // No entry exists - create new one
                     await (supabase.from("weekly_contest_entries") as any).insert({
-                      wallet_address: user.wallet_address,
+                      wallet_address: normalizedWalletAddress,
                       week_start_date: weekStart,
                       legendary_count: totalPoints,
                     })
@@ -958,10 +964,11 @@ const [showInfo, setShowInfo] = useState(false)
                     // Entry exists - add points to existing count
                     const currentCount = Number(existingEntry.legendary_count) || 0
                     const newCount = currentCount + totalPoints
+                    console.log(`[Weekly Contest] Adding ${totalPoints} points. Current: ${currentCount}, New: ${newCount}`)
                     await (supabase
                       .from("weekly_contest_entries") as any)
                       .update({ legendary_count: newCount })
-                      .eq("wallet_address", user.wallet_address)
+                      .eq("wallet_address", normalizedWalletAddress)
                       .eq("week_start_date", weekStart)
                   }
                 }
