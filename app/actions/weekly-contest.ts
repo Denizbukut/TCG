@@ -26,8 +26,8 @@ export async function incrementLegendaryDraw(walletAddress: string, count: numbe
     return { success: false, error: "The contest has ended. No more entries allowed." }
   }
 
-  // Calculate points: 40 points per legendary card
-  const pointsPerCard = 40
+  // Calculate points: 20 points per legendary card
+  const pointsPerCard = 20
   const totalPoints = pointsPerCard * count
 
   const { data, error } = await supabase
@@ -65,8 +65,8 @@ export async function incrementLegendaryDraw(walletAddress: string, count: numbe
  * Points are based on card rarity:
  * - Common: 1 point
  * - Rare: 4 points
- * - Epic: 10 points
- * - Legendary: 20 points
+ * - Epic: 5 points
+ * - Legendary: 10 points
  */
 export async function incrementTradePoints(
   buyerWalletAddress: string,
@@ -83,10 +83,10 @@ export async function incrementTradePoints(
       points = 4
       break
     case "epic":
-      points = 10
+      points = 5
       break
     case "legendary":
-      points = 20
+      points = 10
       break
     default:
       // Fallback: treat as common if rarity is unknown
