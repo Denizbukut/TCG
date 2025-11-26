@@ -2203,7 +2203,7 @@ export default function Home() {
               <div
                 className="w-1/2 flex flex-col items-center rounded-md p-3 h-full text-white cursor-pointer relative overflow-hidden"
                 style={{
-                  backgroundImage: 'url("/dealday.jpg")',
+                  backgroundImage: 'url("/dealday.webp.webp")',
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   backgroundRepeat: 'no-repeat'
@@ -2267,7 +2267,7 @@ export default function Home() {
               <div
                 className="w-1/2 flex flex-col items-center rounded-md p-3 h-full text-white cursor-pointer relative overflow-hidden"
                 style={{
-                  backgroundImage: 'url("/specialdeal.jpg")',
+                  backgroundImage: 'url("/specialdeal.webp.webp")',
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   backgroundRepeat: 'no-repeat'
