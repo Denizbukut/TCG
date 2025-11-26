@@ -2235,7 +2235,7 @@ const [showInfo, setShowInfo] = useState(false)
         <div 
           className="min-h-screen pb-20"
           style={{
-            backgroundImage: 'url(/hintergrung.png)',
+            backgroundImage: 'url(/hintergrund.webp.webp)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
@@ -2300,7 +2300,7 @@ const [showInfo, setShowInfo] = useState(false)
       <div 
         className="min-h-screen pb-20"
         style={{
-          backgroundImage: 'url(/hintergrung.png)',
+          backgroundImage: 'url(/hintergrund.webp.webp)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',

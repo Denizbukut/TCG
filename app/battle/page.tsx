@@ -461,7 +461,7 @@ export default function BattlePage() {
 
   return (
     <ProtectedRoute>
-      <div className="pb-20 min-h-screen bg-cover bg-center bg-no-repeat overflow-x-hidden" style={{ backgroundImage: 'url(/hintergrung.png)' }}>
+      <div className="pb-20 min-h-screen bg-cover bg-center bg-no-repeat overflow-x-hidden" style={{ backgroundImage: 'url(/hintergrund.webp.webp)' }}>
         <header className="bg-orange-600 text-white p-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">

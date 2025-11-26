@@ -1797,7 +1797,7 @@ export default function Home() {
       <div 
         className="flex flex-col min-h-screen text-white relative overflow-y-auto"
         style={{
-          backgroundImage: 'url("/hintergrung.png")',
+          backgroundImage: 'url("/hintergrund.webp.webp")',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',

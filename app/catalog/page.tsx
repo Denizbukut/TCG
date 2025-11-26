@@ -172,7 +172,7 @@ export default function CatalogPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen pb-20" style={{ backgroundImage: 'url(/hintergrung.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
+      <div className="min-h-screen pb-20" style={{ backgroundImage: 'url(/hintergrund.webp.webp)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
         <div className="max-w-lg mx-auto px-4 py-3">
           <div className="flex items-center mb-6">
             <Link href="/collection">
@@ -197,7 +197,7 @@ export default function CatalogPage() {
   }
 
   return (
-    <div className="min-h-screen pb-20" style={{ backgroundImage: 'url(/hintergrung.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
+    <div className="min-h-screen pb-20" style={{ backgroundImage: 'url(/hintergrund.webp.webp)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
       <div className="max-w-lg mx-auto px-4 py-3">
         <div className="flex items-center mb-6">
           <Link href="/collection">

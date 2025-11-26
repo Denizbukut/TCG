@@ -1194,7 +1194,7 @@ export default function TradePage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen pb-20" style={{ backgroundImage: 'url(/hintergrung.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
+      <div className="min-h-screen pb-20" style={{ backgroundImage: 'url(/hintergrund.webp.webp)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
         {/* Header */}
         <header className="sticky top-0 z-10 bg-gradient-to-b from-black/90 to-black/60 border-b border-yellow-400">
           <div className="max-w-lg mx-auto px-4 py-3">

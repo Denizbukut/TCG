@@ -465,7 +465,7 @@ export default function CollectionPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen pb-20" style={{ backgroundImage: 'url(/hintergrung.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
+      <div className="min-h-screen pb-20" style={{ backgroundImage: 'url(/hintergrund.webp.webp)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
         <header className="sticky top-0 z-10 backdrop-blur-md bg-black/80 border-b border-yellow-500">
           <div className="max-w-lg mx-auto px-4 py-3">
             <div className="flex justify-between items-center">
@@ -498,7 +498,7 @@ export default function CollectionPage() {
 
   if (userCards.length === 0) {
     return (
-      <div className="min-h-screen pb-20" style={{ backgroundImage: 'url(/hintergrung.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
+      <div className="min-h-screen pb-20" style={{ backgroundImage: 'url(/hintergrund.webp.webp)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
         <header className="sticky top-0 z-10 backdrop-blur-md bg-black/80 border-b border-yellow-500">
           <div className="max-w-lg mx-auto px-4 py-3">
             <div className="flex justify-between items-center">
@@ -724,7 +724,7 @@ export default function CollectionPage() {
 
   // Normale Collection-Ansicht
   return (
-    <div className="min-h-screen pb-20" style={{ backgroundImage: 'url(/hintergrung.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
+    <div className="min-h-screen pb-20" style={{ backgroundImage: 'url(/hintergrund.webp.webp)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
       {/* Header mit My Collection und My Squad */}
       
 

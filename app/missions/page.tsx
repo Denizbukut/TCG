@@ -121,7 +121,7 @@ export default function ModernMissionsPage() {
     <div
       className="relative min-h-screen pb-24 text-yellow-100"
       style={{
-        backgroundImage: "url('/hintergrung.png')",
+        backgroundImage: "url('/hintergrund.webp.webp')",
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
