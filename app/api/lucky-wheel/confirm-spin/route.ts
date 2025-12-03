@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getSupabaseServerClient } from "@/lib/supabase"
 
 // Global daily limit (for all users combined)
-const GLOBAL_DAILY_LUCKY_WHEEL_LIMIT = 25
+const GLOBAL_DAILY_LUCKY_WHEEL_LIMIT = 100
 
 // Drop Rates (must sum to 100%)
 const DROP_RATES = {

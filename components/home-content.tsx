@@ -1871,16 +1871,21 @@ export default function Home() {
         </header>
 
         <main className="w-full px-2 md:px-6 pb-16 flex-1 overflow-y-auto overscroll-contain"> {/* Padding hinzugefügt */}
-          <Link href="/draw?tab=wheel">
+          <Link href="/tokens">
             <motion.div
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
-              className="mt-3 mb-4 flex items-center gap-2 rounded-lg border-2 border-emerald-400 bg-gradient-to-r from-emerald-400 via-lime-400 to-emerald-500 px-3 py-2 text-sm font-semibold text-black shadow-[0_0_18px_rgba(16,185,129,0.55)] transition hover:scale-[1.02] hover:shadow-[0_0_28px_rgba(16,185,129,0.7)]"
+              className="mt-3 mb-4 flex flex-col gap-1 rounded-lg border-2 border-emerald-400 bg-gradient-to-r from-emerald-400 via-lime-400 to-emerald-500 px-3 py-2 text-sm font-semibold text-black shadow-[0_0_18px_rgba(16,185,129,0.55)] transition hover:scale-[1.02] hover:shadow-[0_0_28px_rgba(16,185,129,0.7)]"
             >
-              <Sparkles className="h-4 w-4 text-black" />
-              <span>{t("home.lucky_wheel_banner", "Spin the Lucky Wheel and win amazing rewards!")}</span>
-              <ArrowRight className="ml-auto h-4 w-4 text-black/80" />
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-black" />
+                <span>Cards Creations 50% Discount</span>
+                <ArrowRight className="ml-auto h-4 w-4 text-black/80" />
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span>Premium Wheel: 100 Spins Today</span>
+              </div>
             </motion.div>
           </Link>
          
@@ -2018,7 +2023,16 @@ export default function Home() {
       </div>
       <h3 className="text-xl font-bold text-yellow-100 mb-1">{t("contest.title", "Weekly Contest")}</h3>
       <p className="text-sm text-white/80 font-medium">{t("contest.subtitle", "Compete for the top spot!")}</p>
-      <p className="text-xs text-green-400 font-semibold mt-1">Up to 3x Bonus!</p>
+      {/* Last Day of Contest Bonus Banner */}
+      {isContestActive() && (
+        <div className="mt-2 mb-1 p-2 bg-gradient-to-r from-green-500/30 to-green-400/20 border border-green-400 rounded-lg">
+          <div className="flex items-center justify-center gap-2 text-green-300 font-bold text-xs">
+            <span className="text-base">🎉</span>
+            <span>Last Day of Contest - Bonus Points!</span>
+            <span className="text-base">🎉</span>
+          </div>
+        </div>
+      )}
       {isContestActive() && (() => {
         const timeLeft = formatContestCountdown(contestCountdown)
         return timeLeft ? (
