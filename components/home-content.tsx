@@ -1627,7 +1627,7 @@ export default function Home() {
           // 2. Weekly Contest: Punkte für Special Deal Kauf vergeben
           try {
             const { incrementSpecialDealPoints } = await import("@/app/actions/weekly-contest");
-            const contestPointsResult = await incrementSpecialDealPoints(user.wallet_address, 45);
+            const contestPointsResult = await incrementSpecialDealPoints(user.wallet_address, 30);
             if (contestPointsResult.success) {
               console.log("✅ [Special Deal] Weekly contest points awarded successfully");
             } else {
@@ -1880,11 +1880,8 @@ export default function Home() {
             >
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-black" />
-                <span>Cards Creations 50% Discount</span>
+                <span>{t("home.card_creation_discount_banner", "Card Creations 50% Discount")}</span>
                 <ArrowRight className="ml-auto h-4 w-4 text-black/80" />
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                <span>Premium Wheel: 100 Spins Today</span>
               </div>
             </motion.div>
           </Link>
@@ -2019,20 +2016,10 @@ export default function Home() {
     </motion.div>
     <div>
       <div className="text-lg font-bold text-yellow-300 mb-1" style={{ letterSpacing: 1 }}>
-        {t("contest.prize_home", "Win 100 WLD")}
+        {t("contest.prize_home", "Win 200 WLD")}
       </div>
       <h3 className="text-xl font-bold text-yellow-100 mb-1">{t("contest.title", "Weekly Contest")}</h3>
       <p className="text-sm text-white/80 font-medium">{t("contest.subtitle", "Compete for the top spot!")}</p>
-      {/* Last Day of Contest Bonus Banner */}
-      {isContestActive() && (
-        <div className="mt-2 mb-1 p-2 bg-gradient-to-r from-green-500/30 to-green-400/20 border border-green-400 rounded-lg">
-          <div className="flex items-center justify-center gap-2 text-green-300 font-bold text-xs">
-            <span className="text-base">🎉</span>
-            <span>Last Day of Contest - Bonus Points!</span>
-            <span className="text-base">🎉</span>
-          </div>
-        </div>
-      )}
       {isContestActive() && (() => {
         const timeLeft = formatContestCountdown(contestCountdown)
         return timeLeft ? (

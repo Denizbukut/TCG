@@ -85,7 +85,7 @@
     "card_bonus_title": "カードボーナス",
     "card_bonus_desc": "ANIウォレットでの購入時にカードを使用してボーナストークンを獲得",
     "open_ani_wallet": "ANIウォレットを開く",
-    "card_creation_discount_banner": "本日はカード作成が50％オフ！"
+    "card_creation_discount_banner": "カード作成 50%オフ"
   },
   "draw": {
     "open_packs": "パック開封",
@@ -363,7 +363,7 @@
     "title": "週間コンテスト",
     "subtitle": "トップを目指せ",
     "prize": "$200 WLD獲得",
-    "prize_home": "100 WLD獲得",
+    "prize_home": "200 WLD獲得",
     "leaderboard": "ランキング",
     "your_rank": "順位",
     "your_mission": "ミッション:",

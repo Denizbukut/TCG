@@ -3,14 +3,14 @@
 
 export const WEEKLY_CONTEST_CONFIG = {
   // Contest Start Date (Montag der Woche)
-  weekStart: "2025-11-26",
+  weekStart: "2025-12-04",
   
   // Contest End Date (Dienstag der nächsten Woche um 23:59:59 UTC)
-  contestEnd: "2025-12-03T23:59:59Z",
+  contestEnd: "2025-12-11T23:59:59Z",
   
   // Prize Pool Configuration
   prizePool: [
-    { rank: "1st Place", reward: "100 WLD", icon: "🥇" },
+    { rank: "1st Place", reward: "200 WLD", icon: "🥇" },
     { rank: "2nd Place", reward: "50 WLD", icon: "🥈" },
     { rank: "3rd Place", reward: "25 WLD", icon: "🥉" },
     { rank: "4th–6th Place", reward: "10WLD", icon: "🎖️" },

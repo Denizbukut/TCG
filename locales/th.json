@@ -85,7 +85,7 @@
     "card_bonus_title": "โบนัสการ์ด",
     "card_bonus_desc": "ใช้การ์ดของคุณเพื่อรับโทเค็นโบนัสเมื่อซื้อใน ANI wallet",
     "open_ani_wallet": "เปิด ANI Wallet",
-    "card_creation_discount_banner": "วันนี้รับส่วนลด 50% สำหรับการสร้างการ์ด!"
+    "card_creation_discount_banner": "การสร้างการ์ด ส่วนลด 50%"
   },
   "draw": {
     "open_packs": "เปิดแพ็ค",
@@ -363,7 +363,7 @@
     "title": "การแข่งขันรายสัปดาห์",
     "subtitle": "แข่งขันเพื่อที่ 1!",
     "prize": "ชนะ $200 WLD!",
-    "prize_home": "ชนะ 100 WLD",
+    "prize_home": "ชนะ 200 WLD",
     "leaderboard": "อันดับ",
     "your_rank": "อันดับของคุณ",
     "your_mission": "ภารกิจของคุณ:",

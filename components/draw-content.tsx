@@ -920,7 +920,7 @@ const [showInfo, setShowInfo] = useState(false)
           try {
             const supabase = getSupabaseBrowserClient()
             if (supabase) {
-              // Calculate points: Common = 2, Rare = 2, Epic = 10, Legendary = 40
+              // Calculate points: Common = 2, Rare = 2, Epic = 5, Legendary = 20
               const commonCards = result.cards.filter((card: any) => card.rarity === "common")
               const rareCards = result.cards.filter((card: any) => card.rarity === "rare")
               const epicCards = result.cards.filter((card: any) => card.rarity === "epic")
@@ -929,8 +929,8 @@ const [showInfo, setShowInfo] = useState(false)
               let totalPoints = 0
               totalPoints += commonCards.length * 2
               totalPoints += rareCards.length * 2
-              totalPoints += epicCards.length * 10
-              totalPoints += legendaryCards.length * 40
+              totalPoints += epicCards.length * 5
+              totalPoints += legendaryCards.length * 20
               
               console.log(`[Weekly Contest] Cards drawn - Common: ${commonCards.length}, Rare: ${rareCards.length}, Epic: ${epicCards.length}, Legendary: ${legendaryCards.length}, Total Points: ${totalPoints}`)
               

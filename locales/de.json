@@ -85,7 +85,7 @@
     "card_bonus_title": "Karten-Bonus",
     "card_bonus_desc": "Nutze deine Karten, um Bonus-Token beim Kauf im ANI Wallet zu erhalten",
     "open_ani_wallet": "ANI Wallet öffnen",
-    "card_creation_discount_banner": "Heute erhältst du 50 % Rabatt auf Kartenerstellungen!"
+    "card_creation_discount_banner": "Kartenerstellung 50% Rabatt"
   },
   "draw": {
     "open_packs": "Kartenpacks öffnen",
@@ -363,7 +363,7 @@
     "title": "Wöchentlicher Contest",
     "subtitle": "Tritt an und gewinne!",
     "prize": "Gewinne $200 in WLD!",
-    "prize_home": "Gewinne 100 WLD",
+    "prize_home": "Gewinne 200 WLD",
     "leaderboard": "Bestenliste",
     "your_rank": "Dein Rang",
     "your_mission": "Deine Mission:",

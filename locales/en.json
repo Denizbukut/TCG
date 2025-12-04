@@ -85,7 +85,7 @@
     "card_bonus_title": "Card Bonus",
     "card_bonus_desc": "Use your cards to get bonus tokens when buying on ANI wallet",
     "open_ani_wallet": "Open ANI Wallet",
-    "card_creation_discount_banner": "Enjoy a 50% discount on Card Creations today!"
+    "card_creation_discount_banner": "Card Creations 50% Discount"
   },
   "draw": {
     "open_packs": "Open Card Packs",
@@ -363,7 +363,7 @@
     "title": "Weekly Contest",
     "subtitle": "Compete for the top spot!",
     "prize": "Win $200 in WLD!",
-    "prize_home": "Win 100 WLD",
+    "prize_home": "Win 200 WLD",
     "leaderboard": "Leaderboard",
     "your_rank": "Your Rank",
     "your_mission": "Your Mission:",

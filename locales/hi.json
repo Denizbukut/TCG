@@ -85,7 +85,7 @@
     "card_bonus_title": "कार्ड बोनस",
     "card_bonus_desc": "ANI वॉलेट में खरीदारी करते समय बोनस टोकन के लिए अपने कार्ड का उपयोग करें",
     "open_ani_wallet": "ANI वॉलेट खोलें",
-    "card_creation_discount_banner": "आज कार्ड निर्माण पर 50% की छूट का आनंद लें!"
+    "card_creation_discount_banner": "कार्ड निर्माण 50% छूट"
   },
   "draw": {
     "open_packs": "पैक खोलें",
@@ -363,7 +363,7 @@
     "title": "साप्ताहिक प्रतियोगिता",
     "subtitle": "शीर्ष के लिए प्रतिस्पर्धा करें!",
     "prize": "$200 WLD जीतें!",
-    "prize_home": "100 WLD जीतें",
+    "prize_home": "200 WLD जीतें",
     "leaderboard": "लीडरबोर्ड",
     "your_rank": "आपकी रैंक",
     "your_mission": "आपका मिशन:",
