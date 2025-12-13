@@ -210,8 +210,8 @@ export default function WeeklyContestPage() {
                 <CollapsibleContent className="pt-1 space-y-1 text-xs pl-0 text-left">
                   <div className="text-left">• {t("contest.common_cards", "Common Cards")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
                   <div className="text-left">• {t("contest.rare_cards", "Rare Cards")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
-                  <div className="text-left">• {t("contest.epic_cards", "Epic Cards")} = <span className="font-bold text-yellow-400">5 {t("contest.points", "Points")}</span></div>
-                  <div className="text-left">• {t("contest.legendary_cards", "Legendary Cards")} = <span className="font-bold text-yellow-400">40 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.epic_cards", "Epic Cards")} = <span className="font-bold text-yellow-400">8 {t("contest.points", "Points")}</span> <span className="text-green-400 font-bold">(2x Bonus)</span></div>
+                  <div className="text-left">• {t("contest.legendary_cards", "Legendary Cards")} = <span className="font-bold text-yellow-400">80 {t("contest.points", "Points")}</span> <span className="text-green-400 font-bold">(2x Bonus)</span></div>
                 </CollapsibleContent>
               </Collapsible>
               <Collapsible className="w-full" open={isTradeMarketOpen} onOpenChange={setIsTradeMarketOpen}>
@@ -241,7 +241,7 @@ export default function WeeklyContestPage() {
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-1 space-y-1 text-xs pl-0 text-left">
                   <div className="text-left">• {t("contest.standard_wheel", "Standard Lucky Wheel Spin")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
-                  <div className="text-left">• {t("contest.premium_wheel", "Premium Lucky Wheel Spin")} = <span className="font-bold text-yellow-400">24 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.premium_wheel", "Premium Lucky Wheel Spin")} = <span className="font-bold text-yellow-400">36 {t("contest.points", "Points")}</span> <span className="text-green-400 font-bold">(2x Bonus)</span></div>
                 </CollapsibleContent>
               </Collapsible>
               <Collapsible className="w-full" open={isOtherOpen} onOpenChange={setIsOtherOpen}>
