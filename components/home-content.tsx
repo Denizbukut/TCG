@@ -1878,11 +1878,11 @@ export default function Home() {
               transition={{ duration: 0.3 }}
               className="mt-3 mb-4 flex flex-col gap-1 rounded-lg border-2 border-emerald-400 bg-gradient-to-r from-emerald-400 via-lime-400 to-emerald-500 px-3 py-2 text-sm font-semibold text-black shadow-[0_0_18px_rgba(16,185,129,0.55)] transition hover:scale-[1.02] hover:shadow-[0_0_28px_rgba(16,185,129,0.7)]"
             >
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-black" />
-                <span>{t("home.card_creation_discount_banner", "Card Creations 50% Discount")}</span>
-                <ArrowRight className="ml-auto h-4 w-4 text-black/80" />
-              </div>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-black" />
+                  <span>Lucky Wheel 2x Bonus</span>
+                  <ArrowRight className="ml-auto h-4 w-4 text-black/80" />
+                </div>
             </motion.div>
           </Link>
          
