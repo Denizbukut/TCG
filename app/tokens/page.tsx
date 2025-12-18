@@ -54,10 +54,10 @@ export default function TokensPage() {
 }
 
 const CARD_CREATION_PRICES: Record<string, { usd: number }> = {
-  common: { usd: 3 },
-  rare: { usd: 10 },
-  epic: { usd: 25 },
-  legendary: { usd: 50 },
+  common: { usd: 1 },
+  rare: { usd: 3 },
+  epic: { usd: 10 },
+  legendary: { usd: 25 },
 }
 
 // Contract 1 ABI (with virtual reserves)

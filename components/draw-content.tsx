@@ -177,6 +177,11 @@ export default function DrawPage() {
       const tabParam = urlParams.get("tab")
       if (tabParam === "wheel") {
         setActiveTab("wheel")
+        // Check if premium wheel is requested
+        const wheelType = urlParams.get("wheelType")
+        if (wheelType === "premium") {
+          setActiveWheelType("premium")
+        }
       }
     }
   }, [])
