@@ -17,6 +17,8 @@ import { WEEKLY_CONTEST_CONFIG, getContestEndDate, getContestStartDate } from "@
 import { MiniKit, Tokens } from "@worldcoin/minikit-js"
 import { useWldPrice } from "@/contexts/WldPriceContext"
 import { useAnixPrice } from "@/contexts/AnixPriceContext"
+import { ethers } from "ethers"
+import { USDC_TOKEN_ADDRESS, WLD_TOKEN_ADDRESS } from "@/lib/payment-utils"
 import { Info } from "lucide-react"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { useI18n } from "@/contexts/i18n-context"
@@ -201,6 +203,9 @@ export default function DrawPage() {
   const [selectedBoostType, setSelectedBoostType] = useState<"regular" | "premium">("regular")
   const [selectedDuration, setSelectedDuration] = useState<"1week" | "1month">("1week")
   const [boostPaymentCurrency, setBoostPaymentCurrency] = useState<"WLD" | "USDC">("WLD")
+  const [wldBalance, setWldBalance] = useState<string>("0")
+  const [usdcBalance, setUsdcBalance] = useState<string>("0")
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false)
   const [isUpdatingScore, setIsUpdatingScore] = useState(false)
   const [isMultiDraw, setIsMultiDraw] = useState(false)
   const [isBulkDraw, setIsBulkDraw] = useState(false)
@@ -855,6 +860,56 @@ const [showInfo, setShowInfo] = useState(false)
 
     fetchDropRateBoost()
   }, [user?.wallet_address, activeTab])
+
+  // Load token balances
+  useEffect(() => {
+    const loadTokenBalances = async () => {
+      if (!user?.wallet_address || !showBoostDialog) return
+      
+      setIsLoadingBalance(true)
+      try {
+        const provider = new ethers.JsonRpcProvider('https://worldchain-mainnet.g.alchemy.com/public')
+        const ERC20_ABI = [
+          'function balanceOf(address) view returns (uint256)',
+          'function decimals() view returns (uint8)'
+        ]
+
+        // Load WLD balance
+        try {
+          const wldContract = new ethers.Contract(WLD_TOKEN_ADDRESS, ERC20_ABI, provider)
+          const [wldRawBalance, wldDecimals] = await Promise.all([
+            wldContract.balanceOf(user.wallet_address),
+            wldContract.decimals(),
+          ])
+          setWldBalance(ethers.formatUnits(wldRawBalance, wldDecimals))
+        } catch (error) {
+          console.error("Error loading WLD balance:", error)
+          setWldBalance("0")
+        }
+
+        // Load USDC balance
+        try {
+          const usdcContract = new ethers.Contract(USDC_TOKEN_ADDRESS, ERC20_ABI, provider)
+          const [usdcRawBalance, usdcDecimals] = await Promise.all([
+            usdcContract.balanceOf(user.wallet_address),
+            usdcContract.decimals(),
+          ])
+          setUsdcBalance(ethers.formatUnits(usdcRawBalance, usdcDecimals))
+        } catch (error) {
+          console.error("Error loading USDC balance:", error)
+          setUsdcBalance("0")
+        }
+      } catch (error) {
+        console.error("Error loading token balances:", error)
+      } finally {
+        setIsLoadingBalance(false)
+      }
+    }
+
+    if (showBoostDialog && user?.wallet_address) {
+      loadTokenBalances()
+    }
+  }, [showBoostDialog, user?.wallet_address])
 
   // Update tickets and legendary tickets when user changes
   useEffect(() => {
@@ -3205,14 +3260,28 @@ const [showInfo, setShowInfo] = useState(false)
                                     onClick={() => setBoostPaymentCurrency("WLD")}
                                     className={`${boostPaymentCurrency === "WLD" ? "bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white shadow-md shadow-red-500/30 border-red-400/50" : "text-gray-300 border-gray-600 hover:border-red-500/50"} flex-1 py-3 rounded-xl transition-all duration-200`}
                                   >
-                                    WLD
+                                    <div className="flex flex-col items-center">
+                                      <span>WLD</span>
+                                      {!isLoadingBalance && (
+                                        <span className="text-xs opacity-75 mt-0.5">
+                                          {isNaN(parseFloat(wldBalance)) ? "0.00" : parseFloat(wldBalance).toFixed(2)}
+                                        </span>
+                                      )}
+                                    </div>
                                   </Button>
                                   <Button
                                     variant={boostPaymentCurrency === "USDC" ? "default" : "outline"}
                                     onClick={() => setBoostPaymentCurrency("USDC")}
                                     className={`${boostPaymentCurrency === "USDC" ? "bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white shadow-md shadow-red-500/30 border-red-400/50" : "text-gray-300 border-gray-600 hover:border-red-500/50"} flex-1 py-3 rounded-xl transition-all duration-200`}
                                   >
-                                    USDC
+                                    <div className="flex flex-col items-center">
+                                      <span>USDC</span>
+                                      {!isLoadingBalance && (
+                                        <span className="text-xs opacity-75 mt-0.5">
+                                          {isNaN(parseFloat(usdcBalance)) ? "0.00" : parseFloat(usdcBalance).toFixed(2)}
+                                        </span>
+                                      )}
+                                    </div>
                                   </Button>
                                 </div>
                               </div>
