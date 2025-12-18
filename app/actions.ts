@@ -316,6 +316,23 @@ export async function drawCards(walletAddress: string, packType: string, count =
     // Check if user has premium pass
     const hasPremium = userData.has_premium || false
 
+    // Check if user has active drop rate boost
+    let hasDropRateBoost = false
+    let boostType: "regular" | "premium" | null = null
+    let legendaryBonus = 0
+    try {
+      const { checkDropRateBoost } = await import("./actions/drop-rate-boost")
+      const boostResult = await checkDropRateBoost(walletAddress, packType as "regular" | "legendary")
+      if (boostResult.success && boostResult.hasBoost) {
+        hasDropRateBoost = true
+        boostType = boostResult.boostType
+        legendaryBonus = boostResult.legendaryBonus || 0
+        console.log(`✅ Drop Rate Boost active for user ${walletAddress}, pack: ${packType}, type: ${boostType}, bonus: +${legendaryBonus}%`)
+      }
+    } catch (error) {
+      console.error("Error checking drop rate boost:", error)
+    }
+
     // Check if user has active Icon Pass
     let hasIconPass = false
     try {
@@ -374,7 +391,7 @@ export async function drawCards(walletAddress: string, packType: string, count =
 
       if (!isLegendary) {
         // Verwende Rarity-basiertes System statt Rating
-        rarity = determineRarity("regular", hasPremiumPass)
+        rarity = determineRarity("regular", hasPremiumPass, hasDropRateBoost, boostType, legendaryBonus)
         
         // Filter cards nach Rarity
         cardPool = availableCards.filter(card => card.rarity === rarity);
@@ -854,29 +871,80 @@ export async function getUserCards(walletAddress: string) {
 }
 
 // Helper function to determine card rarity based on pack type
-function determineRarity(packType: string, hasPremiumPass = false): CardRarity {
+function determineRarity(
+  packType: string,
+  hasPremiumPass = false,
+  hasDropRateBoost = false,
+  boostType: "regular" | "premium" | null = null,
+  legendaryBonus = 0
+): CardRarity {
   const random = Math.random() * 100 // Random number between 0-100
 
   if (packType === "legendary") {
-    // Legendary pack with updated odds:
-    // 3% legendary, 30% epic, 50% rare, 17% common
-    if (random < 3) return "legendary"
-    if (random < 33) return "epic" // 3 + 30 = 33
-    if (random < 83) return "rare" // 33 + 50 = 83
-    return "common" // Remaining 17%
+    // Legendary pack base odds: 3% legendary, 30% epic, 50% rare, 17% common
+    // With boost (+20%): Apply 20% relative improvement to higher rarities
+    let legendaryChance = 3
+    let epicChance = 30
+    let rareChance = 50
+    let commonChance = 17
+
+    if (hasDropRateBoost && legendaryBonus > 0) {
+      // Add absolute percentage points to legendary, subtract from common
+      legendaryChance = 3 + legendaryBonus
+      commonChance = 17 - legendaryBonus
+      // Ensure common doesn't go below 0
+      if (commonChance < 0) {
+        commonChance = 0
+      }
+    }
+
+    if (random < legendaryChance) return "legendary"
+    if (random < legendaryChance + epicChance) return "epic"
+    if (random < legendaryChance + epicChance + rareChance) return "rare"
+    return "common"
   } else {
-    // Regular pack with updated odds (no legendary cards):
+    // Regular pack with updated odds
     if (hasPremiumPass) {
       // With Premium Pass (Game Pass): 1% legendary, 15% epic, 34% rare, 50% common
-      if (random < 1) return "legendary"
-      if (random < 16) return "epic" // 1 + 15 = 16
-      if (random < 50) return "rare" // 16 + 34 = 50
-      return "common" // Remaining 50%
+      let legendaryChance = 1
+      let epicChance = 15
+      let rareChance = 34
+      let commonChance = 50
+
+      if (hasDropRateBoost && legendaryBonus > 0) {
+        // Add absolute percentage points to legendary, subtract from common
+        legendaryChance = 1 + legendaryBonus
+        commonChance = 50 - legendaryBonus
+        // Ensure common doesn't go below 0
+        if (commonChance < 0) {
+          commonChance = 0
+        }
+      }
+
+      if (random < legendaryChance) return "legendary"
+      if (random < legendaryChance + epicChance) return "epic"
+      if (random < legendaryChance + epicChance + rareChance) return "rare"
+      return "common"
     } else {
       // Without Premium Pass: 0% legendary, 6% epic, 34% rare, 60% common
-      if (random < 6) return "epic" // 0 + 6 = 6
-      if (random < 40) return "rare" // 6 + 34 = 40
-      return "common" // Remaining 60%
+      let legendaryChance = 0
+      let epicChance = 6
+      let rareChance = 34
+      let commonChance = 60
+
+      if (hasDropRateBoost && legendaryBonus > 0) {
+        // Add absolute percentage points to legendary, subtract from common
+        legendaryChance = 0 + legendaryBonus
+        commonChance = 60 - legendaryBonus
+        // Ensure common doesn't go below 0
+        if (commonChance < 0) {
+          commonChance = 0
+        }
+      }
+
+      if (random < epicChance) return "epic"
+      if (random < epicChance + rareChance) return "rare"
+      return "common"
     }
   }
 }

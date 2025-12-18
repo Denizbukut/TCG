@@ -28,6 +28,7 @@ import {
   PAYMENT_RECIPIENT,
   getTransferDetails,
 } from "@/lib/payment-utils"
+import { checkDropRateBoost, purchaseDropRateBoost, getBoostConfig } from "@/app/actions/drop-rate-boost"
 // import { isUserBanned } from "@/lib/banned-users" // Lokale Version verwendet
 
 // Gebannte Benutzernamen - diese können keine Packs ziehen
@@ -191,6 +192,15 @@ export default function DrawPage() {
   const [hasPremiumPass, setHasPremiumPass] = useState(false)
   const [hasXpPass, setHasXpPass] = useState(false)
   const [userClanRole, setUserClanRole] = useState<string | null>(null)
+  const [hasDropRateBoost, setHasDropRateBoost] = useState(false)
+  const [boostExpiresAt, setBoostExpiresAt] = useState<string | null>(null)
+  const [boostType, setBoostType] = useState<"regular" | "premium" | null>(null)
+  const [legendaryBonus, setLegendaryBonus] = useState(0)
+  const [showBoostDialog, setShowBoostDialog] = useState(false)
+  const [isCheckingBoost, setIsCheckingBoost] = useState(true)
+  const [selectedBoostType, setSelectedBoostType] = useState<"regular" | "premium">("regular")
+  const [selectedDuration, setSelectedDuration] = useState<"1week" | "1month">("1week")
+  const [boostPaymentCurrency, setBoostPaymentCurrency] = useState<"WLD" | "USDC">("WLD")
   const [isUpdatingScore, setIsUpdatingScore] = useState(false)
   const [isMultiDraw, setIsMultiDraw] = useState(false)
   const [isBulkDraw, setIsBulkDraw] = useState(false)
@@ -803,6 +813,48 @@ const [showInfo, setShowInfo] = useState(false)
 
     fetchPremiumPass()
   }, [user?.wallet_address])
+
+  // Check drop rate boost status
+  useEffect(() => {
+    const fetchDropRateBoost = async () => {
+      setIsCheckingBoost(true)
+      
+      if (!user?.wallet_address) {
+        setHasDropRateBoost(false)
+        setBoostExpiresAt(null)
+        setBoostType(null)
+        setLegendaryBonus(0)
+        setIsCheckingBoost(false)
+        return
+      }
+
+      try {
+        const packType = activeTab === "legendary" ? "legendary" : "regular"
+        const result = await checkDropRateBoost(user.wallet_address, packType)
+        
+        if (result.success && result.hasBoost) {
+          setHasDropRateBoost(true)
+          setBoostExpiresAt(result.expiresAt || null)
+          setBoostType(result.boostType)
+          setLegendaryBonus(result.legendaryBonus || 0)
+        } else {
+          setHasDropRateBoost(false)
+          setBoostExpiresAt(null)
+          setBoostType(null)
+          setLegendaryBonus(0)
+        }
+      } catch (error) {
+        console.error("Error checking drop rate boost:", error)
+        setHasDropRateBoost(false)
+        setBoostExpiresAt(null)
+        setBoostType(null)
+      } finally {
+        setIsCheckingBoost(false)
+      }
+    }
+
+    fetchDropRateBoost()
+  }, [user?.wallet_address, activeTab])
 
   // Update tickets and legendary tickets when user changes
   useEffect(() => {
@@ -2187,6 +2239,86 @@ const [showInfo, setShowInfo] = useState(false)
 
     return finalXp
   }
+
+  // Boost price configuration (matching server-side config)
+  const BOOST_PRICES = {
+    regular: {
+      regular: { "1week": 0.2, "1month": 0.6 },
+      premium: { "1week": 0.4, "1month": 1.2 },
+    },
+    legendary: {
+      regular: { "1week": 0.3, "1month": 1.0 },
+      premium: { "1week": 1.0, "1month": 3.0 },
+    },
+  }
+
+  // Calculate rarity percentages with boost
+  const getRarityPercentages = (packType: "regular" | "legendary") => {
+    if (packType === "legendary") {
+      // Base: 3% legendary, 30% epic, 50% rare, 17% common
+      let legendary = 3
+      let epic = 30
+      let rare = 50
+      let common = 17
+
+      if (hasDropRateBoost && legendaryBonus > 0) {
+        // Add absolute percentage points to legendary, subtract from common
+        legendary = 3 + legendaryBonus
+        common = 17 - legendaryBonus
+        if (common < 0) common = 0
+      }
+
+      return {
+        legendary: Math.round(legendary * 10) / 10,
+        epic: Math.round(epic * 10) / 10,
+        rare: Math.round(rare * 10) / 10,
+        common: Math.round(common * 10) / 10,
+      }
+    } else {
+      // Regular pack
+      if (hasPremiumPass) {
+        // Base: 1% legendary, 15% epic, 34% rare, 50% common
+        let legendary = 1
+        let epic = 15
+        let rare = 34
+        let common = 50
+
+        if (hasDropRateBoost && legendaryBonus > 0) {
+          // Add absolute percentage points to legendary, subtract from common
+          legendary = 1 + legendaryBonus
+          common = 50 - legendaryBonus
+          if (common < 0) common = 0
+        }
+
+        return {
+          legendary: Math.round(legendary * 10) / 10,
+          epic: Math.round(epic * 10) / 10,
+          rare: Math.round(rare * 10) / 10,
+          common: Math.round(common * 10) / 10,
+        }
+      } else {
+        // Base: 0% legendary, 6% epic, 34% rare, 60% common
+        let legendary = 0
+        let epic = 6
+        let rare = 34
+        let common = 60
+
+        if (hasDropRateBoost && legendaryBonus > 0) {
+          // Add absolute percentage points to legendary, subtract from common
+          legendary = 0 + legendaryBonus
+          common = 60 - legendaryBonus
+          if (common < 0) common = 0
+        }
+
+        return {
+          legendary: Math.round(legendary * 10) / 10,
+          epic: Math.round(epic * 10) / 10,
+          rare: Math.round(rare * 10) / 10,
+          common: Math.round(common * 10) / 10,
+        }
+      }
+    }
+  }
   const calculateDynamicGodPackChances = (opened: number) => {
   const baseGodlike = 1
   const baseEpic = 49
@@ -2848,6 +2980,394 @@ const [showInfo, setShowInfo] = useState(false)
                         </div>
                       </div>
 
+                      {/* Boost Drop Rate Button */}
+                      {(activeTab === "regular" || activeTab === "legendary") && !isCheckingBoost && (
+                        <div className="w-full mb-4">
+                          {hasDropRateBoost && boostExpiresAt ? (
+                            <div className="border border-red-400/50 rounded-lg p-3 bg-gradient-to-br from-red-500/20 via-pink-500/10 to-red-600/20 relative overflow-visible">
+                              {/* Glitter effect */}
+                              <motion.div
+                                className="absolute inset-0 pointer-events-none rounded-lg"
+                                style={{
+                                  background: "linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%)",
+                                  backgroundSize: "200% 200%",
+                                }}
+                                animate={{
+                                  backgroundPosition: ["0% 0%", "200% 200%"],
+                                }}
+                                transition={{
+                                  duration: 3,
+                                  repeat: Number.POSITIVE_INFINITY,
+                                  repeatType: "loop",
+                                  ease: "linear",
+                                }}
+                              />
+                              <div className="absolute -top-4 -right-3 bg-gradient-to-r from-red-400 via-pink-500 to-red-600 text-white text-xs px-2.5 py-1.5 rounded-full font-bold shadow-lg shadow-red-500/50 z-50">
+                                BOOST ACTIVE
+                              </div>
+                              <div className="flex flex-col gap-2 relative z-10">
+                                <div className="flex items-center gap-2">
+                                  <Zap className="h-4 w-4 text-red-400 animate-pulse" />
+                                  <span className="text-sm text-red-300 font-medium">
+                                    +{legendaryBonus}% Legendary Drop Rate Boost
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="text-red-200">
+                                    {boostType === "premium" ? "Premium" : "Regular"} Boost
+                                  </span>
+                                  <span className="text-red-200">
+                                    {new Date(boostExpiresAt) > new Date()
+                                      ? `Expires: ${new Date(boostExpiresAt).toLocaleDateString()}`
+                                      : "Expired"}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <Button
+                              onClick={() => {
+                                if (!user?.wallet_address) {
+                                  toast({
+                                    title: "Error",
+                                    description: "You must be logged in.",
+                                    variant: "destructive",
+                                  })
+                                  return
+                                }
+                                setShowBoostDialog(true)
+                              }}
+                              className="w-full bg-gradient-to-r from-red-500 via-pink-500 to-red-600 hover:from-red-600 hover:via-pink-600 hover:to-red-700 text-white rounded-lg py-2.5 shadow-lg shadow-red-500/50 hover:shadow-xl hover:shadow-red-500/70 transition-all duration-200 relative overflow-hidden"
+                            >
+                              {/* Glitter effect on button */}
+                              <motion.div
+                                className="absolute inset-0 pointer-events-none"
+                                style={{
+                                  background: "linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.2) 50%, transparent 70%)",
+                                  backgroundSize: "200% 200%",
+                                }}
+                                animate={{
+                                  backgroundPosition: ["0% 0%", "200% 200%"],
+                                }}
+                                transition={{
+                                  duration: 2.5,
+                                  repeat: Number.POSITIVE_INFINITY,
+                                  repeatType: "loop",
+                                  ease: "linear",
+                                }}
+                              />
+                              <div className="flex items-center justify-center gap-2 relative z-10">
+                                <Zap className="h-4 w-4" />
+                                <span className="font-semibold">Boost Your Drop Rate</span>
+                              </div>
+                            </Button>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Boost Purchase Dialog */}
+                      {showBoostDialog && (
+                        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl border-2 border-red-500/50 shadow-2xl shadow-red-500/20 p-6 max-w-md w-full relative overflow-hidden"
+                          >
+                            {/* Glitter background effect */}
+                            <motion.div
+                              className="absolute inset-0 pointer-events-none opacity-20"
+                              style={{
+                                background: "radial-gradient(circle at 20% 50%, rgba(255,0,100,0.3) 0%, transparent 50%), radial-gradient(circle at 80% 50%, rgba(255,50,150,0.3) 0%, transparent 50%)",
+                              }}
+                              animate={{
+                                opacity: [0.2, 0.3, 0.2],
+                              }}
+                              transition={{
+                                duration: 3,
+                                repeat: Number.POSITIVE_INFINITY,
+                                repeatType: "loop",
+                              }}
+                            />
+                            <div className="flex justify-between items-center mb-6 relative z-10">
+                              <div className="flex items-center gap-2">
+                                <Zap className="h-6 w-6 text-red-400" />
+                                <h3 className="text-2xl font-bold bg-gradient-to-r from-red-400 via-pink-400 to-red-500 bg-clip-text text-transparent">
+                                  Boost Your Drop Rate
+                                </h3>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowBoostDialog(false)}
+                                className="text-gray-400 hover:text-white hover:bg-red-500/20 rounded-full"
+                              >
+                                <X className="h-5 w-5" />
+                              </Button>
+                            </div>
+
+                            <div className="space-y-5 relative z-10">
+                              {/* Boost Type Selection */}
+                              <div>
+                                <label className="text-sm font-semibold text-gray-200 mb-3 block">Boost Type</label>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <Button
+                                    variant={selectedBoostType === "regular" ? "default" : "outline"}
+                                    onClick={() => setSelectedBoostType("regular")}
+                                    className={`${selectedBoostType === "regular" ? "bg-gradient-to-br from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white shadow-lg shadow-red-500/30 border-red-400/50" : "text-gray-300 border-gray-600 hover:border-red-500/50"} flex flex-col items-center justify-center py-4 h-auto min-h-[80px] rounded-xl transition-all duration-200 relative overflow-hidden`}
+                                  >
+                                    {selectedBoostType === "regular" && (
+                                      <motion.div
+                                        className="absolute inset-0 pointer-events-none"
+                                        style={{
+                                          background: "linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.15) 50%, transparent 70%)",
+                                          backgroundSize: "200% 200%",
+                                        }}
+                                        animate={{
+                                          backgroundPosition: ["0% 0%", "200% 200%"],
+                                        }}
+                                        transition={{
+                                          duration: 2,
+                                          repeat: Number.POSITIVE_INFINITY,
+                                          repeatType: "loop",
+                                          ease: "linear",
+                                        }}
+                                      />
+                                    )}
+                                    <span className="font-bold text-base relative z-10">Regular</span>
+                                    <span className="text-xs mt-1.5 opacity-90 relative z-10">
+                                      +{activeTab === "legendary" ? "2%" : "1%"} Legendary
+                                    </span>
+                                  </Button>
+                                  <Button
+                                    variant={selectedBoostType === "premium" ? "default" : "outline"}
+                                    onClick={() => setSelectedBoostType("premium")}
+                                    className={`${selectedBoostType === "premium" ? "bg-gradient-to-br from-red-600 via-pink-600 to-red-700 hover:from-red-700 hover:via-pink-700 hover:to-red-800 text-white shadow-lg shadow-red-500/40 border-red-400/50" : "text-gray-300 border-gray-600 hover:border-red-500/50"} flex flex-col items-center justify-center py-4 h-auto min-h-[80px] rounded-xl transition-all duration-200 relative overflow-hidden`}
+                                  >
+                                    {selectedBoostType === "premium" && (
+                                      <>
+                                        <motion.div
+                                          className="absolute inset-0 pointer-events-none"
+                                          style={{
+                                            background: "linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.2) 50%, transparent 70%)",
+                                            backgroundSize: "200% 200%",
+                                          }}
+                                          animate={{
+                                            backgroundPosition: ["0% 0%", "200% 200%"],
+                                          }}
+                                          transition={{
+                                            duration: 2,
+                                            repeat: Number.POSITIVE_INFINITY,
+                                            repeatType: "loop",
+                                            ease: "linear",
+                                          }}
+                                        />
+                                        <div className="absolute top-1 right-1">
+                                          <Crown className="h-3 w-3 text-yellow-300" />
+                                        </div>
+                                      </>
+                                    )}
+                                    <span className="font-bold text-base relative z-10">Premium</span>
+                                    <span className="text-xs mt-1.5 opacity-90 relative z-10">
+                                      +{activeTab === "legendary" ? "5%" : "2%"} Legendary
+                                    </span>
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* Duration Selection */}
+                              <div>
+                                <label className="text-sm font-semibold text-gray-200 mb-3 block">Duration</label>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <Button
+                                    variant={selectedDuration === "1week" ? "default" : "outline"}
+                                    onClick={() => setSelectedDuration("1week")}
+                                    className={`${selectedDuration === "1week" ? "bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white shadow-md shadow-red-500/30 border-red-400/50" : "text-gray-300 border-gray-600 hover:border-red-500/50"} py-3 rounded-xl transition-all duration-200`}
+                                  >
+                                    1 Week
+                                  </Button>
+                                  <Button
+                                    variant={selectedDuration === "1month" ? "default" : "outline"}
+                                    onClick={() => setSelectedDuration("1month")}
+                                    className={`${selectedDuration === "1month" ? "bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white shadow-md shadow-red-500/30 border-red-400/50" : "text-gray-300 border-gray-600 hover:border-red-500/50"} py-3 rounded-xl transition-all duration-200`}
+                                  >
+                                    1 Month
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* Payment Currency */}
+                              <div>
+                                <label className="text-sm font-semibold text-gray-200 mb-3 block">Payment Method</label>
+                                <div className="flex gap-3">
+                                  <Button
+                                    variant={boostPaymentCurrency === "WLD" ? "default" : "outline"}
+                                    onClick={() => setBoostPaymentCurrency("WLD")}
+                                    className={`${boostPaymentCurrency === "WLD" ? "bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white shadow-md shadow-red-500/30 border-red-400/50" : "text-gray-300 border-gray-600 hover:border-red-500/50"} flex-1 py-3 rounded-xl transition-all duration-200`}
+                                  >
+                                    WLD
+                                  </Button>
+                                  <Button
+                                    variant={boostPaymentCurrency === "USDC" ? "default" : "outline"}
+                                    onClick={() => setBoostPaymentCurrency("USDC")}
+                                    className={`${boostPaymentCurrency === "USDC" ? "bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white shadow-md shadow-red-500/30 border-red-400/50" : "text-gray-300 border-gray-600 hover:border-red-500/50"} flex-1 py-3 rounded-xl transition-all duration-200`}
+                                  >
+                                    USDC
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* Price Display */}
+                              {(() => {
+                                const packType = activeTab === "legendary" ? "legendary" : "regular"
+                                const priceUsd = BOOST_PRICES[packType][selectedBoostType][selectedDuration]
+                                const transferDetails = getTransferDetails({
+                                  usdAmount: priceUsd,
+                                  currency: boostPaymentCurrency,
+                                  wldPrice: price,
+                                  anixPrice,
+                                })
+                                
+                                return (
+                                  <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 rounded-xl p-4 border border-red-500/30 shadow-lg">
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-gray-300 font-medium">Price:</span>
+                                      <span className="text-white font-bold text-lg">
+                                        {transferDetails.displayAmount}
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-gray-400 mt-2">
+                                      ≈ ${priceUsd.toFixed(2)} USD
+                                    </div>
+                                  </div>
+                                )
+                              })()}
+
+                              {/* Purchase Button */}
+                              <Button
+                                onClick={async () => {
+                                  try {
+                                    const packType = activeTab === "legendary" ? "legendary" : "regular"
+                                    const config = await getBoostConfig(packType, selectedBoostType, selectedDuration)
+                                    const priceUsd = config.priceUsd[selectedDuration]
+
+                                    // Get transfer details
+                                    const transferDetails = getTransferDetails({
+                                      usdAmount: priceUsd,
+                                      currency: boostPaymentCurrency,
+                                      wldPrice: price,
+                                      anixPrice,
+                                    })
+
+                                    let finalPayload
+
+                                    if (boostPaymentCurrency === "USDC" && transferDetails.miniKitTokenAmount) {
+                                      const reference = `boost-${packType}-${Date.now().toString(36)}`.slice(0, 36)
+                                      const description = `Drop rate boost for ${packType} pack (${selectedDuration})`
+                                      const { finalPayload: payPayload } = await MiniKit.commandsAsync.pay({
+                                        reference,
+                                        to: PAYMENT_RECIPIENT,
+                                        description,
+                                        tokens: [
+                                          {
+                                            symbol: transferDetails.miniKitSymbol ?? Tokens.USDCE,
+                                            token_amount: transferDetails.miniKitTokenAmount,
+                                          },
+                                        ],
+                                      })
+                                      finalPayload = payPayload
+                                    } else {
+                                      const { finalPayload: txPayload } = await MiniKit.commandsAsync.sendTransaction({
+                                        transaction: [
+                                          {
+                                            address: transferDetails.tokenAddress,
+                                            abi: ERC20_TRANSFER_ABI,
+                                            functionName: "transfer",
+                                            args: [PAYMENT_RECIPIENT, transferDetails.rawAmount],
+                                          },
+                                        ],
+                                      })
+                                      finalPayload = txPayload
+                                    }
+
+                                    if (finalPayload.status === "success") {
+                                      // Purchase boost on backend with payment information
+                                      const result = await purchaseDropRateBoost(
+                                        user!.wallet_address,
+                                        packType,
+                                        selectedBoostType,
+                                        selectedDuration,
+                                        priceUsd,
+                                        boostPaymentCurrency,
+                                        transferDetails.numericAmount
+                                      )
+
+                                      if (result.success) {
+                                        toast({
+                                          title: "Success",
+                                          description: `Drop rate boost activated! +${config.legendaryBonus}% legendary drop rate for ${selectedDuration === "1week" ? "1 week" : "1 month"}.`,
+                                        })
+                                        setShowBoostDialog(false)
+                                        // Refresh boost status
+                                        const boostResult = await checkDropRateBoost(user!.wallet_address, packType)
+                                        if (boostResult.success && boostResult.hasBoost) {
+                                          setHasDropRateBoost(true)
+                                          setBoostExpiresAt(boostResult.expiresAt || null)
+                                          setBoostType(boostResult.boostType)
+                                          setLegendaryBonus(boostResult.legendaryBonus || 0)
+                                        }
+                                      } else {
+                                        toast({
+                                          title: "Error",
+                                          description: result.error || "Failed to activate boost",
+                                          variant: "destructive",
+                                        })
+                                      }
+                                    } else {
+                                      toast({
+                                        title: "Payment Failed",
+                                        description: "Your payment could not be processed.",
+                                        variant: "destructive",
+                                      })
+                                    }
+                                  } catch (error: any) {
+                                    console.error("Error purchasing boost:", error)
+                                    toast({
+                                      title: "Error",
+                                      description: error.message || "An error occurred. Please try again.",
+                                      variant: "destructive",
+                                    })
+                                  }
+                                }}
+                                className="w-full bg-gradient-to-r from-red-500 via-pink-500 to-red-600 hover:from-red-600 hover:via-pink-600 hover:to-red-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-red-500/50 hover:shadow-xl hover:shadow-red-500/70 transition-all duration-200 relative overflow-hidden"
+                              >
+                                <motion.div
+                                  className="absolute inset-0 pointer-events-none"
+                                  style={{
+                                    background: "linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.2) 50%, transparent 70%)",
+                                    backgroundSize: "200% 200%",
+                                  }}
+                                  animate={{
+                                    backgroundPosition: ["0% 0%", "200% 200%"],
+                                  }}
+                                  transition={{
+                                    duration: 2,
+                                    repeat: Number.POSITIVE_INFINITY,
+                                    repeatType: "loop",
+                                    ease: "linear",
+                                  }}
+                                />
+                                <span className="relative z-10 flex items-center justify-center gap-2">
+                                  <Zap className="h-5 w-5" />
+                                  Purchase Boost
+                                </span>
+                              </Button>
+                            </div>
+                          </motion.div>
+                        </div>
+                      )}
+
+
                       <div className="w-full space-y-2 mb-4">
                         {/* God Pack Rarity Display - UPDATED: Changed godlike text to red */}
                         {activeTab === "god" ? (
@@ -2885,53 +3405,67 @@ const [showInfo, setShowInfo] = useState(false)
                                 PASS ACTIVE
                               </div>
                             )}
-                            <div className="space-y-2">
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-500">{t("rarity.common", "Common")}</span>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-gray-500">{hasPremiumPass ? "50%" : "60%"}</span>
+                            {(() => {
+                              const percentages = getRarityPercentages("regular")
+                              const baseCommon = hasPremiumPass ? 50 : 60
+                              const baseLegendary = hasPremiumPass ? 1 : 0
+                              return (
+                                <div className="space-y-2">
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span className="text-gray-500">{t("rarity.common", "Common")}</span>
+                                    <span className="text-gray-500">{percentages.common}%</span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span className="text-blue-500">{t("rarity.rare", "Rare")}</span>
+                                    <span className="text-blue-500">{percentages.rare}%</span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span className="text-purple-500">{t("rarity.epic", "Epic")}</span>
+                                    <span className="text-purple-500">{percentages.epic}%</span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span className="text-amber-500">{t("rarity.legendary", "Legendary")}</span>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-amber-500">{percentages.legendary}%</span>
+                                      {hasDropRateBoost && legendaryBonus > 0 && (
+                                        <span className="text-xs text-red-400">(+{legendaryBonus}%)</span>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-blue-500">{t("rarity.rare", "Rare")}</span>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-blue-500">{hasPremiumPass ? "34%" : "34%"}</span>
-                                </div>
-                              </div>
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-purple-500">{t("rarity.epic", "Epic")}</span>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-purple-500">{hasPremiumPass ? "15%" : "6%"}</span>
-                                </div>
-                              </div>
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-amber-500">{t("rarity.legendary", "Legendary")}</span>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-amber-500">{hasPremiumPass ? "1%" : "0%"}</span>
-                                </div>
-                              </div>
-                            </div>
+                              )
+                            })()}
                           </div>
                         ) : activeTab === "legendary" ? (
                           <div className="border border-gray-200 rounded-lg p-3 relative">
-                            <div className="space-y-2">
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-500">{t("rarity.common", "Common")}</span>
-                                <span className="text-gray-500">17%</span>
-                              </div>
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-blue-500">{t("rarity.rare", "Rare")}</span>
-                                <span className="text-blue-500">50%</span>
-                              </div>
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-purple-500">{t("rarity.epic", "Epic")}</span>
-                                <span className="text-purple-500">30%</span>
-                              </div>
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-amber-500">{t("rarity.legendary", "Legendary")}</span>
-                                <span className="text-amber-500">3%</span>
-                              </div>
-                            </div>
+                            {(() => {
+                              const percentages = getRarityPercentages("legendary")
+                              return (
+                                <div className="space-y-2">
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span className="text-gray-500">{t("rarity.common", "Common")}</span>
+                                    <span className="text-gray-500">{percentages.common}%</span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span className="text-blue-500">{t("rarity.rare", "Rare")}</span>
+                                    <span className="text-blue-500">{percentages.rare}%</span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span className="text-purple-500">{t("rarity.epic", "Epic")}</span>
+                                    <span className="text-purple-500">{percentages.epic}%</span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span className="text-amber-500">{t("rarity.legendary", "Legendary")}</span>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-amber-500">{percentages.legendary}%</span>
+                                      {hasDropRateBoost && legendaryBonus > 0 && (
+                                        <span className="text-xs text-red-400">(+{legendaryBonus}%)</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              )
+                            })()}
                           </div>
                         ) : (
                           <div className="border border-gray-200 rounded-lg p-3 relative">
