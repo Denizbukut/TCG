@@ -1627,7 +1627,7 @@ export default function Home() {
           // 2. Weekly Contest: Punkte für Special Deal Kauf vergeben
           try {
             const { incrementSpecialDealPoints } = await import("@/app/actions/weekly-contest");
-            const contestPointsResult = await incrementSpecialDealPoints(user.wallet_address, 40);
+            const contestPointsResult = await incrementSpecialDealPoints(user.wallet_address, 50);
             if (contestPointsResult.success) {
               console.log("✅ [Special Deal] Weekly contest points awarded successfully");
             } else {

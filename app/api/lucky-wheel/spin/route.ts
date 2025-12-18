@@ -3,7 +3,7 @@ import { getSupabaseServerClient } from "@/lib/supabase"
 import { incrementPremiumWheelPoints, incrementStandardWheelPoints } from "@/app/actions/weekly-contest"
 
 // Global daily limit (for all users combined)
-const GLOBAL_DAILY_LUCKY_WHEEL_LIMIT = 25
+const GLOBAL_DAILY_LUCKY_WHEEL_LIMIT = 100
 
 // Premium Wheel Drop Rates (must sum to 100%)
 const PREMIUM_DROP_RATES = {
