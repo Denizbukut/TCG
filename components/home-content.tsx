@@ -2020,7 +2020,7 @@ export default function Home() {
       </div>
         <h3 className="text-xl font-bold text-yellow-100 mb-1">{t("contest.title", "Weekly Contest")}</h3>
         <p className="text-sm text-white/80 font-medium">{t("contest.subtitle", "Compete for the top spot!")}</p>
-        <p className="text-xs text-yellow-300/90 font-semibold mt-1">up to 2x bonus on last day</p>
+        <p className="text-xs text-green-400 font-bold mt-1 drop-shadow-[0_0_8px_rgba(74,222,128,0.8)]">up to 2x bonus on last day</p>
         {isContestActive() && (() => {
         const timeLeft = formatContestCountdown(contestCountdown)
         return timeLeft ? (
