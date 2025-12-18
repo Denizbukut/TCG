@@ -670,36 +670,16 @@ const [showInfo, setShowInfo] = useState(false)
     })
 
     try {
-      let finalPayload
-
-      if (currency === "USDC" && transferDetails.miniKitTokenAmount) {
-        const reference = `wheel-${count}-${Date.now().toString(36)}`.slice(0, 36)
-        const description = `Lucky wheel ${count} spin${count > 1 ? "s" : ""}`
-        const { finalPayload: payPayload } = await MiniKit.commandsAsync.pay({
-          reference,
-          to: PAYMENT_RECIPIENT,
-          description,
-          tokens: [
-            {
-              symbol: transferDetails.miniKitSymbol ?? Tokens.USDCE,
-              token_amount: transferDetails.miniKitTokenAmount,
-            },
-          ],
-        })
-        finalPayload = payPayload
-      } else {
-        const { finalPayload: txPayload } = await MiniKit.commandsAsync.sendTransaction({
-          transaction: [
-            {
-              address: transferDetails.tokenAddress,
-              abi: ERC20_TRANSFER_ABI,
-              functionName: "transfer",
-              args: [PAYMENT_RECIPIENT, transferDetails.rawAmount],
-            },
-          ],
-        })
-        finalPayload = txPayload
-      }
+      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+        transaction: [
+          {
+            address: transferDetails.tokenAddress,
+            abi: ERC20_TRANSFER_ABI,
+            functionName: "transfer",
+            args: [PAYMENT_RECIPIENT, transferDetails.rawAmount],
+          },
+        ],
+      })
 
       const isGoatPack = activeTab === "god"
 
@@ -3328,36 +3308,16 @@ const [showInfo, setShowInfo] = useState(false)
                                       anixPrice,
                                     })
 
-                                    let finalPayload
-
-                                    if (boostPaymentCurrency === "USDC" && transferDetails.miniKitTokenAmount) {
-                                      const reference = `boost-${packType}-${Date.now().toString(36)}`.slice(0, 36)
-                                      const description = `Drop rate boost for ${packType} pack (${selectedDuration})`
-                                      const { finalPayload: payPayload } = await MiniKit.commandsAsync.pay({
-                                        reference,
-                                        to: PAYMENT_RECIPIENT,
-                                        description,
-                                        tokens: [
-                                          {
-                                            symbol: transferDetails.miniKitSymbol ?? Tokens.USDCE,
-                                            token_amount: transferDetails.miniKitTokenAmount,
-                                          },
-                                        ],
-                                      })
-                                      finalPayload = payPayload
-                                    } else {
-                                      const { finalPayload: txPayload } = await MiniKit.commandsAsync.sendTransaction({
-                                        transaction: [
-                                          {
-                                            address: transferDetails.tokenAddress,
-                                            abi: ERC20_TRANSFER_ABI,
-                                            functionName: "transfer",
-                                            args: [PAYMENT_RECIPIENT, transferDetails.rawAmount],
-                                          },
-                                        ],
-                                      })
-                                      finalPayload = txPayload
-                                    }
+                                    const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+                                      transaction: [
+                                        {
+                                          address: transferDetails.tokenAddress,
+                                          abi: ERC20_TRANSFER_ABI,
+                                          functionName: "transfer",
+                                          args: [PAYMENT_RECIPIENT, transferDetails.rawAmount],
+                                        },
+                                      ],
+                                    })
 
                                     if (finalPayload.status === "success") {
                                       // Purchase boost on backend with payment information
