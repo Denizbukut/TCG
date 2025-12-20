@@ -1880,7 +1880,7 @@ export default function Home() {
             >
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-black" />
-                <span>Create Your Own Card and Earn</span>
+                <span>{t("home.create_card_earn", "Create Your Own Card and Earn")}</span>
                 <ArrowRight className="ml-auto h-4 w-4 text-black/80" />
               </div>
             </motion.div>

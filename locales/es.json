@@ -85,7 +85,8 @@
     "card_bonus_title": "Bonus de Cartas",
     "card_bonus_desc": "Usa tus cartas para obtener tokens bonus al comprar en ANI wallet",
     "open_ani_wallet": "Abrir ANI Wallet",
-    "card_creation_discount_banner": "Creaciones de Cartas 50% Descuento"
+    "card_creation_discount_banner": "Creaciones de Cartas 50% Descuento",
+    "create_card_earn": "Crea tu propia carta y gana"
   },
   "draw": {
     "open_packs": "Abrir Packs",

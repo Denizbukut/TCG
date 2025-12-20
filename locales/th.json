@@ -85,7 +85,8 @@
     "card_bonus_title": "โบนัสการ์ด",
     "card_bonus_desc": "ใช้การ์ดของคุณเพื่อรับโทเค็นโบนัสเมื่อซื้อใน ANI wallet",
     "open_ani_wallet": "เปิด ANI Wallet",
-    "card_creation_discount_banner": "การสร้างการ์ด ส่วนลด 50%"
+    "card_creation_discount_banner": "การสร้างการ์ด ส่วนลด 50%",
+    "create_card_earn": "สร้างการ์ดของคุณเองและรับรางวัล"
   },
   "draw": {
     "open_packs": "เปิดแพ็ค",
