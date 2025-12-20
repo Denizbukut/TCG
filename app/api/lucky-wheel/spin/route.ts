@@ -3,7 +3,7 @@ import { getSupabaseServerClient } from "@/lib/supabase"
 import { incrementPremiumWheelPoints, incrementStandardWheelPoints } from "@/app/actions/weekly-contest"
 
 // Global daily limit (for all users combined)
-const GLOBAL_DAILY_LUCKY_WHEEL_LIMIT = 100
+const GLOBAL_DAILY_LUCKY_WHEEL_LIMIT = 25
 
 // Premium Wheel Drop Rates (must sum to 100%)
 const PREMIUM_DROP_RATES = {
@@ -291,7 +291,7 @@ export async function POST(req: Request) {
     // Award Weekly Contest points for Wheel spins
     if (wheelType === "premium") {
       try {
-        await incrementPremiumWheelPoints(normalizedWalletAddress, 36)
+        await incrementPremiumWheelPoints(normalizedWalletAddress, 18)
       } catch (error) {
         // Log error but don't fail the spin if contest points fail
         console.error("Failed to award contest points for premium wheel spin:", error)

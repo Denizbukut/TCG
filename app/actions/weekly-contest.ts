@@ -26,8 +26,8 @@ export async function incrementLegendaryDraw(walletAddress: string, count: numbe
     return { success: false, error: "The contest has ended. No more entries allowed." }
   }
 
-  // Calculate points: 80 points per legendary card (2x bonus)
-  const pointsPerCard = 80
+  // Calculate points: 40 points per legendary card
+  const pointsPerCard = 40
   const totalPoints = pointsPerCard * count
 
   const { data, error } = await supabase
@@ -394,7 +394,7 @@ export async function incrementSpecialDealPoints(
  */
 export async function incrementPremiumWheelPoints(
   walletAddress: string,
-  points: number = 36
+  points: number = 18
 ) {
   console.log(`🎯 [incrementPremiumWheelPoints] Called with wallet: ${walletAddress}, points: ${points}`)
   

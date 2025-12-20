@@ -1871,7 +1871,7 @@ export default function Home() {
         </header>
 
         <main className="w-full px-2 md:px-6 pb-16 flex-1 overflow-y-auto overscroll-contain"> {/* Padding hinzugefügt */}
-          <Link href="/draw?tab=wheel&wheelType=premium">
+          <Link href="/tokens">
             <motion.div
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1880,7 +1880,7 @@ export default function Home() {
             >
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-black" />
-                <span>Lucky Wheel 2x Bonus</span>
+                <span>Create Your Own Card and Earn</span>
                 <ArrowRight className="ml-auto h-4 w-4 text-black/80" />
               </div>
             </motion.div>
@@ -2020,7 +2020,6 @@ export default function Home() {
       </div>
         <h3 className="text-xl font-bold text-yellow-100 mb-1">{t("contest.title", "Weekly Contest")}</h3>
         <p className="text-sm text-white/80 font-medium">{t("contest.subtitle", "Compete for the top spot!")}</p>
-        <p className="text-xs text-green-400 font-bold mt-1 drop-shadow-[0_0_8px_rgba(74,222,128,0.8)]">up to 2x bonus on last day</p>
         {isContestActive() && (() => {
         const timeLeft = formatContestCountdown(contestCountdown)
         return timeLeft ? (
