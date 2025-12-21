@@ -323,7 +323,19 @@
     "purchase_failed": "Kauf fehlgeschlagen",
     "failed_purchase_deal": "Deal konnte nicht gekauft werden",
     "deal_purchased": "Dein Deal wurde erfolgreich gekauft.",
-    "creator_receives_percent": "Karten-Ersteller erhält {percent}% des Kaufpreises"
+    "creator_receives_percent": "Karten-Ersteller erhält {percent}% des Kaufpreises",
+    "daily_deals": "Tägliche Deals",
+    "click_to_view": "Klicken, um alle Deals anzuzeigen",
+    "next_update": "Nächstes Update in",
+    "classic": "Classic",
+    "elite": "Elite",
+    "card_level": "Karten-Level",
+    "confirm_purchase": "Kauf bestätigen",
+    "tickets": "Tickets",
+    "purchase_confirmation_note": "Du erhältst die Karte und Tickets nach Zahlungsbestätigung.",
+    "confirm_and_pay": "Bestätigen & Zahlen",
+    "wallet_required": "Wallet-Adresse erforderlich",
+    "payment_unavailable": "Zahlung nicht verfügbar"
   },
   "special_day": {
     "title": "Besonderer Tag"

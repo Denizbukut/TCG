@@ -47,6 +47,7 @@ import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { getSupabaseBrowserClient } from "@/lib/supabase"
 import DealOfTheDayDialog from "@/components/deal-of-the-day-dialog"
+import DailyDealsBatch from "@/components/daily-deals-batch"
 import { MiniKit } from "@worldcoin/minikit-js"
 import { useWldPrice } from "@/contexts/WldPriceContext"
 import { claimReferralRewardForUser } from "@/app/actions/referrals"
@@ -2199,69 +2200,15 @@ export default function Home() {
               </div>
             </div>
             {/* Deals nebeneinander im Grid */}
-            <div className="col-span-6 flex gap-0 w-full">
-              {/* Deal of the Day */}
-              <div
-                className="w-1/2 flex flex-col items-center rounded-md p-3 h-full text-white cursor-pointer relative overflow-hidden"
-                style={{
-                  backgroundImage: 'url("/dealday.webp.webp")',
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  backgroundRepeat: 'no-repeat'
-                }}
-                onClick={() => setShowDailyDealDialog(true)}
-              >
-                {/* Overlay für bessere Lesbarkeit */}
-                <div className="absolute inset-0 bg-black/30 rounded-md"></div>
-                {/* Content über dem Overlay */}
-                <div className="relative z-10 w-full h-full flex flex-col items-center">
-                {dailyDeal ? (
-                  <>
-                    <div className={`w-3/5 aspect-[3/4] max-h-[140px] rounded-md flex items-center justify-center mb-1 relative border-2 bg-black/20 mx-auto overflow-hidden ${
-                      dailyDeal.card_rarity === 'common' ? 'border-gray-400' :
-                      dailyDeal.card_rarity === 'uncommon' ? 'border-green-400' :
-                      dailyDeal.card_rarity === 'rare' ? 'border-blue-400' :
-                      dailyDeal.card_rarity === 'epic' ? 'border-purple-400' :
-                      dailyDeal.card_rarity === 'legendary' ? 'border-yellow-400' :
-                      dailyDeal.card_rarity === 'mythic' ? 'border-red-400' :
-                      'border-gray-400'
-                    }`}>
-                      <img
-                        src={getCloudflareImageUrl(dailyDeal.card_image_url)}
-                        alt={dailyDeal.card_name}
-                        className="w-full h-full object-cover rounded-md scale-105"
-                      />
-                      <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 text-[10px] px-1.5 py-0.5 rounded-full font-bold flex items-center gap-1">
-                        {renderStars(dailyDeal.card_level, "xs")}
-                      </div>
-                    </div>
-                    <div className="text-lg font-bold text-center mb-0.5">{t("deals.deal_of_the_day", "Deal of the Day")}</div>
-                    <div className="text-sm text-white/80 text-center mb-1">
-                      {dailyDeal.card_name} <span className="text-white/70">·</span>
-                      <span className="inline-block px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold align-middle ml-1">{getDisplayRarity(dailyDeal.card_rarity)}</span>
-                    </div>
-                    <div className="flex gap-2 mb-1 justify-center">
-                      {dailyDeal.classic_tickets > 0 && (
-                        <span className="inline-block px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-sm font-bold flex items-center gap-1 border border-white">
-                          <Ticket className="h-3 w-3 text-blue-500" />+{dailyDeal.classic_tickets}
-                        </span>
-                      )}
-                      {dailyDeal.elite_tickets > 0 && (
-                        <span className="inline-block px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 text-sm font-bold flex items-center gap-1 border border-white">
-                          <Crown className="h-3 w-3 text-purple-500" />+{dailyDeal.elite_tickets}
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-1 w-full flex flex-col items-center gap-1">
-                      <div className="text-lg font-bold text-center text-white">
-                        {formatPrice(dailyDeal.price)}
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex flex-1 items-center justify-center h-full text-white/70">{t("deals.no_deal", "No deal available")}</div>
+            <div className="col-span-6 flex gap-2 w-full">
+              {/* Daily Deals Batch - 4 Deals */}
+              <div className="w-1/2">
+                {user?.wallet_address && (
+                  <DailyDealsBatch
+                    walletAddress={user.wallet_address}
+                    onPurchaseSuccess={handleDailyDealPurchaseSuccess}
+                  />
                 )}
-                </div>
               </div>
               
               {/* Special Deal */}

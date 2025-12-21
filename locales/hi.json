@@ -323,7 +323,19 @@
     "purchase_failed": "खरीद विफल",
     "failed_purchase_deal": "सौदा खरीदने में विफल",
     "deal_purchased": "सौदा खरीदा गया।",
-    "creator_receives_percent": "कार्ड निर्माता को खरीद का {percent}% प्राप्त होता है"
+    "creator_receives_percent": "कार्ड निर्माता को खरीद का {percent}% प्राप्त होता है",
+    "daily_deals": "दैनिक सौदे",
+    "click_to_view": "सभी सौदे देखने के लिए क्लिक करें",
+    "next_update": "अगला अपडेट",
+    "classic": "क्लासिक",
+    "elite": "एलीट",
+    "card_level": "कार्ड स्तर",
+    "confirm_purchase": "खरीदारी की पुष्टि करें",
+    "tickets": "टिकट",
+    "purchase_confirmation_note": "भुगतान पुष्टि के बाद आपको कार्ड और टिकट प्राप्त होंगे।",
+    "confirm_and_pay": "पुष्टि करें और भुगतान करें",
+    "wallet_required": "वॉलेट पता आवश्यक",
+    "payment_unavailable": "भुगतान उपलब्ध नहीं"
   },
   "special_day": {
     "title": "विशेष दिन"

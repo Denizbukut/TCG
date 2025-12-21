@@ -323,7 +323,19 @@
     "purchase_failed": "ซื้อไม่สำเร็จ",
     "failed_purchase_deal": "ซื้อดีลไม่สำเร็จ",
     "deal_purchased": "ซื้อดีลสำเร็จแล้ว",
-    "creator_receives_percent": "ผู้สร้างการ์ดจะได้รับ {percent}% ของการซื้อ"
+    "creator_receives_percent": "ผู้สร้างการ์ดจะได้รับ {percent}% ของการซื้อ",
+    "daily_deals": "ดีลประจำวัน",
+    "click_to_view": "คลิกเพื่อดูดีลทั้งหมด",
+    "next_update": "อัปเดตครั้งถัดไปใน",
+    "classic": "คลาสสิก",
+    "elite": "เอลิท",
+    "card_level": "ระดับการ์ด",
+    "confirm_purchase": "ยืนยันการซื้อ",
+    "tickets": "ตั๋ว",
+    "purchase_confirmation_note": "คุณจะได้รับการ์ดและตั๋วหลังจากยืนยันการชำระเงิน",
+    "confirm_and_pay": "ยืนยันและชำระเงิน",
+    "wallet_required": "ต้องการที่อยู่กระเป๋าเงิน",
+    "payment_unavailable": "การชำระเงินไม่พร้อมใช้งาน"
   },
   "special_day": {
     "title": "วันพิเศษ"

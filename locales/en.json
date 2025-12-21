@@ -308,6 +308,7 @@
     "no_special_deal": "No special deal available",
     "buy": "Buy",
     "daily_deal": "Daily Deal",
+    "daily_deals": "Daily Deals",
     "whats_included": "What's Included",
     "regular_tickets": "Regular Tickets",
     "legendary_tickets": "Legendary Tickets",
@@ -323,7 +324,18 @@
     "purchase_failed": "Purchase Failed",
     "failed_purchase_deal": "Failed to purchase the deal",
     "deal_purchased": "Your deal was successfully purchased.",
-    "creator_receives_percent": "Card Creator receives {percent}% of purchase"
+    "creator_receives_percent": "Card Creator receives {percent}% of purchase",
+    "click_to_view": "Click to view all deals",
+    "next_update": "Next update in",
+    "classic": "Classic",
+    "elite": "Elite",
+    "card_level": "Card Level",
+    "confirm_purchase": "Confirm Purchase",
+    "tickets": "Tickets",
+    "purchase_confirmation_note": "You will receive the card and tickets after payment confirmation.",
+    "confirm_and_pay": "Confirm & Pay",
+    "wallet_required": "Wallet address required",
+    "payment_unavailable": "Payment unavailable"
   },
   "special_day": {
     "title": "Special Day"

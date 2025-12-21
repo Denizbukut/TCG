@@ -323,7 +323,19 @@
     "purchase_failed": "購入失敗",
     "failed_purchase_deal": "特典購入失敗",
     "deal_purchased": "特典購入完了",
-    "creator_receives_percent": "カードクリエイターは購入の{percent}％を受け取ります"
+    "creator_receives_percent": "カードクリエイターは購入の{percent}％を受け取ります",
+    "daily_deals": "デイリー特典",
+    "click_to_view": "すべての特典を表示",
+    "next_update": "次の更新まで",
+    "classic": "クラシック",
+    "elite": "エリート",
+    "card_level": "カードレベル",
+    "confirm_purchase": "購入確認",
+    "tickets": "チケット",
+    "purchase_confirmation_note": "支払い確認後、カードとチケットを受け取ります。",
+    "confirm_and_pay": "確認して支払う",
+    "wallet_required": "ウォレットアドレスが必要です",
+    "payment_unavailable": "支払い不可"
   },
   "special_day": {
     "title": "スペシャルデー"

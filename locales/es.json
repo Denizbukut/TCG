@@ -323,7 +323,19 @@
     "purchase_failed": "Compra Fallida",
     "failed_purchase_deal": "Error al comprar oferta",
     "deal_purchased": "Oferta comprada exitosamente.",
-    "creator_receives_percent": "El creador de la carta recibe {percent}% de la compra"
+    "creator_receives_percent": "El creador de la carta recibe {percent}% de la compra",
+    "daily_deals": "Ofertas Diarias",
+    "click_to_view": "Haz clic para ver todas las ofertas",
+    "next_update": "Próxima actualización en",
+    "classic": "Clásico",
+    "elite": "Élite",
+    "card_level": "Nivel de Carta",
+    "confirm_purchase": "Confirmar Compra",
+    "tickets": "Tickets",
+    "purchase_confirmation_note": "Recibirás la carta y los tickets después de la confirmación del pago.",
+    "confirm_and_pay": "Confirmar y Pagar",
+    "wallet_required": "Dirección de billetera requerida",
+    "payment_unavailable": "Pago no disponible"
   },
   "special_day": {
     "title": "Día Especial"

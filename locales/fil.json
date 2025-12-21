@@ -323,7 +323,19 @@
     "purchase_failed": "Nabigo ang Pagbili",
     "failed_purchase_deal": "Hindi mabili ang deal",
     "deal_purchased": "Nabili na ang deal.",
-    "creator_receives_percent": "Ang Card Creator ay tumatanggap ng {percent}% ng pagbili"
+    "creator_receives_percent": "Ang Card Creator ay tumatanggap ng {percent}% ng pagbili",
+    "daily_deals": "Araw-araw na Deals",
+    "click_to_view": "I-click para makita ang lahat ng deals",
+    "next_update": "Susunod na update sa",
+    "classic": "Classic",
+    "elite": "Elite",
+    "card_level": "Card Level",
+    "confirm_purchase": "Kumpirmahin ang Pagbili",
+    "tickets": "Tickets",
+    "purchase_confirmation_note": "Makakatanggap ka ng card at tickets pagkatapos ng payment confirmation.",
+    "confirm_and_pay": "Kumpirmahin at Magbayad",
+    "wallet_required": "Kailangan ang wallet address",
+    "payment_unavailable": "Hindi available ang payment"
   },
   "special_day": {
     "title": "Special Day"
