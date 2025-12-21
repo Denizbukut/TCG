@@ -18,13 +18,13 @@ function calculatePrice(
   const eliteTicketPrice = eliteTickets * 0.1
   
   // Level price
-  const levelPrice = cardLevel * 0.1
+  const levelPrice = cardLevel * 0.05
   
   // Rarity price
   const rarityPrices: Record<string, number> = {
-    common: 0.1,
-    rare: 0.15,
-    epic: 0.2,
+    common: 0.03,
+    rare: 0.06,
+    epic: 0.9,
   }
   const rarityPrice = rarityPrices[rarity.toLowerCase()] || 0.1
   
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
     const deals = selectedCards.map((card, index) => {
       const classicTickets = randomInt(3, 10)
       const eliteTickets = randomInt(3, 10)
-      const cardLevel = randomInt(1, 5) // Random level between 1-5
+      const cardLevel = randomInt(1, 5) // Random level between 1-5 (includes level 1)
       
       const price = calculatePrice(classicTickets, eliteTickets, cardLevel, card.rarity)
 
