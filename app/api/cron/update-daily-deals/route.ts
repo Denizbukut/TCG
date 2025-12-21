@@ -6,24 +6,30 @@ function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min
 }
 
-// Calculate price based on tickets and card level
+// Calculate price based on tickets, level, and rarity
 function calculatePrice(
-  normalTickets: number,
-  legendaryTickets: number,
   classicTickets: number,
   eliteTickets: number,
-  cardLevel: number
+  cardLevel: number,
+  rarity: string
 ): number {
-  // Base price between 0.5-2.5
-  let basePrice = 0.5 + Math.random() * 2 // 0.5-2.5
+  // Ticket prices
+  const ticketPrice = classicTickets * 0.05
+  const eliteTicketPrice = eliteTickets * 0.1
   
-  // Add price for tickets (reduced multipliers)
-  const ticketPrice = (normalTickets + legendaryTickets) * 0.05 + (classicTickets + eliteTickets) * 0.08
+  // Level price
+  const levelPrice = cardLevel * 0.1
   
-  // Add price for card level (higher level = more expensive, reduced multiplier)
-  const levelPrice = (cardLevel - 1) * 0.1
+  // Rarity price
+  const rarityPrices: Record<string, number> = {
+    common: 0.1,
+    rare: 0.15,
+    epic: 0.2,
+  }
+  const rarityPrice = rarityPrices[rarity.toLowerCase()] || 0.1
   
-  const totalPrice = basePrice + ticketPrice + levelPrice
+  // Total price
+  const totalPrice = ticketPrice + eliteTicketPrice + levelPrice + rarityPrice
   
   // Ensure price is between 0.5 and 3
   return Math.max(0.5, Math.min(totalPrice, 3))
@@ -65,13 +71,16 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Select 4 random cards
-    const selectedCards: string[] = []
+    // Select 4 random cards with their full information
+    const selectedCards: Array<{ id: string; rarity: string }> = []
     const availableCards = [...cards]
     
     for (let i = 0; i < 4 && availableCards.length > 0; i++) {
       const randomIndex = Math.floor(Math.random() * availableCards.length)
-      selectedCards.push(availableCards[randomIndex].id)
+      selectedCards.push({
+        id: availableCards[randomIndex].id,
+        rarity: availableCards[randomIndex].rarity,
+      })
       availableCards.splice(randomIndex, 1) // Remove to avoid duplicates
     }
 
@@ -84,26 +93,24 @@ export async function GET(request: NextRequest) {
 
     // Generate deals for each card
     const batchTimestamp = new Date().toISOString()
-    const deals = selectedCards.map((cardId, index) => {
-      const normalTickets = randomInt(2, 5)
-      const legendaryTickets = randomInt(2, 5)
+    const deals = selectedCards.map((card, index) => {
       const classicTickets = randomInt(3, 10)
       const eliteTickets = randomInt(3, 10)
       const cardLevel = randomInt(1, 5) // Random level between 1-5
       
-      const price = calculatePrice(normalTickets, legendaryTickets, classicTickets, eliteTickets, cardLevel)
+      const price = calculatePrice(classicTickets, eliteTickets, cardLevel, card.rarity)
 
       return {
         batch_timestamp: batchTimestamp,
         deal_index: index,
-        card_id: cardId,
+        card_id: card.id,
         card_level: cardLevel,
         classic_tickets: classicTickets,
         elite_tickets: eliteTickets,
-        normal_tickets: normalTickets,
-        legendary_tickets: legendaryTickets,
+        normal_tickets: 0,
+        legendary_tickets: 0,
         price: Number(price.toFixed(2)),
-        description: `Special deal with ${normalTickets} normal tickets, ${legendaryTickets} legendary tickets, ${classicTickets} classic tickets, and ${eliteTickets} elite tickets!`,
+        description: `Special deal with ${classicTickets} classic tickets and ${eliteTickets} elite tickets!`,
         discount_percentage: 0,
         created_at: batchTimestamp,
         updated_at: batchTimestamp,
