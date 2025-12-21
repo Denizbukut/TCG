@@ -14,19 +14,19 @@ function calculatePrice(
   eliteTickets: number,
   cardLevel: number
 ): number {
-  // Base price between 1-3
-  let basePrice = 1 + Math.random() * 2 // 1-3
+  // Base price between 0.5-2.5
+  let basePrice = 0.5 + Math.random() * 2 // 0.5-2.5
   
-  // Add price for tickets
-  const ticketPrice = (normalTickets + legendaryTickets) * 0.1 + (classicTickets + eliteTickets) * 0.15
+  // Add price for tickets (reduced multipliers)
+  const ticketPrice = (normalTickets + legendaryTickets) * 0.05 + (classicTickets + eliteTickets) * 0.08
   
-  // Add price for card level (higher level = more expensive)
-  const levelPrice = (cardLevel - 1) * 0.2
+  // Add price for card level (higher level = more expensive, reduced multiplier)
+  const levelPrice = (cardLevel - 1) * 0.1
   
   const totalPrice = basePrice + ticketPrice + levelPrice
   
-  // Cap at reasonable maximum (e.g., 5)
-  return Math.min(totalPrice, 5)
+  // Ensure price is between 0.5 and 3
+  return Math.max(0.5, Math.min(totalPrice, 3))
 }
 
 export async function GET(request: NextRequest) {
@@ -41,10 +41,10 @@ export async function GET(request: NextRequest) {
 
     const supabase = getSupabaseServerClient()
 
-    // Get all obtainable cards
-    const { data: cards, error: cardsError } = await supabase
+    // Get all obtainable cards, excluding legendary cards
+    const { data: allCards, error: cardsError } = await supabase
       .from("cards")
-      .select("id")
+      .select("id, rarity")
       .eq("obtainable", true)
 
     if (cardsError) {
@@ -54,6 +54,9 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       )
     }
+
+    // Filter out legendary cards
+    const cards = allCards?.filter((card) => card.rarity !== "legendary") || []
 
     if (!cards || cards.length === 0) {
       return NextResponse.json(
@@ -118,13 +121,28 @@ export async function GET(request: NextRequest) {
 
     if (!latestError && latestBatch) {
       // Delete all batches except the latest one
-      const { error: deleteError } = await supabase
+      // Get all unique batch timestamps
+      const { data: allBatches, error: fetchAllError } = await supabase
         .from("daily_deals_batch")
-        .neq("batch_timestamp", latestBatch.batch_timestamp)
+        .select("batch_timestamp")
 
-      if (deleteError) {
-        console.error("Error deleting old batches:", deleteError)
-        // Continue anyway, not critical
+      if (!fetchAllError && allBatches && allBatches.length > 0) {
+        // Get unique batch timestamps and filter out the latest
+        const uniqueTimestamps = [...new Set(allBatches.map((b) => b.batch_timestamp))]
+        const oldTimestamps = uniqueTimestamps.filter((ts) => ts !== latestBatch.batch_timestamp)
+        
+        // Delete each old batch
+        for (const timestamp of oldTimestamps) {
+          const { error: deleteError } = await supabase
+            .from("daily_deals_batch")
+            .delete()
+            .eq("batch_timestamp", timestamp)
+
+          if (deleteError) {
+            console.error("Error deleting old batch:", deleteError)
+            // Continue anyway, not critical
+          }
+        }
       }
     }
 
