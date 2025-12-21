@@ -702,7 +702,19 @@ export async function purchaseBatchDeal(walletAddress: string, batchDealId: numb
       console.error("Error processing creator revenue (non-fatal):", creatorError)
     }
 
-    // 1. Add the card to user's collection
+    // 1. Record the purchase in daily_deals_batch_purchases
+    const { error: purchaseError } = await supabase.from("daily_deals_batch_purchases").insert({
+      wallet_address: walletAddress,
+      batch_deal_id: batchDealId,
+      purchased_at: new Date().toISOString(),
+    })
+
+    if (purchaseError) {
+      console.error("Error recording batch deal purchase:", purchaseError)
+      return { success: false, error: "Failed to record purchase" }
+    }
+
+    // 2. Add the card to user's collection
     const { error: insertCardError } = await supabase.from("user_card_instances").insert({
       wallet_address: walletAddress,
       card_id: deal.card_id,
@@ -716,7 +728,7 @@ export async function purchaseBatchDeal(walletAddress: string, batchDealId: numb
       return { success: false, error: "Failed to add card to your collection" }
     }
 
-    // 2. Add tickets to user's account
+    // 3. Add tickets to user's account
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select("tickets, elite_tickets")
