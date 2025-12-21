@@ -706,6 +706,7 @@ export async function purchaseBatchDeal(walletAddress: string, batchDealId: numb
     const { error: purchaseError } = await supabase.from("daily_deals_batch_purchases").insert({
       wallet_address: walletAddress,
       batch_deal_id: batchDealId,
+      price: deal.price,
       purchased_at: new Date().toISOString(),
     })
 

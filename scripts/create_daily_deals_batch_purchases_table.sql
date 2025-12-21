@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS public.daily_deals_batch_purchases (
   id integer NOT NULL DEFAULT nextval('daily_deals_batch_purchases_id_seq'::regclass),
   wallet_address text NOT NULL,
   batch_deal_id integer NOT NULL,
+  price numeric NOT NULL,
   purchased_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT daily_deals_batch_purchases_pkey PRIMARY KEY (id),
   CONSTRAINT daily_deals_batch_purchases_wallet_address_fkey FOREIGN KEY (wallet_address) REFERENCES public.users(wallet_address),
