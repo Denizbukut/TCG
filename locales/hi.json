@@ -43,6 +43,7 @@
     "unknown": "अज्ञात"
   },
   "rarity": {
+    "basic": "बुनियादी",
     "common": "सामान्य",
     "rare": "दुर्लभ",
     "epic": "एपिक",
@@ -158,6 +159,7 @@
     "lucky_wheel_reward_legendary_4": "+4 महान टिकट",
     "lucky_wheel_reward_regular_5_standard": "+5 नियमित टिकट",
     "lucky_wheel_reward_legendary_5_standard": "+5 महान टिकट",
+    "lucky_wheel_reward_basic": "बुनियादी कार्ड",
     "lucky_wheel_reward_common": "सामान्य कार्ड",
     "lucky_wheel_reward_rare": "दुर्लभ कार्ड",
     "lucky_wheel_reward_epic_standard": "महाकाव्य कार्ड",
@@ -687,6 +689,7 @@
     "creating_card": "कार्ड बनाया जा रहा है...",
     "cancel": "रद्द करें",
     "for": "के लिए",
+    "rarity_basic_label": "बुनियादी",
     "rarity_common_label": "Common",
     "rarity_rare_label": "Rare",
     "rarity_epic_label": "Epic",

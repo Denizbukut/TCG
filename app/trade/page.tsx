@@ -75,7 +75,7 @@ type Card = {
   name: string
   character: string
   image_url?: string
-  rarity: "common" | "rare" | "epic" | "legendary" // | "wbc" // Commented out
+  rarity: "basic" | "common" | "rare" | "epic" | "legendary" // | "wbc" // Commented out
   overall_rating?: number
   creator_address?: string
 }
@@ -311,6 +311,7 @@ export default function TradePage() {
   // Helper function to translate rarity
   const getDisplayRarity = (rarity: string) => {
     const rarityMap: Record<string, string> = {
+      basic: t("rarity.basic", "Basic"),
       common: t("rarity.common", "Common"),
       rare: t("rarity.rare", "Rare"),
       epic: t("rarity.epic", "Epic"),
@@ -1312,10 +1313,11 @@ export default function TradePage() {
                       </SelectTrigger>
                       <SelectContent className="bg-black/90 text-yellow-300 border border-yellow-400">
                         <SelectItem value="all">{t("trade.all_rarities", "All Rarities")}</SelectItem>
-                        <SelectItem value="common">{t("rarity.common", "Common")}</SelectItem>
-                        <SelectItem value="rare">{t("rarity.rare", "Rare")}</SelectItem>
-                        <SelectItem value="epic">{t("rarity.epic", "Epic")}</SelectItem>
                         <SelectItem value="legendary">{t("rarity.legendary", "Legendary")}</SelectItem>
+                        <SelectItem value="epic">{t("rarity.epic", "Epic")}</SelectItem>
+                        <SelectItem value="rare">{t("rarity.rare", "Rare")}</SelectItem>
+                        <SelectItem value="common">{t("rarity.common", "Common")}</SelectItem>
+                        <SelectItem value="basic">{t("rarity.basic", "Basic")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -2079,6 +2081,7 @@ function MarketplaceCard({
 
   const getDisplayRarity = (rarity: string) => {
     const rarityMap: Record<string, string> = {
+      basic: t("rarity.basic", "Basic"),
       common: t("rarity.common", "Common"),
       rare: t("rarity.rare", "Rare"),
       epic: t("rarity.epic", "Epic"),
@@ -2091,9 +2094,9 @@ function MarketplaceCard({
   // Map rarity to color styles
   const rarityStyles = {
     basic: {
-      border: "border-gray-400",
-      text: "text-gray-600",
-      badge: "bg-gray-500",
+      border: "border-0",
+      text: "text-gray-700",
+      badge: "bg-gray-600",
     },
     rare: {
       border: "border-blue-500",
@@ -2230,6 +2233,7 @@ function MyListingCard({
 
   const getDisplayRarity = (rarity: string) => {
     const rarityMap: Record<string, string> = {
+      basic: t("rarity.basic", "Basic"),
       common: t("rarity.common", "Common"),
       rare: t("rarity.rare", "Rare"),
       epic: t("rarity.epic", "Epic"),
@@ -2242,9 +2246,9 @@ function MyListingCard({
   // Map rarity to color styles
   const rarityStyles = {
     basic: {
-      border: "border-gray-400",
-      text: "text-gray-600",
-      badge: "bg-gray-500",
+      border: "border-0",
+      text: "text-gray-700",
+      badge: "bg-gray-600",
     },
     rare: {
       border: "border-blue-500",
@@ -2387,9 +2391,9 @@ function TransactionCard({
   // Map rarity to color styles
   const rarityStyles = {
     basic: {
-      border: "border-gray-400",
-      text: "text-gray-600",
-      badge: "bg-gray-500",
+      border: "border-0",
+      text: "text-gray-700",
+      badge: "bg-gray-600",
     },
     rare: {
       border: "border-blue-500",
@@ -2514,6 +2518,7 @@ function RecentSaleCard({
 
   const getDisplayRarity = (rarity: string) => {
     const rarityMap: Record<string, string> = {
+      basic: t("rarity.basic", "Basic"),
       common: t("rarity.common", "Common"),
       rare: t("rarity.rare", "Rare"),
       epic: t("rarity.epic", "Epic"),
@@ -2526,9 +2531,9 @@ function RecentSaleCard({
   // Map rarity to color styles
   const rarityStyles = {
     basic: {
-      border: "border-gray-400",
-      text: "text-gray-600",
-      badge: "bg-gray-500",
+      border: "border-0",
+      text: "text-gray-700",
+      badge: "bg-gray-600",
     },
     rare: {
       border: "border-blue-500",

@@ -95,6 +95,12 @@ export function CardItem({
   if (!id) return null
 
   const rarityStyles = {
+  basic: {
+    border: "border-0",
+    glow: "shadow-gray-400",
+    text: "text-gray-700",
+    gradient: "from-gray-400/30 to-gray-200/30",
+  },
   common: {
     border: "border-4 border-gray-400",
     glow: "shadow-gray-300",

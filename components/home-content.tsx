@@ -166,6 +166,7 @@ export default function Home() {
   // Helper function to translate rarity
   const getDisplayRarity = (rarity: string) => {
     const rarityMap: Record<string, string> = {
+      basic: t("rarity.basic", "Basic"),
       common: t("rarity.common", "Common"),
       uncommon: t("rarity.uncommon", "Uncommon"),
       rare: t("rarity.rare", "Rare"),
@@ -2229,6 +2230,7 @@ export default function Home() {
                 {specialDeal ? (
                   <>
                     <div className={`w-3/5 aspect-[3/4] max-h-[140px] rounded-md flex items-center justify-center mb-1 relative border-2 bg-black/20 mx-auto overflow-hidden ${
+                      specialDeal.card_rarity === 'basic' ? 'border-0' :
                       specialDeal.card_rarity === 'common' ? 'border-gray-400' :
                       specialDeal.card_rarity === 'uncommon' ? 'border-green-400' :
                       specialDeal.card_rarity === 'rare' ? 'border-blue-400' :
@@ -2350,6 +2352,7 @@ export default function Home() {
                         <div className="absolute -top-24 left-1/2 transform -translate-x-1/2 w-96 h-96 rounded-full bg-blue-500/10 blur-3xl"></div>
                       </div>
                       <div className={`relative w-40 h-56 ${
+                        specialDeal.card_rarity === 'basic' ? 'shadow-[0_0_12px_rgba(107,114,128,0.4)]' :
                         specialDeal.card_rarity === 'common' ? 'shadow-[0_0_15px_rgba(156,163,175,0.5)]' :
                         specialDeal.card_rarity === 'uncommon' ? 'shadow-[0_0_15px_rgba(34,197,94,0.5)]' :
                         specialDeal.card_rarity === 'rare' ? 'shadow-[0_0_15px_rgba(59,130,246,0.5)]' :
@@ -2359,6 +2362,7 @@ export default function Home() {
                         'shadow-[0_0_15px_rgba(61,174,245,0.5)]'
                       }`}>
                         <div className={`absolute inset-0 rounded-lg border-2 overflow-hidden ${
+                          specialDeal.card_rarity === 'basic' ? 'border-0' :
                           specialDeal.card_rarity === 'common' ? 'border-gray-400' :
                           specialDeal.card_rarity === 'uncommon' ? 'border-green-400' :
                           specialDeal.card_rarity === 'rare' ? 'border-blue-400' :

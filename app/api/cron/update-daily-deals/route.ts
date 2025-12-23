@@ -22,6 +22,7 @@ function calculatePrice(
   
   // Rarity price
   const rarityPrices: Record<string, number> = {
+    basic: 0.015,
     common: 0.03,
     rare: 0.06,
     epic: 0.9,

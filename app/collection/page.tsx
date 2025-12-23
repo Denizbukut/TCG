@@ -351,7 +351,8 @@ export default function CollectionPage() {
       (activeTab === "legendary" && (card.rarity?.toLowerCase() === "legendary" || card.rarity?.toLowerCase() === "ultima" || card.rarity?.toLowerCase() === "ultimate")) || 
       (activeTab === "epic" && (card.rarity?.toLowerCase() === "epic" || card.rarity?.toLowerCase() === "elite")) ||
       (activeTab === "rare" && card.rarity?.toLowerCase() === "rare") ||
-      (activeTab === "common" && (card.rarity?.toLowerCase() === "common" || card.rarity?.toLowerCase() === "basic"))
+      (activeTab === "common" && card.rarity?.toLowerCase() === "common") ||
+      (activeTab === "basic" && card.rarity?.toLowerCase() === "basic")
       // (activeTab === "wbc" && card.rarity?.toLowerCase() === "wbc") // Commented out
 
     const matchesEpoch = selectedEpoch === "all" || card.epoch === selectedEpoch
@@ -392,8 +393,10 @@ export default function CollectionPage() {
           rarityKey = 'epic'
         } else if (rarityKey === 'rare') {
           rarityKey = 'rare'
-        } else if (rarityKey === 'common' || rarityKey === 'basic') {
+        } else if (rarityKey === 'common') {
           rarityKey = 'common'
+        } else if (rarityKey === 'basic') {
+          rarityKey = 'basic'
         } else if (rarityKey === 'goat') {
           rarityKey = 'goat'
         }
@@ -407,7 +410,7 @@ export default function CollectionPage() {
       }
       return acc
     },
-    { total: 0, common: 0, rare: 0, epic: 0, legendary: 0, goat: 0 },
+    { total: 0, basic: 0, common: 0, rare: 0, epic: 0, legendary: 0, goat: 0 },
   )
   
   // Debug: Log the final stats
@@ -476,8 +479,8 @@ export default function CollectionPage() {
         <div className="p-4 max-w-lg mx-auto">
           <div className="bg-black/80 rounded-2xl shadow-sm mb-4 p-4 border border-yellow-500">
             <Skeleton className="h-6 w-32 mb-3 bg-yellow-500/20" />
-            <div className="grid grid-cols-5 gap-2">
-              {Array.from({ length: 5 }).map((_, i) => (
+            <div className="grid grid-cols-3 gap-2">
+              {Array.from({ length: 6 }).map((_, i) => (
                 <Skeleton key={i} className="h-16 rounded-lg bg-yellow-500/20" />
               ))}
             </div>
@@ -752,10 +755,11 @@ export default function CollectionPage() {
             <div className="grid grid-cols-3 gap-2 text-center">
               {[
                 { label: t("collection.total", "Total"), value: collectionStats.total, color: "text-yellow-300" },
-                { label: t("rarity.common", "Common"), value: collectionStats.common, color: "text-yellow-300" },
-                { label: t("rarity.rare", "Rare"), value: collectionStats.rare, color: "text-blue-400" },
-                { label: t("rarity.epic", "Epic"), value: collectionStats.epic, color: "text-purple-400" },
                 { label: t("rarity.legendary", "Legendary"), value: collectionStats.legendary, color: "text-amber-400" },
+                { label: t("rarity.epic", "Epic"), value: collectionStats.epic, color: "text-purple-400" },
+                { label: t("rarity.rare", "Rare"), value: collectionStats.rare, color: "text-blue-400" },
+                { label: t("rarity.common", "Common"), value: collectionStats.common, color: "text-yellow-300" },
+                { label: t("rarity.basic", "Basic"), value: collectionStats.basic, color: "text-gray-400" },
               ].map((stat) => (
                 <div key={stat.label} className="bg-black/60 rounded-lg p-2 border border-yellow-500/50">
                   <div className={`text-lg font-semibold ${stat.color}`}>{stat.value}</div>
@@ -812,21 +816,24 @@ export default function CollectionPage() {
           )}
 
           <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-5 bg-black/80 border-yellow-500 h-9">
-              <TabsTrigger value="all" className="text-xs h-7 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">
+            <TabsList className="grid w-full grid-cols-6 bg-black/80 border-yellow-500 h-10 gap-0.5 p-0.5">
+              <TabsTrigger value="all" className="text-[10px] sm:text-xs h-8 px-1 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black truncate">
                 {t("collection.all", "All")}
               </TabsTrigger>
-              <TabsTrigger value="legendary" className="text-xs h-7 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">
+              <TabsTrigger value="legendary" className="text-[10px] sm:text-xs h-8 px-1 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black truncate">
                 {t("rarity.legendary", "Legendary")}
               </TabsTrigger>
-              <TabsTrigger value="epic" className="text-xs h-7 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">
+              <TabsTrigger value="epic" className="text-[10px] sm:text-xs h-8 px-1 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black truncate">
                 {t("rarity.epic", "Epic")}
               </TabsTrigger>
-              <TabsTrigger value="rare" className="text-xs h-7 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">
+              <TabsTrigger value="rare" className="text-[10px] sm:text-xs h-8 px-1 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black truncate">
                 {t("rarity.rare", "Rare")}
               </TabsTrigger>
-              <TabsTrigger value="common" className="text-xs h-7 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">
+              <TabsTrigger value="common" className="text-[10px] sm:text-xs h-8 px-1 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black truncate">
                 {t("rarity.common", "Common")}
+              </TabsTrigger>
+              <TabsTrigger value="basic" className="text-[10px] sm:text-xs h-8 px-1 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black truncate">
+                {t("rarity.basic", "Basic")}
               </TabsTrigger>
               {/* <TabsTrigger value="wbc" className="text-xs h-7 text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">
                 WBC

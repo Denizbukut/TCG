@@ -119,7 +119,7 @@ export default function UserCollectionClient({
         {/* Tabs for filtering by rarity */}
         <div className="mb-4">
           <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-5 bg-white h-9">
+            <TabsList className="grid w-full grid-cols-6 bg-white h-9">
               <TabsTrigger value="all" className="text-xs h-7">
                 All
               </TabsTrigger>
@@ -134,6 +134,9 @@ export default function UserCollectionClient({
               </TabsTrigger>
               <TabsTrigger value="common" className="text-xs h-7">
                 Common
+              </TabsTrigger>
+              <TabsTrigger value="basic" className="text-xs h-7">
+                Basic
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -162,6 +165,7 @@ export default function UserCollectionClient({
                       character={card.cardDetails?.character || "Unknown Character"}
                       imageUrl={card.cardDetails?.imageUrl}
                       rarity={card.cardDetails?.rarity?.toLowerCase() || "common"}
+                      epoch={card.cardDetails?.epoch || 1}
                       level={card.level || 1}
                       quantity={card.quantity || 1}
                       owned={true}

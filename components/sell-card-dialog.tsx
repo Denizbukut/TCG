@@ -22,7 +22,7 @@ type UserCard = {
   name: string
   character: string
   image_url?: string
-  rarity: "common" | "rare" | "epic" | "elite" | "legendary" | "ultimate" | "goat" | "wbc"
+  rarity: "basic" | "common" | "rare" | "epic" | "elite" | "legendary" | "ultimate" | "goat" | "wbc"
   overall_rating?: number
   level: number
   quantity: number
@@ -206,10 +206,18 @@ export default function SellCardDialog({ isOpen, onClose, card, walletAddress, o
   } else if (card.rarity === "elite") {
     minUsdPrice = 0.5
     console.log("Elite rarity detected, setting min price to $0.50")
-  }
+  } else if (card.rarity === "basic") {
+    minUsdPrice = 0.04
+    console.log("Basic rarity detected, setting min price to $0.04")
+    }
   
   // Mindestpreis wird mit dem Level multipliziert
-  minUsdPrice = minUsdPrice * card.level
+  // Basic-Karten: Jedes Level doppelter Preis (0.04 * 2^(level-1))
+  if (card.rarity === "basic") {
+    minUsdPrice = 0.04 * Math.pow(2, card.level - 1)
+  } else {
+    minUsdPrice = minUsdPrice * card.level
+  }
   console.log("Min price adjusted for level:", { level: card.level, minUsdPrice })
   
   const minWldPrice = priceUsdPerWLD ? minUsdPrice / priceUsdPerWLD : minUsdPrice
@@ -293,6 +301,11 @@ export default function SellCardDialog({ isOpen, onClose, card, walletAddress, o
 
   // Map rarity to color styles
   const rarityStyles = {
+    basic: {
+      border: "border-0",
+      text: "text-gray-700",
+      badge: "bg-gray-600 text-white font-semibold",
+    },
     common: {
       border: "border-gray-400",
       text: "text-gray-600",

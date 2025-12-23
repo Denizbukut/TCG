@@ -52,6 +52,7 @@ export default function PremiumPassPage() {
   // Helper function to translate rarity
   const getDisplayRarity = (rarity: string) => {
     const rarityMap: Record<string, string> = {
+      basic: t("rarity.basic", "Basic"),
       common: t("rarity.common", "Common"),
       rare: t("rarity.rare", "Rare"),
       epic: t("rarity.epic", "Epic"),
@@ -1023,18 +1024,20 @@ const handlePurchaseXpPass = async () => {
   const renderDropRateComparison = () => {
     // Regular pack rates (without Premium Pass)
     const regularRates = [
-      { rarity: "Common", rate: 60, color: "bg-gray-400" },
+      { rarity: "Basic", rate: 20, color: "bg-gray-500" },
+      { rarity: "Common", rate: 40, color: "bg-gray-400" },
       { rarity: "Rare", rate: 34, color: "bg-blue-500" },
       { rarity: "Epic", rate: 6, color: "bg-purple-500" },
-      { rarity: "Legendary", rate: 0, color: "bg-blue-500" },
+      { rarity: "Legendary", rate: 0, color: "bg-yellow-500" },
     ]
 
     // Regular pack rates (with Premium Pass)
     const improvedRegularRates = [
-      { rarity: "Common", rate: 50, color: "bg-gray-400" },
+      { rarity: "Basic", rate: 20, color: "bg-gray-500" },
+      { rarity: "Common", rate: 30, color: "bg-gray-400" },
       { rarity: "Rare", rate: 34, color: "bg-blue-500" },
       { rarity: "Epic", rate: 15, color: "bg-purple-500" },
-      { rarity: "Legendary", rate: 1, color: "bg-blue-500" },
+      { rarity: "Legendary", rate: 1, color: "bg-yellow-500" },
     ]
 
     return (

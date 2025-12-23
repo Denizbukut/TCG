@@ -19,15 +19,18 @@ const rarityMapping: Record<string, string> = {
   epic: "E",
   rare: "R",
   common: "C",
+  basic: "B",
   // wbc: "WBC" // Commented out
 };
 
 // Map display categories back to database rarities
 const categoryToRarities: Record<string, string[]> = {
   L: ["legendary"],
+  U: ["legendary"], // Ultimate = Legendary
   E: ["epic"],
   R: ["rare"],
   C: ["common"],
+  B: ["basic"],
   // WBC: ["wbc"] // Commented out
 };
 
@@ -172,8 +175,8 @@ export default function CardCatalog({ username, searchTerm = "" }: CardCatalogPr
     return acc
   }, {})
 
-  // Sort categories in order: L, E, R, C (WBC commented out)
-  const sortedCategories = ["L", "E", "R", "C"].filter(
+  // Sort categories in order: L, E, R, C, B (WBC commented out)
+  const sortedCategories = ["L", "E", "R", "C", "B"].filter(
     (category) => cardsByRarity[category] && cardsByRarity[category].length > 0,
   )
 
@@ -211,18 +214,21 @@ export default function CardCatalog({ username, searchTerm = "" }: CardCatalogPr
     <div className="w-full">
       
       <Tabs defaultValue="all" className="w-full text-black" onValueChange={setActiveTab}>
-      <TabsList className="grid w-full grid-cols-5 bg-white text-black">
+      <TabsList className="grid w-full grid-cols-6 bg-white text-black">
         <TabsTrigger value="all" className="text-black data-[state=active]:bg-gray-200 data-[state=active]:text-black">
           All
         </TabsTrigger>
-        <TabsTrigger value="U" className="text-black data-[state=active]:bg-gray-200 data-[state=active]:text-black">
-          Ultimate
+        <TabsTrigger value="L" className="text-black data-[state=active]:bg-gray-200 data-[state=active]:text-black">
+          Legendary
         </TabsTrigger>
         <TabsTrigger value="E" className="text-black data-[state=active]:bg-gray-200 data-[state=active]:text-black">
-          Elite
+          Epic
         </TabsTrigger>
         <TabsTrigger value="R" className="text-black data-[state=active]:bg-gray-200 data-[state=active]:text-black">
           Rare
+        </TabsTrigger>
+        <TabsTrigger value="C" className="text-black data-[state=active]:bg-gray-200 data-[state=active]:text-black">
+          Common
         </TabsTrigger>
         <TabsTrigger value="B" className="text-black data-[state=active]:bg-gray-200 data-[state=active]:text-black">
           Basic
@@ -248,6 +254,8 @@ export default function CardCatalog({ username, searchTerm = "" }: CardCatalogPr
                   ? "Rare"
                   : category === "C"
                   ? "Common"
+                  : category === "B"
+                  ? "Basic"
                   // : category === "WBC"
                   // ? "WBC"
                   : category}
@@ -286,7 +294,7 @@ export default function CardCatalog({ username, searchTerm = "" }: CardCatalogPr
         ))}
       </TabsContent>
 
-      {["U", "E", "R", "B"].map((category) => (
+      {["L", "E", "R", "C", "B"].map((category) => (
         <TabsContent key={category} value={category} className="mt-4 text-black">
           <motion.div
             className="grid grid-cols-5 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2"

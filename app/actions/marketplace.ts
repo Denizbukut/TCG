@@ -49,7 +49,7 @@ const MAX_USER_LISTINGS = 3
 const DEFAULT_PAGE_SIZE = 20
 
 // Card rarity type
-type CardRarity = "common" | "rare" | "epic" | "legendary" | "goat" // | "wbc" // Commented out
+type CardRarity = "basic" | "common" | "rare" | "epic" | "legendary" | "goat" // | "wbc" // Commented out
 
 // Function to calculate score based on card rarity
 function getScoreForRarity(rarity: CardRarity): number {
@@ -647,10 +647,17 @@ export async function createListing(
       minUsdPrice = 0.34
     } else if (cardDetails.rarity === "common") {
       minUsdPrice = 0.15
+    } else if (cardDetails.rarity === "basic") {
+      minUsdPrice = 0.04
     }
 
     // Mindestpreis wird mit dem Level multipliziert
-    minUsdPrice = minUsdPrice * cardLevel
+    // Basic-Karten: Jedes Level doppelter Preis (0.04 * 2^(level-1))
+    if (cardDetails.rarity === "basic") {
+      minUsdPrice = 0.04 * Math.pow(2, cardLevel - 1)
+    } else {
+      minUsdPrice = minUsdPrice * cardLevel
+    }
 
     const minWldPrice = priceUsdPerWLD ? minUsdPrice / priceUsdPerWLD : minUsdPrice
     // Round down to 2 decimal places to match what users see in the UI
@@ -662,7 +669,8 @@ export async function createListing(
       cardType = cardDetails.rarity === "legendary" ? "Legendary" : 
                 cardDetails.rarity === "epic" ? "Epic" : 
                 cardDetails.rarity === "rare" ? "Rare" : 
-                cardDetails.rarity === "common" ? "Common" : "cards"
+                cardDetails.rarity === "common" ? "Common" :
+                cardDetails.rarity === "basic" ? "Basic" : "cards"
       
       return {
         success: false,

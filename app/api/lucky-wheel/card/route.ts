@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getSupabaseServerClient } from "@/lib/supabase"
 
 const SCORE_BY_RARITY: Record<string, number> = {
+  basic: 0.5,
   common: 1,
   rare: 3,
   epic: 8,
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
       )
     }
 
-    if (!["common", "rare", "epic", "legendary"].includes(rarity)) {
+    if (!["basic", "common", "rare", "epic", "legendary"].includes(rarity)) {
       return NextResponse.json(
         { success: false, error: "Unsupported rarity for wheel reward" },
         { status: 400 },

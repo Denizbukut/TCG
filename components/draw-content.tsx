@@ -50,7 +50,7 @@ const isUserBanned = (username: string): boolean => {
 }
 
 // Rarität definieren - UPDATED: Changed rarity names
-type CardRarity = "common" | "rare" | "epic" | "legendary" | "godlike"
+type CardRarity = "basic" | "common" | "rare" | "epic" | "legendary" | "godlike"
 
 const FALLBACK_CARDS = [
   {
@@ -98,11 +98,11 @@ const RARITY_COLORS = {
     bg: "bg-gray-100",
   },
   basic: {
-    border: "card-border-common",
-    glow: "shadow-gray-300",
-    text: "text-gray-600",
-    gradient: "from-gray-300/30 to-gray-100/30",
-    bg: "bg-gray-100",
+    border: "card-border-basic",
+    glow: "shadow-gray-400",
+    text: "text-gray-700",
+    gradient: "from-gray-400/30 to-gray-200/30",
+    bg: "bg-gray-200",
   },
   rare: {
     border: "card-border-rare",
@@ -275,8 +275,10 @@ const [showInfo, setShowInfo] = useState(false)
       // Tickets 1 (most common - 30% each = 60% total)
       { label: t("draw.lucky_wheel_reward_regular_1", "+1 Regular Ticket"), color: "#3B82F6", dropRate: 30, reward: { type: "tickets", ticketType: "regular" as const, amount: 1 } },
       { label: t("draw.lucky_wheel_reward_legendary_1", "+1 Legendary Ticket"), color: "#A855F7", dropRate: 30, reward: { type: "tickets", ticketType: "legendary" as const, amount: 1 } },
-      // Common Cards (26%)
-      { label: t("draw.lucky_wheel_reward_common", "Common Card"), color: "#9CA3AF", dropRate: 26, reward: { type: "card", rarity: "common" as const } },
+      // Common Cards (13%)
+      { label: t("draw.lucky_wheel_reward_common", "Common Card"), color: "#9CA3AF", dropRate: 13, reward: { type: "card", rarity: "common" as const } },
+      // Basic Cards (13%)
+      { label: t("draw.lucky_wheel_reward_basic", "Basic Card"), color: "#6B7280", dropRate: 13, reward: { type: "card", rarity: "basic" as const } },
       // Tickets 2 (2.5% each = 5% total)
       { label: t("draw.lucky_wheel_reward_regular_2", "+2 Regular Tickets"), color: "#3B82F6", dropRate: 2.5, reward: { type: "tickets", ticketType: "regular" as const, amount: 2 } },
       { label: t("draw.lucky_wheel_reward_legendary_2", "+2 Legendary Tickets"), color: "#A855F7", dropRate: 2.5, reward: { type: "tickets", ticketType: "legendary" as const, amount: 2 } },
@@ -1012,13 +1014,15 @@ const [showInfo, setShowInfo] = useState(false)
           try {
             const supabase = getSupabaseBrowserClient()
             if (supabase) {
-              // Calculate points: Common = 2, Rare = 2, Epic = 5, Legendary = 40
+              // Calculate points: Basic = 1, Common = 2, Rare = 2, Epic = 5, Legendary = 40
+              const basicCards = result.cards.filter((card: any) => card.rarity === "basic")
               const commonCards = result.cards.filter((card: any) => card.rarity === "common")
               const rareCards = result.cards.filter((card: any) => card.rarity === "rare")
               const epicCards = result.cards.filter((card: any) => card.rarity === "epic")
               const legendaryCards = result.cards.filter((card: any) => card.rarity === "legendary")
               
               let totalPoints = 0
+              totalPoints += basicCards.length * 1
               totalPoints += commonCards.length * 2
               totalPoints += rareCards.length * 2
               totalPoints += epicCards.length * 5
@@ -2310,19 +2314,20 @@ const [showInfo, setShowInfo] = useState(false)
         common: Math.round(common * 10) / 10,
       }
     } else {
-      // Regular pack
+      // Regular pack (includes Basic rarity)
       if (hasPremiumPass) {
-        // Base: 1% legendary, 15% epic, 34% rare, 50% common
+        // Base: 1% legendary, 15% epic, 34% rare, 30% common, 20% basic
         let legendary = 1
         let epic = 15
         let rare = 34
-        let common = 50
+        let common = 30
+        let basic = 20
 
         if (hasDropRateBoost && legendaryBonus > 0) {
-          // Add absolute percentage points to legendary, subtract from common
+          // Add absolute percentage points to legendary, subtract from basic
           legendary = 1 + legendaryBonus
-          common = 50 - legendaryBonus
-          if (common < 0) common = 0
+          basic = 20 - legendaryBonus
+          if (basic < 0) basic = 0
         }
 
         return {
@@ -2330,19 +2335,21 @@ const [showInfo, setShowInfo] = useState(false)
           epic: Math.round(epic * 10) / 10,
           rare: Math.round(rare * 10) / 10,
           common: Math.round(common * 10) / 10,
+          basic: Math.round(basic * 10) / 10,
         }
       } else {
-        // Base: 0% legendary, 6% epic, 34% rare, 60% common
+        // Base: 0% legendary, 6% epic, 34% rare, 40% common, 20% basic
         let legendary = 0
         let epic = 6
         let rare = 34
-        let common = 60
+        let common = 40
+        let basic = 20
 
         if (hasDropRateBoost && legendaryBonus > 0) {
-          // Add absolute percentage points to legendary, subtract from common
+          // Add absolute percentage points to legendary, subtract from basic
           legendary = 0 + legendaryBonus
-          common = 60 - legendaryBonus
-          if (common < 0) common = 0
+          basic = 20 - legendaryBonus
+          if (basic < 0) basic = 0
         }
 
         return {
@@ -2350,6 +2357,7 @@ const [showInfo, setShowInfo] = useState(false)
           epic: Math.round(epic * 10) / 10,
           rare: Math.round(rare * 10) / 10,
           common: Math.round(common * 10) / 10,
+          basic: Math.round(basic * 10) / 10,
         }
       }
     }
@@ -2373,6 +2381,7 @@ const [showInfo, setShowInfo] = useState(false)
   const getRarityStats = () => {
     // Nur die gewünschten Rarities für die Anzeige
     const stats: Record<string, number> = {
+      basic: 0,
       common: 0,
       rare: 0,
       epic: 0,
@@ -2381,7 +2390,6 @@ const [showInfo, setShowInfo] = useState(false)
     drawnCards.forEach((card) => {
       // Mappe alte Namen auf neue
       let key = card.rarity
-      if (key === 'basic') key = 'common'
       if (key === 'elite') key = 'legendary'
       if (key === 'ultima') key = 'legendary'
       if (stats.hasOwnProperty(key)) {
@@ -2393,7 +2401,8 @@ const [showInfo, setShowInfo] = useState(false)
 
   // Hilfsfunktion für die Anzeige der Rarity-Namen
   const getDisplayRarity = (rarity: string) => {
-    if (rarity === 'common' || rarity === 'basic') return t('rarity.common', 'Common');
+    if (rarity === 'basic') return t('rarity.basic', 'Basic');
+    if (rarity === 'common') return t('rarity.common', 'Common');
     if (rarity === 'rare') return t('rarity.rare', 'Rare');
     if (rarity === 'epic') return t('rarity.epic', 'Epic');
     if (rarity === 'legendary' || rarity === 'ultima') return t('rarity.legendary', 'Legendary');
@@ -3441,6 +3450,10 @@ const [showInfo, setShowInfo] = useState(false)
                               return (
                                 <div className="space-y-2">
                                   <div className="flex justify-between items-center text-sm">
+                                    <span className="text-gray-600">{t("rarity.basic", "Basic")}</span>
+                                    <span className="text-gray-600">{percentages.basic || 10}%</span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-sm">
                                     <span className="text-gray-500">{t("rarity.common", "Common")}</span>
                                     <span className="text-gray-500">{percentages.common}%</span>
                                   </div>
@@ -3503,32 +3516,38 @@ const [showInfo, setShowInfo] = useState(false)
                                 PASS ACTIVE
                               </div>
                             )}
-                            <div className="space-y-2">
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-500">{t("rarity.common", "Common")}</span>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-gray-500">{hasPremiumPass ? "50%" : "60%"}</span>
+                            {(() => {
+                              const percentages = getRarityPercentages("regular")
+                              return (
+                                <div className="space-y-2">
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span className="text-gray-600">{t("rarity.basic", "Basic")}</span>
+                                    <span className="text-gray-600">{percentages.basic || 20}%</span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span className="text-gray-500">{t("rarity.common", "Common")}</span>
+                                    <span className="text-gray-500">{percentages.common}%</span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span className="text-blue-500">{t("rarity.rare", "Rare")}</span>
+                                    <span className="text-blue-500">{percentages.rare}%</span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span className="text-purple-500">{t("rarity.epic", "Epic")}</span>
+                                    <span className="text-purple-500">{percentages.epic}%</span>
+                                  </div>
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span className="text-amber-500">{t("rarity.legendary", "Legendary")}</span>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-amber-500">{percentages.legendary}%</span>
+                                      {hasDropRateBoost && legendaryBonus > 0 && (
+                                        <span className="text-xs text-red-400">(+{legendaryBonus}%)</span>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-blue-500">{t("rarity.rare", "Rare")}</span>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-blue-500">{hasPremiumPass ? "34%" : "34%"}</span>
-                                </div>
-                              </div>
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-purple-500">{t("rarity.epic", "Epic")}</span>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-purple-500">{hasPremiumPass ? "14%" : "5%"}</span>
-                                </div>
-                              </div>
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-amber-500">{t("rarity.legendary", "Legendary")}</span>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-amber-500">{hasPremiumPass ? "2%" : "1%"}</span>
-                                </div>
-                              </div>
-                            </div>
+                              )
+                            })()}
                           </div>
                         )}
                       </div>
@@ -3745,13 +3764,13 @@ const [showInfo, setShowInfo] = useState(false)
                 </div>
 
                 <div className="bg-white border-b border-gray-200 px-4 py-3">
-                  <div className="grid grid-cols-4 gap-2 text-center">
-                    {['common', 'rare', 'epic', 'legendary'].map((rarity) => (
-                      <div key={rarity} className={`p-2 rounded-lg ${getRarityStyles(rarity as CardRarity).bg}`}>
-                        <div className={`text-xs font-medium ${getRarityStyles(rarity as CardRarity).text}`}>
+                  <div className="grid grid-cols-5 gap-1.5 text-center">
+                    {['basic', 'common', 'rare', 'epic', 'legendary'].map((rarity) => (
+                      <div key={rarity} className={`p-2 rounded-lg ${getRarityStyles(rarity as CardRarity).bg} min-h-[60px] flex flex-col justify-center`}>
+                        <div className={`text-[10px] sm:text-xs font-medium ${getRarityStyles(rarity as CardRarity).text} truncate leading-tight mb-1`}>
                           {getDisplayRarity(rarity)}
                         </div>
-                        <div className="text-lg font-bold">{getRarityStats()[rarity]}</div>
+                        <div className={`text-base sm:text-lg font-bold ${getRarityStyles(rarity as CardRarity).text}`}>{getRarityStats()[rarity]}</div>
                       </div>
                     ))}
 

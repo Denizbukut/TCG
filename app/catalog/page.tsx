@@ -149,13 +149,14 @@ export default function CatalogPage() {
     return acc
   }, {})
 
-  // Sort categories in order: legendary, epic, rare, common
-  const sortedCategories = ["legendary", "epic", "rare", "common"].filter(
+  // Sort categories in order: legendary, epic, rare, common, basic
+  const sortedCategories = ["legendary", "epic", "rare", "common", "basic"].filter(
     (category) => cardsByRarity[category] && cardsByRarity[category].length > 0,
   )
 
   const getDisplayRarity = (rarity: string) => {
     const rarityMap: Record<string, string> = {
+      basic: t("rarity.basic", "Basic"),
       common: t("rarity.common", "Common"),
       rare: t("rarity.rare", "Rare"),
       epic: t("rarity.epic", "Epic"),
@@ -252,6 +253,7 @@ export default function CatalogPage() {
           <TabsTrigger value="epic" className="text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">{t("rarity.epic", "Epic")}</TabsTrigger>
           <TabsTrigger value="rare" className="text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">{t("rarity.rare", "Rare")}</TabsTrigger>
           <TabsTrigger value="common" className="text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">{t("rarity.common", "Common")}</TabsTrigger>
+          <TabsTrigger value="basic" className="text-yellow-300 data-[state=active]:bg-yellow-500 data-[state=active]:text-black">{t("rarity.basic", "Basic")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="mt-4">
@@ -297,7 +299,7 @@ export default function CatalogPage() {
           ))}
         </TabsContent>
 
-        {["legendary", "epic", "rare", "common"].map((category) => (
+        {["legendary", "epic", "rare", "common", "basic"].map((category) => (
           <TabsContent key={category} value={category} className="mt-4">
             <motion.div
               className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3"

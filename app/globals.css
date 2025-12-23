@@ -46,6 +46,10 @@ html {
 }
 
 @layer components {
+  .card-border-basic {
+    @apply border-0;
+  }
+
   .card-border-common {
     @apply border-4 border-gray-400;
   }

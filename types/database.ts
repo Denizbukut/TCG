@@ -68,7 +68,7 @@ export interface IconPass {
     name: string
     character: string
     image_url?: string
-    rarity: "common" | "rare" | "epic" | "legendary"
+    rarity: "basic" | "common" | "rare" | "epic" | "legendary"
     type?: string
     description?: string
   }

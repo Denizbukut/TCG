@@ -29,7 +29,8 @@ const PREMIUM_DROP_RATES = {
 const STANDARD_DROP_RATES = {
   regular_tickets_1: 30,
   legendary_tickets_1: 30,
-  common_card: 26,
+  common_card: 13,
+  basic_card: 13,
   regular_tickets_2: 2.5,
   legendary_tickets_2: 2.5,
   regular_tickets_3: 2,
@@ -81,24 +82,26 @@ const STANDARD_SEGMENT_MAP = [
   { index: 0, reward: { type: "tickets", ticketType: "regular", amount: 1 }, weight: STANDARD_DROP_RATES.regular_tickets_1 },
   // Index 1: +1 Legendary Ticket (30%)
   { index: 1, reward: { type: "tickets", ticketType: "legendary", amount: 1 }, weight: STANDARD_DROP_RATES.legendary_tickets_1 },
-  // Index 2: Common Card (26%)
+  // Index 2: Common Card (13%)
   { index: 2, reward: { type: "card", rarity: "common" }, weight: STANDARD_DROP_RATES.common_card },
-  // Index 3: +2 Regular Tickets (2.5%)
-  { index: 3, reward: { type: "tickets", ticketType: "regular", amount: 2 }, weight: STANDARD_DROP_RATES.regular_tickets_2 },
-  // Index 4: +2 Legendary Tickets (2.5%)
-  { index: 4, reward: { type: "tickets", ticketType: "legendary", amount: 2 }, weight: STANDARD_DROP_RATES.legendary_tickets_2 },
-  // Index 5: +3 Regular Tickets (2%)
-  { index: 5, reward: { type: "tickets", ticketType: "regular", amount: 3 }, weight: STANDARD_DROP_RATES.regular_tickets_3 },
-  // Index 6: +3 Legendary Tickets (2%)
-  { index: 6, reward: { type: "tickets", ticketType: "legendary", amount: 3 }, weight: STANDARD_DROP_RATES.legendary_tickets_3 },
-  // Index 7: Rare Card (2.5%)
-  { index: 7, reward: { type: "card", rarity: "rare" }, weight: STANDARD_DROP_RATES.rare_card },
-  // Index 8: Epic Card (1.5%)
-  { index: 8, reward: { type: "card", rarity: "epic" }, weight: STANDARD_DROP_RATES.epic_card },
-  // Index 9: Legendary Card (0.5%)
-  { index: 9, reward: { type: "card", rarity: "legendary" }, weight: STANDARD_DROP_RATES.legendary_card },
-  // Index 10: Deal of the Day Bundle (0.5%)
-  { index: 10, reward: { type: "deal", deal: "daily" }, weight: STANDARD_DROP_RATES.deal_of_the_day },
+  // Index 3: Basic Card (13%)
+  { index: 3, reward: { type: "card", rarity: "basic" }, weight: STANDARD_DROP_RATES.basic_card },
+  // Index 4: +2 Regular Tickets (2.5%)
+  { index: 4, reward: { type: "tickets", ticketType: "regular", amount: 2 }, weight: STANDARD_DROP_RATES.regular_tickets_2 },
+  // Index 5: +2 Legendary Tickets (2.5%)
+  { index: 5, reward: { type: "tickets", ticketType: "legendary", amount: 2 }, weight: STANDARD_DROP_RATES.legendary_tickets_2 },
+  // Index 6: +3 Regular Tickets (2%)
+  { index: 6, reward: { type: "tickets", ticketType: "regular", amount: 3 }, weight: STANDARD_DROP_RATES.regular_tickets_3 },
+  // Index 7: +3 Legendary Tickets (2%)
+  { index: 7, reward: { type: "tickets", ticketType: "legendary", amount: 3 }, weight: STANDARD_DROP_RATES.legendary_tickets_3 },
+  // Index 8: Rare Card (2.5%)
+  { index: 8, reward: { type: "card", rarity: "rare" }, weight: STANDARD_DROP_RATES.rare_card },
+  // Index 9: Epic Card (1.5%)
+  { index: 9, reward: { type: "card", rarity: "epic" }, weight: STANDARD_DROP_RATES.epic_card },
+  // Index 10: Legendary Card (0.5%)
+  { index: 10, reward: { type: "card", rarity: "legendary" }, weight: STANDARD_DROP_RATES.legendary_card },
+  // Index 11: Deal of the Day Bundle (0.5%)
+  { index: 11, reward: { type: "deal", deal: "daily" }, weight: STANDARD_DROP_RATES.deal_of_the_day },
 ]
 
 // Calculate cumulative weights for weighted random selection

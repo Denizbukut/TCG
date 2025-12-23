@@ -4,7 +4,7 @@
  * Helper functions for calculating creator revenue shares based on card rarity
  */
 
-export type Rarity = "common" | "rare" | "epic" | "legendary" | "godlike" | "goat" | "wbc"
+export type Rarity = "basic" | "common" | "rare" | "epic" | "legendary" | "godlike" | "goat" | "wbc"
 
 /**
  * Get revenue split for Daily Deal / Special Deal
@@ -12,6 +12,7 @@ export type Rarity = "common" | "rare" | "epic" | "legendary" | "godlike" | "goa
  */
 export function getDealRevenueSplit(rarity: Rarity): { devShare: number; creatorShare: number } {
   const splits: Record<string, { devShare: number; creatorShare: number }> = {
+    basic: { devShare: 0.99, creatorShare: 0.01 }, // 1% for basic
     common: { devShare: 0.95, creatorShare: 0.05 },
     rare: { devShare: 0.85, creatorShare: 0.15 },
     epic: { devShare: 0.70, creatorShare: 0.30 },
@@ -30,6 +31,7 @@ export function getDealRevenueSplit(rarity: Rarity): { devShare: number; creator
  */
 export function getMarketRevenueSplit(rarity: Rarity): { sellerShare: number; devShare: number; creatorShare: number } {
   const splits: Record<string, { sellerShare: number; devShare: number; creatorShare: number }> = {
+    basic: { sellerShare: 0.90, devShare: 0.10, creatorShare: 0.00 }, // 0% for basic
     common: { sellerShare: 0.90, devShare: 0.09, creatorShare: 0.01 },
     rare: { sellerShare: 0.90, devShare: 0.08, creatorShare: 0.02 },
     epic: { sellerShare: 0.90, devShare: 0.07, creatorShare: 0.03 },

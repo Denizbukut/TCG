@@ -43,6 +43,7 @@
     "unknown": "Hindi alam"
   },
   "rarity": {
+    "basic": "Pangunahing",
     "common": "Karaniwan",
     "rare": "Bihira",
     "epic": "Epiko",
@@ -158,6 +159,7 @@
     "lucky_wheel_reward_legendary_4": "+4 Alamat na Tickets",
     "lucky_wheel_reward_regular_5_standard": "+5 Regular na Tickets",
     "lucky_wheel_reward_legendary_5_standard": "+5 Alamat na Tickets",
+    "lucky_wheel_reward_basic": "Pangunahing Kard",
     "lucky_wheel_reward_common": "Karaniwang Kard",
     "lucky_wheel_reward_rare": "Bihirang Kard",
     "lucky_wheel_reward_epic_standard": "Epic na Kard",
@@ -687,6 +689,7 @@
     "creating_card": "Nililikha ang kard...",
     "cancel": "Kanselahin",
     "for": "para sa",
+    "rarity_basic_label": "Pangunahing",
     "rarity_common_label": "Common",
     "rarity_rare_label": "Rare",
     "rarity_epic_label": "Epic",

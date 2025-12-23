@@ -43,6 +43,7 @@
     "unknown": "不明"
   },
   "rarity": {
+    "basic": "ベーシック",
     "common": "コモン",
     "rare": "レア",
     "epic": "エピック",
@@ -158,6 +159,7 @@
     "lucky_wheel_reward_legendary_4": "+4 レジェンドチケット",
     "lucky_wheel_reward_regular_5_standard": "+5 レギュラーチケット",
     "lucky_wheel_reward_legendary_5_standard": "+5 レジェンドチケット",
+    "lucky_wheel_reward_basic": "ベーシックカード",
     "lucky_wheel_reward_common": "コモンカード",
     "lucky_wheel_reward_rare": "レアカード",
     "lucky_wheel_reward_epic_standard": "エピックカード",
@@ -687,6 +689,7 @@
     "creating_card": "カードを作成中...",
     "cancel": "キャンセル",
     "for": "の",
+    "rarity_basic_label": "ベーシック",
     "rarity_common_label": "コモン",
     "rarity_rare_label": "レア",
     "rarity_epic_label": "エピック",

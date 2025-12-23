@@ -43,6 +43,7 @@
     "unknown": "ไม่ทราบ"
   },
   "rarity": {
+    "basic": "พื้นฐาน",
     "common": "ธรรมดา",
     "rare": "หายาก",
     "epic": "เอพิค",
@@ -158,6 +159,7 @@
     "lucky_wheel_reward_legendary_4": "+4 ตั๋วตำนาน",
     "lucky_wheel_reward_regular_5_standard": "+5 ตั๋วปกติ",
     "lucky_wheel_reward_legendary_5_standard": "+5 ตั๋วตำนาน",
+    "lucky_wheel_reward_basic": "การ์ดพื้นฐาน",
     "lucky_wheel_reward_common": "การ์ดธรรมดา",
     "lucky_wheel_reward_rare": "การ์ดหายาก",
     "lucky_wheel_reward_epic_standard": "การ์ดมหากาพย์",
@@ -687,6 +689,7 @@
     "creating_card": "กำลังสร้างการ์ด...",
     "cancel": "ยกเลิก",
     "for": "สำหรับ",
+    "rarity_basic_label": "พื้นฐาน",
     "rarity_common_label": "ธรรมดา",
     "rarity_rare_label": "หายาก",
     "rarity_epic_label": "มหากาพย์",

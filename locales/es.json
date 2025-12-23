@@ -43,6 +43,7 @@
     "unknown": "Desconocido"
   },
   "rarity": {
+    "basic": "Básico",
     "common": "Común",
     "rare": "Rara",
     "epic": "Épica",
@@ -158,6 +159,7 @@
     "lucky_wheel_reward_legendary_4": "+4 Tickets Legendarios",
     "lucky_wheel_reward_regular_5_standard": "+5 Tickets Regulares",
     "lucky_wheel_reward_legendary_5_standard": "+5 Tickets Legendarios",
+    "lucky_wheel_reward_basic": "Carta Básica",
     "lucky_wheel_reward_common": "Carta Común",
     "lucky_wheel_reward_rare": "Carta Rara",
     "lucky_wheel_reward_epic_standard": "Carta Épica",
@@ -687,6 +689,7 @@
     "creating_card": "Creando carta...",
     "cancel": "Cancelar",
     "for": "para",
+    "rarity_basic_label": "Básico",
     "rarity_common_label": "Común",
     "rarity_rare_label": "Rara",
     "rarity_epic_label": "Épica",

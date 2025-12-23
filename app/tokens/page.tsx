@@ -54,6 +54,7 @@ export default function TokensPage() {
 }
 
 const CARD_CREATION_PRICES: Record<string, { usd: number }> = {
+  basic: { usd: 0.25 },
   common: { usd: 1 },
   rare: { usd: 3 },
   epic: { usd: 10 },
@@ -148,7 +149,7 @@ function TokensPageContent() {
   }
   const [selectedToken, setSelectedToken] = useState<TokenInfo | null>(null)
   const [showCreateCard, setShowCreateCard] = useState(false)
-  const [selectedRarity, setSelectedRarity] = useState<string>("common")
+  const [selectedRarity, setSelectedRarity] = useState<string>("basic")
   const [selectedImage, setSelectedImage] = useState<File | string | null>(null)
   const [showImageEditor, setShowImageEditor] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -185,6 +186,7 @@ function TokensPageContent() {
   }
 
   const rarityLabelMap: Record<string, string> = {
+    basic: t("tokens.rarity_basic_label", "Basic"),
     common: t("tokens.rarity_common_label", "Common"),
     rare: t("tokens.rarity_rare_label", "Rare"),
     epic: t("tokens.rarity_epic_label", "Epic"),
@@ -547,6 +549,9 @@ function TokensPageContent() {
 
   const getRarityStyles = (rarity: string) => {
     const rarityStyles: Record<string, { border: string }> = {
+      basic: {
+        border: "border-0",
+      },
       common: {
         border: "border-4 border-gray-400",
       },
@@ -737,7 +742,7 @@ function TokensPageContent() {
       setShowCreateCard(false)
       setSelectedToken(null)
       setSelectedImage(null)
-      setSelectedRarity("common")
+      setSelectedRarity("basic")
       
       // Reload tokens to show the new card
       await loadTokens(walletAddress)
@@ -859,6 +864,7 @@ function TokensPageContent() {
                         <div>
                           <p className="font-semibold text-gray-800 mb-2">{t("tokens.deal_benefits", "Daily Deal & Special Deal:")}</p>
                           <ul className="list-disc list-inside space-y-1 text-gray-700 ml-2">
+                            <li>{t("tokens.deal_basic", "Basic: 1%")}</li>
                             <li>{t("tokens.deal_common", "Common: 5%")}</li>
                             <li>{t("tokens.deal_rare", "Rare: 15%")}</li>
                             <li>{t("tokens.deal_epic", "Epic: 30%")}</li>
@@ -868,6 +874,7 @@ function TokensPageContent() {
                         <div>
                           <p className="font-semibold text-gray-800 mb-2">{t("tokens.market_benefits", "Market Sales:")}</p>
                           <ul className="list-disc list-inside space-y-1 text-gray-700 ml-2">
+                            <li>{t("tokens.market_basic", "Basic: 0%")}</li>
                             <li>{t("tokens.market_common", "Common: 1%")}</li>
                             <li>{t("tokens.market_rare", "Rare: 2%")}</li>
                             <li>{t("tokens.market_epic", "Epic: 3%")}</li>
@@ -986,6 +993,7 @@ function TokensPageContent() {
                               <div>
                                 <p className="font-semibold text-gray-800 mb-2">{t("tokens.deal_benefits", "Daily Deal & Special Deal:")}</p>
                                 <ul className="list-disc list-inside space-y-1 text-gray-700 ml-2">
+                                  <li>{t("tokens.deal_basic", "Basic: 1%")}</li>
                                   <li>{t("tokens.deal_common", "Common: 5%")}</li>
                                   <li>{t("tokens.deal_rare", "Rare: 15%")}</li>
                                   <li>{t("tokens.deal_epic", "Epic: 30%")}</li>
@@ -995,6 +1003,7 @@ function TokensPageContent() {
                               <div>
                                 <p className="font-semibold text-gray-800 mb-2">{t("tokens.market_benefits", "Market Sales:")}</p>
                                 <ul className="list-disc list-inside space-y-1 text-gray-700 ml-2">
+                                  <li>{t("tokens.market_basic", "Basic: 0%")}</li>
                                   <li>{t("tokens.market_common", "Common: 1%")}</li>
                                   <li>{t("tokens.market_rare", "Rare: 2%")}</li>
                                   <li>{t("tokens.market_epic", "Epic: 3%")}</li>
@@ -1217,6 +1226,7 @@ function TokensPageContent() {
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
+                                  <SelectItem value="basic">{formatPriceOptionLabel("basic")}</SelectItem>
                                   <SelectItem value="common">{formatPriceOptionLabel("common")}</SelectItem>
                                   <SelectItem value="rare">{formatPriceOptionLabel("rare")}</SelectItem>
                                   <SelectItem value="epic">{formatPriceOptionLabel("epic")}</SelectItem>

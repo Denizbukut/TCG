@@ -5,11 +5,12 @@ import { revalidatePath } from "next/cache"
 import { isUserBanned } from "@/lib/banned-users"
 import { incrementMission } from "@/app/actions/missions"
 
-type CardRarity = "common" | "rare" | "epic" | "legendary" | "ultimate"
+type CardRarity = "basic" | "common" | "rare" | "epic" | "legendary" | "ultimate"
 
 // Helper function to get score for rarity
 function getScoreForRarity(rarity: CardRarity): number {
   switch (rarity) {
+    case "basic": return 0.5
     case "common": return 1
     case "rare": return 3
     case "epic": return 8
@@ -31,18 +32,20 @@ function determineRarity(packType: string, hasPremiumPass = false): CardRarity {
     if (random < 85) return "rare" // 35 + 50 = 85
     return "common" // Remaining 15%
   } else {
-    // Regular pack with updated odds:
+    // Regular pack with updated odds (includes Basic rarity):
     if (hasPremiumPass) {
-      // With Premium Pass (Game Pass): 1% legendary, 15% epic, 34% rare, 50% common
+      // With Premium Pass (Game Pass): 1% legendary, 15% epic, 34% rare, 30% common, 20% basic
       if (random < 1) return "legendary"
       if (random < 16) return "epic" // 1 + 15 = 16
       if (random < 50) return "rare" // 16 + 34 = 50
-      return "common" // Remaining 50%
+      if (random < 80) return "common" // 50 + 30 = 80
+      return "basic" // Remaining 20%
     } else {
-      // Without Premium Pass: 0% legendary, 6% epic, 34% rare, 60% common
+      // Without Premium Pass: 0% legendary, 6% epic, 34% rare, 40% common, 20% basic
       if (random < 6) return "epic" // 6% epic
       if (random < 40) return "rare" // 34% rare (6 + 34 = 40)
-      return "common" // Remaining 60%
+      if (random < 80) return "common" // 40 + 40 = 80
+      return "basic" // Remaining 20%
     }
   }
 }
@@ -99,11 +102,14 @@ export async function drawCardsIndividual(walletAddress: string, packType: strin
       return { success: false, error: "You are banned from drawing packs." }
     }
 
+    // Normalize wallet address for consistent lookup
+    const normalizedWalletAddress = walletAddress.toLowerCase().trim()
+    
     // Get user data
     let { data: userData, error: userError } = await supabase
       .from("users")
       .select("tickets, elite_tickets, score, clan_id, wallet_address")
-      .eq("wallet_address", walletAddress)
+      .eq("wallet_address", normalizedWalletAddress)
       .maybeSingle()
 
     if (userError) {
@@ -115,7 +121,7 @@ export async function drawCardsIndividual(walletAddress: string, packType: strin
       const { data: userByUsername, error: usernameError } = await supabase
         .from("users")
         .select("tickets, elite_tickets, score, clan_id, wallet_address")
-        .eq("username", walletAddress)
+        .eq("username", normalizedWalletAddress)
         .maybeSingle()
       
       if (userByUsername) {
@@ -125,8 +131,8 @@ export async function drawCardsIndividual(walletAddress: string, packType: strin
       }
     }
     
-    // Get the correct wallet_address from the database
-    const correctWalletAddress = userData.wallet_address || walletAddress
+    // Get the correct wallet_address from the database (normalized)
+    const correctWalletAddress = (userData.wallet_address || normalizedWalletAddress).toLowerCase().trim()
 
     const isLegendary = packType === "legendary"
     const requiredTickets = isLegendary ? userData.elite_tickets : userData.tickets
@@ -142,6 +148,7 @@ export async function drawCardsIndividual(walletAddress: string, packType: strin
     const { data: availableCards, error: cardsError } = await supabase
       .from("cards")
       .select("id, name, character, image_url, rarity")
+      .eq("obtainable", true)
 
     if (cardsError) {
       return { success: false, error: `Failed to fetch available cards: ${cardsError.message}` }
@@ -153,6 +160,7 @@ export async function drawCardsIndividual(walletAddress: string, packType: strin
 
     // Pre-group cards by rarity for faster access
     const cardsByRarity = {
+      basic: availableCards.filter((card: any) => card.rarity === "basic"),
       common: availableCards.filter((card: any) => card.rarity === "common"),
       rare: availableCards.filter((card: any) => card.rarity === "rare"),
       epic: availableCards.filter((card: any) => card.rarity === "epic"),
@@ -220,20 +228,24 @@ export async function drawCardsIndividual(walletAddress: string, packType: strin
 
     // Update user's tickets and score
     const newTicketCount = isLegendary 
-      ? userData.elite_tickets - count 
-      : userData.tickets - count
-    const newScore = userData.score + totalScoreToAdd
+      ? Math.max(0, (userData.elite_tickets || 0) - count)
+      : Math.max(0, (userData.tickets || 0) - count)
+    // Round score to integer since database uses bigint
+    const newScore = Math.round((userData.score || 0) + totalScoreToAdd)
+
+    const updateData: any = {
+      [isLegendary ? "elite_tickets" : "tickets"]: newTicketCount,
+      score: newScore
+    }
 
     const { error: updateError } = await supabase
       .from("users")
-      .update({
-        [isLegendary ? "elite_tickets" : "tickets"]: newTicketCount,
-        score: newScore
-      })
-      .eq("wallet_address", correctWalletAddress)
+      .update(updateData)
+      .eq("wallet_address", correctWalletAddress.toLowerCase())
 
     if (updateError) {
-      return { success: false, error: "Failed to update user data" }
+      console.error("Failed to update user data:", updateError)
+      return { success: false, error: `Failed to update user data: ${updateError.message || 'Unknown error'}` }
     }
 
     if (count >= 20 && isLegendary) {

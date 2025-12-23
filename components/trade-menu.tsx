@@ -285,6 +285,18 @@ export default function TradeMenu() {
     } else if (selectedCard.cards.rarity === "elite") {
       minUsdPrice = 0.5
       console.log("Elite rarity detected, setting min price to $0.50")
+    } else if (selectedCard.cards.rarity === "basic") {
+      minUsdPrice = 0.04
+      console.log("Basic rarity detected, setting min price to $0.04")
+    }
+
+    // Basic-Karten: Jedes Level doppelter Preis (0.04 * 2^(level-1))
+    if (selectedCard.cards.rarity === "basic") {
+      const cardLevel = selectedCard.level || 1
+      minUsdPrice = 0.04 * Math.pow(2, cardLevel - 1)
+    } else {
+      const cardLevel = selectedCard.level || 1
+      minUsdPrice = minUsdPrice * cardLevel
     }
 
     const minWldPrice = priceUsdPerWLD ? minUsdPrice / priceUsdPerWLD : minUsdPrice

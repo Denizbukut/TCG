@@ -69,10 +69,17 @@ useEffect(() => {
     minUsdPrice = 0.34
   } else if (cardRarity === "common") {
     minUsdPrice = 0.15
+  } else if (cardRarity === "basic") {
+    minUsdPrice = 0.04
   }
   
   // Mindestpreis wird mit dem Level multipliziert
-  minUsdPrice = minUsdPrice * cardLevel
+  // Basic-Karten: Jedes Level doppelter Preis (0.04 * 2^(level-1))
+  if (cardRarity === "basic") {
+    minUsdPrice = 0.04 * Math.pow(2, cardLevel - 1)
+  } else {
+    minUsdPrice = minUsdPrice * cardLevel
+  }
   
   const minWldPrice = priceUsdPerWLD ? minUsdPrice / priceUsdPerWLD : minUsdPrice
   // Round down to 2 decimal places to match what users see
