@@ -294,7 +294,7 @@ export async function POST(req: Request) {
     // Award Weekly Contest points for Wheel spins
     if (wheelType === "premium") {
       try {
-        await incrementPremiumWheelPoints(normalizedWalletAddress, 18)
+        await incrementPremiumWheelPoints(normalizedWalletAddress, 50)
       } catch (error) {
         // Log error but don't fail the spin if contest points fail
         console.error("Failed to award contest points for premium wheel spin:", error)

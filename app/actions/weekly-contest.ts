@@ -309,7 +309,7 @@ export async function incrementTicketShopPoints(
  */
 export async function incrementSpecialDealPoints(
   walletAddress: string,
-  points: number = 50
+  points: number = 200
 ) {
   console.log(`🎯 [incrementSpecialDealPoints] Called with wallet: ${walletAddress}, points: ${points}`)
   
@@ -394,7 +394,7 @@ export async function incrementSpecialDealPoints(
  */
 export async function incrementPremiumWheelPoints(
   walletAddress: string,
-  points: number = 18
+  points: number = 50
 ) {
   console.log(`🎯 [incrementPremiumWheelPoints] Called with wallet: ${walletAddress}, points: ${points}`)
   

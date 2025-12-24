@@ -1026,7 +1026,7 @@ const [showInfo, setShowInfo] = useState(false)
               totalPoints += commonCards.length * 2
               totalPoints += rareCards.length * 2
               totalPoints += epicCards.length * 5
-              totalPoints += legendaryCards.length * 80
+              totalPoints += legendaryCards.length * 50 // 1x Bonus: 50 Punkte für Legendary
               
               console.log(`[Weekly Contest] Cards drawn - Common: ${commonCards.length}, Rare: ${rareCards.length}, Epic: ${epicCards.length}, Legendary: ${legendaryCards.length}, Total Points: ${totalPoints}`)
               
