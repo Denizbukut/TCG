@@ -3,10 +3,10 @@
 
 export const WEEKLY_CONTEST_CONFIG = {
   // Contest Start Date (Montag der Woche)
-  weekStart: "2025-12-20",
+  weekStart: "2025-12-28",
   
   // Contest End Date (Dienstag der nächsten Woche um 23:59:59 UTC)
-  contestEnd: "2025-12-27T23:59:59Z",
+  contestEnd: "2026-01-04T20:59:59Z",
   
   // Prize Pool Configuration
   prizePool: [
