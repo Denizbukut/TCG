@@ -13,8 +13,8 @@ function getScoreForRarity(rarity: CardRarity): number {
     case "basic": return 0.5
     case "common": return 1
     case "rare": return 3
-    case "epic": return 8
-    case "legendary": return 20
+    case "epic": return 10 * 2 // 10 points with 2x bonus for epic cards
+    case "legendary": return 65 * 2 // 65 points with 2x bonus for legendary cards
     case "ultimate": return 50
     default: return 1
   }

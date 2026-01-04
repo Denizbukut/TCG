@@ -2022,7 +2022,7 @@ export default function Home() {
       </div>
         <h3 className="text-xl font-bold text-yellow-100 mb-1">{t("contest.title", "Weekly Contest")}</h3>
         <p className="text-sm text-white/80 font-medium">{t("contest.subtitle", "Compete for the top spot!")}</p>
-        <p className="text-xs font-bold mt-1 text-[#00ff88] drop-shadow-[0_0_8px_rgba(0,255,136,0.6)]">Up to 4x Bonus</p>
+        <p className="text-xs font-bold mt-1 text-[#00ff88] drop-shadow-[0_0_8px_rgba(0,255,136,0.6)]">2x bonus on legendary cards</p>
         {isContestActive() && (() => {
         const timeLeft = formatContestCountdown(contestCountdown)
         return timeLeft ? (
