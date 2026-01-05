@@ -339,8 +339,8 @@ const [showInfo, setShowInfo] = useState(false)
     if (paymentCurrency === "WLD" && (!price || price <= 0)) return null
     if (paymentCurrency === "ANIX" && (!anixPrice || anixPrice <= 0)) return null
     try {
-      // Different prices for Premium (1.65 USD) and Standard (0.18 USD) wheels
-      const usdAmount = activeWheelType === "premium" ? 1.65 : 0.18
+      // Different prices for Premium (1.35 USD) and Standard (0.18 USD) wheels
+      const usdAmount = activeWheelType === "premium" ? 1.35 : 0.18
       
       const details = getTransferDetails({
         usdAmount,
@@ -1014,7 +1014,7 @@ const [showInfo, setShowInfo] = useState(false)
           try {
             const supabase = getSupabaseBrowserClient()
             if (supabase) {
-              // Calculate points: Basic = 1, Common = 2, Rare = 2, Epic = 20 (10 Punkte mit 2x Bonus), Legendary = 130 (65 Punkte mit 2x Bonus)
+              // Calculate points: Basic = 1, Common = 2, Rare = 2, Epic = 5, Legendary = 20
               const basicCards = result.cards.filter((card: any) => card.rarity === "basic")
               const commonCards = result.cards.filter((card: any) => card.rarity === "common")
               const rareCards = result.cards.filter((card: any) => card.rarity === "rare")
@@ -1025,8 +1025,8 @@ const [showInfo, setShowInfo] = useState(false)
               totalPoints += basicCards.length * 1
               totalPoints += commonCards.length * 2
               totalPoints += rareCards.length * 2
-              totalPoints += epicCards.length * 10 // 10 Punkte mit 2x Bonus für Epic Cards
-              totalPoints += legendaryCards.length * 65 // 65 Punkte mit 2x Bonus für Legendary Cards
+              totalPoints += epicCards.length * 5 // 5 Punkte für Epic Cards
+              totalPoints += legendaryCards.length * 20 // 20 Punkte für Legendary Cards
               
               console.log(`[Weekly Contest] Cards drawn - Common: ${commonCards.length}, Rare: ${rareCards.length}, Epic: ${epicCards.length}, Legendary: ${legendaryCards.length}, Total Points: ${totalPoints}`)
               
@@ -1984,7 +1984,7 @@ const [showInfo, setShowInfo] = useState(false)
 
       // Step 2: Spin after successful payment (check limit and get reward)
       // Calculate USD price for database tracking
-      const usdPrice = activeWheelType === "premium" ? 1.65 : 0.18
+      const usdPrice = activeWheelType === "premium" ? 1.35 : 0.18
       const spinResponse = await fetch("/api/lucky-wheel/spin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

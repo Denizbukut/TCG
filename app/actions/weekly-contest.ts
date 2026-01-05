@@ -64,9 +64,9 @@ export async function incrementLegendaryDraw(walletAddress: string, count: numbe
  * - User hasn't been trading too frequently with the same seller (anti-fraud)
  * Points are based on card rarity:
  * - Common: 1 point
- * - Rare: 4 points
- * - Epic: 5 points
- * - Legendary: 10 points
+ * - Rare: 2 points
+ * - Epic: 3 points
+ * - Legendary: 5 points
  */
 export async function incrementTradePoints(
   buyerWalletAddress: string,
@@ -309,7 +309,7 @@ export async function incrementTicketShopPoints(
  */
 export async function incrementSpecialDealPoints(
   walletAddress: string,
-  points: number = 200
+  points: number = 100
 ) {
   console.log(`🎯 [incrementSpecialDealPoints] Called with wallet: ${walletAddress}, points: ${points}`)
   
@@ -394,7 +394,7 @@ export async function incrementSpecialDealPoints(
  */
 export async function incrementPremiumWheelPoints(
   walletAddress: string,
-  points: number = 50
+  points: number = 25
 ) {
   console.log(`🎯 [incrementPremiumWheelPoints] Called with wallet: ${walletAddress}, points: ${points}`)
   
