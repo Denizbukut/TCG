@@ -1014,11 +1014,7 @@ const [showInfo, setShowInfo] = useState(false)
           try {
             const supabase = getSupabaseBrowserClient()
             if (supabase) {
-<<<<<<< Updated upstream
-              // Calculate points: Basic = 1, Common = 2, Rare = 2, Epic = 5, Legendary = 20
-=======
               // Calculate points: Basic = 1, Common = 2, Rare = 2, Epic = 5, Legendary = 80 (4x Bonus)
->>>>>>> Stashed changes
               const basicCards = result.cards.filter((card: any) => card.rarity === "basic")
               const commonCards = result.cards.filter((card: any) => card.rarity === "common")
               const rareCards = result.cards.filter((card: any) => card.rarity === "rare")
@@ -1029,13 +1025,8 @@ const [showInfo, setShowInfo] = useState(false)
               totalPoints += basicCards.length * 1
               totalPoints += commonCards.length * 2
               totalPoints += rareCards.length * 2
-<<<<<<< Updated upstream
-              totalPoints += epicCards.length * 5 // 5 Punkte für Epic Cards
-              totalPoints += legendaryCards.length * 20 // 20 Punkte für Legendary Cards
-=======
               totalPoints += epicCards.length * 5
               totalPoints += legendaryCards.length * 80 // 4x Bonus: 80 Punkte für Legendary
->>>>>>> Stashed changes
               
               console.log(`[Weekly Contest] Cards drawn - Common: ${commonCards.length}, Rare: ${rareCards.length}, Epic: ${epicCards.length}, Legendary: ${legendaryCards.length}, Total Points: ${totalPoints}`)
               
