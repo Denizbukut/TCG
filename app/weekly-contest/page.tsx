@@ -211,7 +211,11 @@ export default function WeeklyContestPage() {
                   <div className="text-left">• {t("contest.common_cards", "Common Cards")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
                   <div className="text-left">• {t("contest.rare_cards", "Rare Cards")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
                   <div className="text-left">• {t("contest.epic_cards", "Epic Cards")} = <span className="font-bold text-yellow-400">5 {t("contest.points", "Points")}</span></div>
+<<<<<<< Updated upstream
                   <div className="text-left">• {t("contest.legendary_cards", "Legendary Cards")} = <span className="font-bold text-yellow-400">20 {t("contest.points", "Points")}</span></div>
+=======
+                  <div className="text-left">• {t("contest.legendary_cards", "Legendary Cards")} = <span className="font-bold text-yellow-400">80 {t("contest.points", "Points")}</span> <span className="text-green-400 text-xs">(4x Bonus)</span></div>
+>>>>>>> Stashed changes
                 </CollapsibleContent>
               </Collapsible>
               <Collapsible className="w-full" open={isTradeMarketOpen} onOpenChange={setIsTradeMarketOpen}>
