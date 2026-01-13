@@ -26,8 +26,8 @@ export async function incrementLegendaryDraw(walletAddress: string, count: numbe
     return { success: false, error: "The contest has ended. No more entries allowed." }
   }
 
-  // Calculate points: 80 points per legendary card (4x Bonus)
-  const pointsPerCard = 80
+  // Calculate points: 20 points per legendary card
+  const pointsPerCard = 20
   const totalPoints = pointsPerCard * count
 
   const { data, error } = await supabase
