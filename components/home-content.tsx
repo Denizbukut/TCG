@@ -54,6 +54,7 @@ import { claimReferralRewardForUser } from "@/app/actions/referrals"
 import { Progress } from "@/components/ui/progress" // Import Progress component
 import { renderStars } from "@/utils/card-stars"
 import { PaymentCurrencyToggle } from "@/components/payment-currency-toggle"
+import { AniAds } from 'ani-ads-sdk'
 import { usePaymentCurrency } from "@/contexts/payment-currency-context"
 import {
   type PaymentCurrency,
@@ -1873,20 +1874,15 @@ export default function Home() {
         </header>
 
         <main className="w-full px-2 md:px-6 pb-16 flex-1 overflow-y-auto overscroll-contain"> {/* Padding hinzugefügt */}
-          <Link href="/tokens">
-            <motion.div
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="mt-3 mb-4 flex flex-col gap-1 rounded-lg border-2 border-emerald-400 bg-gradient-to-r from-emerald-400 via-lime-400 to-emerald-500 px-3 py-2 text-sm font-semibold text-black shadow-[0_0_18px_rgba(16,185,129,0.55)] transition hover:scale-[1.02] hover:shadow-[0_0_28px_rgba(16,185,129,0.7)]"
-            >
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-black" />
-                <span>{t("home.create_card_earn", "25% discount on card creations")}</span>
-                <ArrowRight className="ml-auto h-4 w-4 text-black/80" />
-              </div>
-            </motion.div>
-          </Link>
+          {user?.wallet_address && (
+            <div className="mt-3 mb-4">
+              <AniAds
+                creator_wallet="0x4bb270ef6dcb052a083bd5cff518e2e019c0f4ee" 
+                app_name="Crypto TCG"
+                user_wallet_address={user.wallet_address}
+              />
+            </div>
+          )}
          
           <div className="grid grid-cols-6 gap-3 mt-2 pb-4">
             {/* Profile */}
