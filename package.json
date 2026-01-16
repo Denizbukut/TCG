@@ -45,7 +45,7 @@
     "@react-three/drei": "^10.0.7",
     "@react-three/fiber": "^9.1.2",
     "@supabase/supabase-js": "latest",
-    "@worldcoin/minikit-js": "latest",
+    "@worldcoin/minikit-js": "^1.9.8",
     "@worldcoin/minikit-react": "^1.9.5",
     "ani-ads-sdk": "^2.0.11",
     "autoprefixer": "^10.4.20",

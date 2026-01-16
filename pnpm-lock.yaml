@@ -117,11 +117,14 @@ importers:
         specifier: latest
         version: 2.78.0
       '@worldcoin/minikit-js':
-        specifier: latest
+        specifier: ^1.9.8
         version: 1.9.8(@types/react@19.2.2)(react@19.2.0)(typescript@5.9.3)(viem@2.38.6(typescript@5.9.3)(zod@3.25.76))(zod@3.25.76)
       '@worldcoin/minikit-react':
         specifier: ^1.9.5
         version: 1.9.9(@types/react@19.2.2)(react@19.2.0)(typescript@5.9.3)(viem@2.38.6(typescript@5.9.3)(zod@3.25.76))(zod@3.25.76)
+      ani-ads-sdk:
+        specifier: ^2.0.11
+        version: 2.0.11(@worldcoin/minikit-js@1.9.8(@types/react@19.2.2)(react@19.2.0)(typescript@5.9.3)(viem@2.38.6(typescript@5.9.3)(zod@3.25.76))(zod@3.25.76))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.21(postcss@8.5.6)
@@ -2129,6 +2132,13 @@ packages:
   aggregate-error@3.1.0:
     resolution: {integrity: sha512-4I7Td01quW/RpocfNayFdFVk1qSuoh0E7JrbRJ16nH01HhKFQ88INq9Sd+nd72zqRySlr9BmDA8xlEJ6vJMrYA==}
     engines: {node: '>=8'}
+
+  ani-ads-sdk@2.0.11:
+    resolution: {integrity: sha512-gQuQD/oC4OGLlYM9Z3b9MLKIaET+UN4IEUNdiGI0N8/trkCjSa6etXWNzaq3CHPns+2lvpayjd9cPOnHaGJ/Jg==}
+    peerDependencies:
+      '@worldcoin/minikit-js': '>=1.9.6'
+      react: ^18.0.0 || ^19.0.0
+      react-dom: ^18.0.0 || ^19.0.0
 
   ansi-align@3.0.1:
     resolution: {integrity: sha512-IOfwwBF5iczOjp/WeY4YxyjqAFMQoZufdQWDd19SEExbVLNXqvpzSJ/M7Za4/sCPmQ0+GRquoA7bGcINcxew6w==}
@@ -6033,7 +6043,7 @@ snapshots:
 
   '@scure/bip32@1.7.0':
     dependencies:
-      '@noble/curves': 1.9.1
+      '@noble/curves': 1.9.7
       '@noble/hashes': 1.8.0
       '@scure/base': 1.2.6
 
@@ -6811,6 +6821,12 @@ snapshots:
     dependencies:
       clean-stack: 2.2.0
       indent-string: 4.0.0
+
+  ani-ads-sdk@2.0.11(@worldcoin/minikit-js@1.9.8(@types/react@19.2.2)(react@19.2.0)(typescript@5.9.3)(viem@2.38.6(typescript@5.9.3)(zod@3.25.76))(zod@3.25.76))(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
+    dependencies:
+      '@worldcoin/minikit-js': 1.9.8(@types/react@19.2.2)(react@19.2.0)(typescript@5.9.3)(viem@2.38.6(typescript@5.9.3)(zod@3.25.76))(zod@3.25.76)
+      react: 19.2.0
+      react-dom: 19.2.0(react@19.2.0)
 
   ansi-align@3.0.1:
     dependencies:
@@ -8012,7 +8028,7 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
-      abitype: 1.1.0(typescript@5.9.3)(zod@3.25.76)
+      abitype: 1.1.1(typescript@5.9.3)(zod@3.25.76)
       eventemitter3: 5.0.1
     optionalDependencies:
       typescript: 5.9.3
