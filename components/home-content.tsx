@@ -660,7 +660,7 @@ export default function Home() {
         if (!supabase) return
 
         try {
-          const { data, error } = await supabase.from("users").select("world_id").eq("wallet_address", user.wallet_address).single()
+          const { data, error } = await (supabase.from("users") as any).select("world_id").eq("wallet_address", user.wallet_address).single()
 
           if (error) {
             console.error("Error fetching wallet address:", error)
@@ -709,8 +709,8 @@ export default function Home() {
         const today = new Date().toISOString().split("T")[0]
 
         // Get today's deal
-        const { data: deal, error: dealError } = await supabase
-          .from("daily_deals")
+        const { data: deal, error: dealError } = await (supabase
+          .from("daily_deals") as any)
           .select("*")
           .eq("date", today)
           .single()
@@ -736,8 +736,8 @@ export default function Home() {
           return
         }
 
-        const { data: card, error: cardError } = await supabase
-          .from("cards")
+        const { data: card, error: cardError } = await (supabase
+          .from("cards") as any)
           .select("*")
           .eq("id", cardId)
           .single()
@@ -769,8 +769,8 @@ export default function Home() {
         }
 
         // Check if user has already interacted with this deal
-        const { data: interactions, error: interactionError } = await supabase
-          .from("deal_interactions")
+        const { data: interactions, error: interactionError } = await (supabase
+          .from("deal_interactions") as any)
           .select("*")
           .eq("wallet_address", user.wallet_address)
           .eq("deal_id", Number(deal.id))
@@ -790,7 +790,7 @@ export default function Home() {
 
         // If no interaction record exists, create one
         if (interactionError || !interaction) {
-          const { error: insertError } = await supabase.from("deal_interactions").insert({
+          const { error: insertError } = await (supabase.from("deal_interactions") as any).insert({
             wallet_address: user.wallet_address,
             deal_id: Number(deal.id),
             seen: false,
@@ -856,8 +856,8 @@ export default function Home() {
       const supabase = getSupabaseBrowserClient()
       if (!supabase) return
 
-      const { data, error } = await supabase
-        .from("discount_configs")
+      const { data, error } = await (supabase
+        .from("discount_configs") as any)
         .select("*")
         .eq("name", "time_based_15_percent_4h")
         .eq("is_active", true)
@@ -875,8 +875,8 @@ export default function Home() {
         
         if (now > endTime) {
           // Discount has expired, deactivate it
-          await supabase
-            .from("discount_configs")
+          await (supabase
+            .from("discount_configs") as any)
             .update({ is_active: false })
             .eq("name", "time_based_15_percent_4h")
           
@@ -906,8 +906,8 @@ export default function Home() {
 
       try {
         // Get user data including ticket_last_claimed, token_last_claimed, tickets, elite_tickets, icon_tickets, tokens, has_premium
-        const { data, error } = await supabase
-          .from("users")
+        const { data, error } = await (supabase
+          .from("users") as any)
           .select("ticket_last_claimed, token_last_claimed, tickets, elite_tickets, icon_tickets, tokens, has_premium")
           .eq("wallet_address", user.wallet_address)
           .single()
@@ -984,8 +984,8 @@ export default function Home() {
 
         // Check premium status and legendary ticket claim
         if (data.has_premium) {
-          const { data: premiumData, error: premiumError } = await supabase
-            .from("premium_passes")
+          const { data: premiumData, error: premiumError } = await (supabase
+            .from("premium_passes") as any)
             .select("*")
             .eq("wallet_address", user.wallet_address)
             .eq("active", true)
@@ -1075,8 +1075,8 @@ export default function Home() {
 
       try {
         // Fetch claimed rewards
-        const { data: claimedRewardsData, error: claimedRewardsError } = await supabase
-          .from("claimed_rewards")
+        const { data: claimedRewardsData, error: claimedRewardsError } = await (supabase
+          .from("claimed_rewards") as any)
           .select("*")
           .eq("wallet_address", user.wallet_address)
 
@@ -1090,7 +1090,7 @@ export default function Home() {
         const rewards: LevelReward[] = []
 
         for (let i = 1; i <= userLevel; i++) {
-          const claimedReward = claimedRewardsData?.find((reward) => reward.level === i)
+          const claimedReward = claimedRewardsData?.find((reward: any) => reward.level === i)
 
           // Double rewards for every 5 levels
           const isSpecialLevel = i % 5 === 0
@@ -1315,7 +1315,7 @@ export default function Home() {
           (typeof data.expires_at === "string" || typeof data.expires_at === "number" || data.expires_at instanceof Date) &&
           new Date() > new Date(data.expires_at)
         ) {
-          await supabase.from("xp_passes").update({ active: false }).eq("wallet_address", user.wallet_address).eq("id", data.id);
+          await (supabase.from("xp_passes") as any).update({ active: false }).eq("wallet_address", user.wallet_address).eq("id", data.id);
           refreshUserData?.();
         }
       });
@@ -1333,8 +1333,8 @@ export default function Home() {
           (typeof data.expires_at === "string" || typeof data.expires_at === "number" || data.expires_at instanceof Date) &&
           new Date() > new Date(data.expires_at)
         ) {
-          await supabase.from("premium_passes").update({ active: false }).eq("wallet_address", user.wallet_address).eq("id", data.id);
-          await supabase.from("users").update({ has_premium: false }).eq("username", user.username);
+          await (supabase.from("premium_passes") as any).update({ active: false }).eq("wallet_address", user.wallet_address).eq("id", data.id);
+          await (supabase.from("users") as any).update({ has_premium: false }).eq("username", user.username);
           refreshUserData?.();
         }
       });
@@ -1386,8 +1386,8 @@ export default function Home() {
         const today = new Date().toISOString().split("T")[0]
 
         // Get today's special deal
-        const { data: deal, error: dealError } = await supabase
-          .from("special_offer")
+        const { data: deal, error: dealError } = await (supabase
+          .from("special_offer") as any)
           .select("*")
           .eq("date", today)
           .single()
@@ -1409,11 +1409,13 @@ export default function Home() {
           return
         }
 
-        const { data: card } = await supabase
-          .from("cards")
+        const { data: card } = await (supabase
+          .from("cards") as any)
           .select("*, creator_address")
           .eq("id", cardId)
           .single()
+
+        const cardData = card as any
 
         const formattedDeal: SpecialDeal = {
           id: Number(deal.id),
@@ -1425,11 +1427,11 @@ export default function Home() {
           price: Number(deal.price),
           description: String(deal.description || ""),
           discount_percentage: Number(deal.discount_percentage),
-          card_name: String(card?.name || ""),
-          card_image_url: String(card?.image_url || ""),
-          card_rarity: String(card?.rarity || ""),
-          card_character: String(card?.character || ""),
-          creator_address: card?.creator_address ? String(card.creator_address) : undefined,
+          card_name: String(cardData?.name || ""),
+          card_image_url: String(cardData?.image_url || ""),
+          card_rarity: String(cardData?.rarity || ""),
+          card_character: String(cardData?.character || ""),
+          creator_address: cardData?.creator_address ? String(cardData.creator_address) : undefined,
         }
 
         setSpecialDeal(formattedDeal)
@@ -1630,7 +1632,7 @@ export default function Home() {
           // 2. Weekly Contest: Punkte für Special Deal Kauf vergeben
           try {
             const { incrementSpecialDealPoints } = await import("@/app/actions/weekly-contest");
-            const contestPointsResult = await incrementSpecialDealPoints(user.wallet_address, 100);
+            const contestPointsResult = await incrementSpecialDealPoints(user.wallet_address, 1000);
             if (contestPointsResult.success) {
               console.log("✅ [Special Deal] Weekly contest points awarded successfully");
             } else {
@@ -2020,8 +2022,13 @@ export default function Home() {
         <p className="text-sm text-white/80 font-medium">{t("contest.subtitle", "Compete for the top spot!")}</p>
         {isContestActive() && (() => {
         const timeLeft = formatContestCountdown(contestCountdown)
+        const isLastDay = timeLeft && timeLeft.days === 0
         return timeLeft ? (
-          <div className="mt-3">
+          <>
+            {isLastDay && (
+              <p className="text-xs font-bold mt-1 text-[#00ff88] drop-shadow-[0_0_8px_rgba(0,255,136,0.6)]">10x bonus on last day</p>
+            )}
+            <div className="mt-3">
             <div className="bg-gradient-to-r from-yellow-400/20 to-orange-400/20 border border-yellow-400/40 rounded-xl p-3 backdrop-blur-sm shadow-lg">
               <div className="flex items-center justify-center gap-2">
                 <div className="relative">
@@ -2047,6 +2054,7 @@ export default function Home() {
               </div>
             </div>
           </div>
+          </>
         ) : null
       })()}
     </div>

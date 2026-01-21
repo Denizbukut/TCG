@@ -55,8 +55,8 @@ export default function WeeklyContestPage() {
 
         // Fetch leaderboard - Top 20
         // WICHTIG: trade_points fließen jetzt direkt in legendary_count
-        const { data: entries, error: entriesError } = await supabase
-          .from("weekly_contest_entries")
+        const { data: entries, error: entriesError } = await (supabase
+          .from("weekly_contest_entries") as any)
           .select("wallet_address, legendary_count")
           .eq("week_start_date", weekStart)
           .order("legendary_count", { ascending: false })
@@ -64,17 +64,17 @@ export default function WeeklyContestPage() {
 
         if (!entriesError && entries) {
           // Get usernames for all wallet addresses
-          const walletAddresses = entries.map(e => e.wallet_address)
-          const { data: users } = await supabase
-            .from("users")
+          const walletAddresses = entries.map((e: any) => e.wallet_address)
+          const { data: users } = await (supabase
+            .from("users") as any)
             .select("wallet_address, username")
             .in("wallet_address", walletAddresses)
 
           // Create a map for quick lookup
-          const usernameMap = new Map(users?.map(u => [u.wallet_address, u.username]) || [])
+          const usernameMap = new Map(users?.map((u: any) => [u.wallet_address, u.username]) || [])
 
           // Format the data (legendary_count enthält jetzt auch Trade-Punkte)
-          const formattedData: Entry[] = entries.map(entry => {
+          const formattedData: Entry[] = entries.map((entry: any) => {
             const walletAddr = entry.wallet_address as string
             const username = usernameMap.get(walletAddr)
             return {
@@ -89,8 +89,8 @@ export default function WeeklyContestPage() {
         // Fetch user stats
         // WICHTIG: trade_points fließen jetzt direkt in legendary_count
         if (user?.wallet_address) {
-          const { data: userEntry, error: userError } = await supabase
-            .from("weekly_contest_entries")
+          const { data: userEntry, error: userError } = await (supabase
+            .from("weekly_contest_entries") as any)
             .select("legendary_count")
             .eq("week_start_date", weekStart)
             .eq("wallet_address", user.wallet_address)
@@ -98,11 +98,12 @@ export default function WeeklyContestPage() {
 
           if (!userError) {
             if (userEntry) {
-              const userLegendaryCount: number = Number(userEntry.legendary_count) || 0
+              const userEntryData = userEntry as any
+              const userLegendaryCount: number = Number(userEntryData.legendary_count) || 0
 
               // Calculate rank - count how many have more points
-              const { count } = await supabase
-                .from("weekly_contest_entries")
+              const { count } = await (supabase
+                .from("weekly_contest_entries") as any)
                 .select("*", { count: "exact", head: true })
                 .eq("week_start_date", weekStart)
                 .gt("legendary_count", userLegendaryCount)
@@ -211,7 +212,7 @@ export default function WeeklyContestPage() {
                   <div className="text-left">• {t("contest.common_cards", "Common Cards")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
                   <div className="text-left">• {t("contest.rare_cards", "Rare Cards")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
                   <div className="text-left">• {t("contest.epic_cards", "Epic Cards")} = <span className="font-bold text-yellow-400">5 {t("contest.points", "Points")}</span></div>
-                  <div className="text-left">• {t("contest.legendary_cards", "Legendary Cards")} = <span className="font-bold text-yellow-400">20 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.legendary_cards", "Legendary Cards")} = <span className="font-bold text-yellow-400">50 {t("contest.points", "Points")}</span> <span className="text-green-400 text-xs">(2x Bonus)</span></div>
                 </CollapsibleContent>
               </Collapsible>
               <Collapsible className="w-full" open={isTradeMarketOpen} onOpenChange={setIsTradeMarketOpen}>
@@ -241,7 +242,7 @@ export default function WeeklyContestPage() {
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-1 space-y-1 text-xs pl-0 text-left">
                   <div className="text-left">• {t("contest.standard_wheel", "Standard Lucky Wheel Spin")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
-                  <div className="text-left">• {t("contest.premium_wheel", "Premium Lucky Wheel Spin")} = <span className="font-bold text-yellow-400">25 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.premium_wheel", "Premium Lucky Wheel Spin")} = <span className="font-bold text-yellow-400">50 {t("contest.points", "Points")}</span> <span className="text-green-400 text-xs">(2x Bonus)</span></div>
                 </CollapsibleContent>
               </Collapsible>
               <Collapsible className="w-full" open={isOtherOpen} onOpenChange={setIsOtherOpen}>
@@ -256,7 +257,7 @@ export default function WeeklyContestPage() {
                 <CollapsibleContent className="pt-1 space-y-1 text-xs pl-0 text-left">
                   <div className="text-left">• {t("contest.ticket_shop", "Buying Tickets in Shop")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
                   <div className="text-left">• {t("contest.referrals", "Referrals")} = <span className="font-bold text-yellow-400">5 {t("contest.points", "Points")}</span></div>
-                  <div className="text-left">• {t("contest.special_deal", "Buying Special Deal")} = <span className="font-bold text-yellow-400">100 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.special_deal", "Buying Special Deal")} = <span className="font-bold text-yellow-400">1000 {t("contest.points", "Points")}</span> <span className="text-green-400 text-xs">(10x Bonus)</span></div>
                 </CollapsibleContent>
               </Collapsible>
             </div>
