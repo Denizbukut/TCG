@@ -3,18 +3,18 @@
 
 export const WEEKLY_CONTEST_CONFIG = {
   // Contest Start Date (Montag der Woche)
-  weekStart: "2026-01-13",
+  weekStart: "2026-01-21",
   
   // Contest End Date (Dienstag der nächsten Woche um 23:59:59 UTC)
-  contestEnd: "2026-01-21T20:59:59Z",
+  contestEnd: "2026-01-29T22:59:59Z",
   
   // Prize Pool Configuration
   prizePool: [
     { rank: "1st Place", reward: "200 WLD + 500 Legendary Tickets", icon: "🥇" },
     { rank: "2nd Place", reward: "150 WLD + 250 Legendary Tickets", icon: "🥈" },
     { rank: "3rd Place", reward: "100 WLD + 100 Legendary Tickets", icon: "🥉" },
-    { rank: "4th–6th Place", reward: "30 WLD + 50 Regular Tickets", icon: "🎖️" },
-    { rank: "7th–10th Place", reward: "10 WLD + 25 Regular Tickets", icon: "🎖️" },
+    { rank: "4th–6th Place", reward: "30 WLD + 100 Regular Tickets", icon: "🎖️" },
+    { rank: "7th–10th Place", reward: "10 WLD + 50 Regular Tickets", icon: "🎖️" },
   ]
 } as const
 

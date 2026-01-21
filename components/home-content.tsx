@@ -1632,7 +1632,7 @@ export default function Home() {
           // 2. Weekly Contest: Punkte für Special Deal Kauf vergeben
           try {
             const { incrementSpecialDealPoints } = await import("@/app/actions/weekly-contest");
-            const contestPointsResult = await incrementSpecialDealPoints(user.wallet_address, 1000);
+            const contestPointsResult = await incrementSpecialDealPoints(user.wallet_address, 100);
             if (contestPointsResult.success) {
               console.log("✅ [Special Deal] Weekly contest points awarded successfully");
             } else {
@@ -2022,12 +2022,8 @@ export default function Home() {
         <p className="text-sm text-white/80 font-medium">{t("contest.subtitle", "Compete for the top spot!")}</p>
         {isContestActive() && (() => {
         const timeLeft = formatContestCountdown(contestCountdown)
-        const isLastDay = timeLeft && timeLeft.days === 0
         return timeLeft ? (
           <>
-            {isLastDay && (
-              <p className="text-xs font-bold mt-1 text-[#00ff88] drop-shadow-[0_0_8px_rgba(0,255,136,0.6)]">10x bonus on last day</p>
-            )}
             <div className="mt-3">
             <div className="bg-gradient-to-r from-yellow-400/20 to-orange-400/20 border border-yellow-400/40 rounded-xl p-3 backdrop-blur-sm shadow-lg">
               <div className="flex items-center justify-center gap-2">
