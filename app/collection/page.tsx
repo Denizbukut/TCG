@@ -164,76 +164,48 @@ export default function CollectionPage() {
 
         console.log("Fetching user cards for wallet_address:", user.wallet_address)
 
-        // Prefer RPC to avoid 1000 row limit; fallback to paged fetch if missing
-        const supabaseAny = supabase as unknown as {
-          rpc: (fn: string, args?: any) => Promise<{ data: any[] | null; error: any }>
-        }
-        let userCardsData: any[] | null = null
-        let usedRpc = false
-        try {
-          const rpcResult = await supabaseAny.rpc("get_user_collection_cards", {
-            p_wallet_address: user.wallet_address.toLowerCase(),
-          })
-          if (!rpcResult.error) {
-            userCardsData = rpcResult.data ?? []
-            usedRpc = true
-          } else if (rpcResult.error?.code && rpcResult.error.code !== "PGRST202") {
-            throw rpcResult.error
+        // Use paged fetch to avoid 1000 row limit deterministically
+        const pageSize = 1000
+        let allRows: any[] = []
+        let from = 0
+        let hasMore = true
+        while (hasMore) {
+          const { data: pageData, error: pageError } = await supabase
+            .from("user_card_instances")
+            .select(`id, card_id, level, favorite, obtained_at`)
+            .eq("wallet_address", user.wallet_address.toLowerCase()) // Normalize wallet address to lowercase
+            .order('obtained_at', { ascending: false })
+            .range(from, from + pageSize - 1)
+
+          if (pageError) {
+            console.error("Error fetching user cards:", pageError)
+            console.error("Error details:", {
+              message: pageError.message,
+              code: pageError.code,
+              details: pageError.details,
+              hint: pageError.hint,
+              wallet_address: user.wallet_address,
+            })
+            toast({
+              title: "Error",
+              description: `Failed to load your card collection: ${pageError.message || "Unknown error"}`,
+              variant: "destructive",
+            })
+            setUserCards([])
+            setLoading(false)
+            return
           }
-        } catch (rpcError: any) {
-          console.error("Error fetching user cards via RPC:", rpcError)
-          toast({
-            title: "Error",
-            description: `Failed to load your card collection: ${rpcError?.message || "Unknown error"}`,
-            variant: "destructive",
-          })
-          setUserCards([])
-          setLoading(false)
-          return
-        }
 
-        if (!usedRpc) {
-          const pageSize = 1000
-          let allRows: any[] = []
-          let from = 0
-          let hasMore = true
-          while (hasMore) {
-            const { data: pageData, error: pageError } = await supabase
-              .from("user_card_instances")
-              .select(`id, card_id, level, favorite, obtained_at`)
-              .eq("wallet_address", user.wallet_address.toLowerCase()) // Normalize wallet address to lowercase
-              .order('obtained_at', { ascending: false })
-              .range(from, from + pageSize - 1)
-
-            if (pageError) {
-              console.error("Error fetching user cards:", pageError)
-              console.error("Error details:", {
-                message: pageError.message,
-                code: pageError.code,
-                details: pageError.details,
-                hint: pageError.hint,
-                wallet_address: user.wallet_address,
-              })
-              toast({
-                title: "Error",
-                description: `Failed to load your card collection: ${pageError.message || "Unknown error"}`,
-                variant: "destructive",
-              })
-              setUserCards([])
-              setLoading(false)
-              return
-            }
-
-            const pageRows = pageData ?? []
-            allRows = allRows.concat(pageRows)
-            if (pageRows.length < pageSize) {
-              hasMore = false
-            } else {
-              from += pageSize
-            }
+          const pageRows = pageData ?? []
+          allRows = allRows.concat(pageRows)
+          if (pageRows.length < pageSize) {
+            hasMore = false
+          } else {
+            from += pageSize
           }
-          userCardsData = allRows
         }
+
+        const userCardsData = allRows
 
         const userCardsRows = userCardsData ?? []
 
@@ -261,14 +233,6 @@ export default function CollectionPage() {
               quantity: 0,
               instances: [],
               favorite: false,
-              details: usedRpc ? {
-                id: instance.card_id,
-                name: instance.name,
-                character: instance.character,
-                image_url: instance.image_url,
-                rarity: instance.rarity,
-                epoch: instance.epoch,
-              } : undefined,
             })
           }
           
@@ -297,55 +261,28 @@ export default function CollectionPage() {
           return
         }
 
-        let cardMap = new Map()
-        if (usedRpc) {
-          uniqueUserCards.forEach((card) => {
-            if (card.details?.id) {
-              cardMap.set(card.details.id, card.details)
-            }
-          })
-        } else {
-          console.log("Fetching card details for", cardIds.length, "unique cards")
-          const allCardsData: any[] = []
-          const chunkSize = 500
-          for (let i = 0; i < cardIds.length; i += chunkSize) {
-            const chunk = cardIds.slice(i, i + chunkSize)
-            const { data: cardsData, error: cardsError } = await supabase
-              .from("cards")
-              .select("id, name, character, image_url, rarity, epoch")
-              .in("id", chunk)
+        console.log("Fetching card details for", cardIds.length, "unique cards")
+        const allCardsData: any[] = []
+        const chunkSize = 500
+        for (let i = 0; i < cardIds.length; i += chunkSize) {
+          const chunk = cardIds.slice(i, i + chunkSize)
+          const { data: cardsData, error: cardsError } = await supabase
+            .from("cards")
+            .select("id, name, character, image_url, rarity, epoch")
+            .in("id", chunk)
 
-            if (cardsError) {
-              console.error("Error fetching card details:", cardsError)
-              console.error("Error details:", {
-                message: cardsError.message,
-                code: cardsError.code,
-                details: cardsError.details,
-                hint: cardsError.hint,
-                cardIds: chunk,
-              })
-              toast({
-                title: "Error",
-                description: `Failed to load card details: ${cardsError.message || "Unknown error"}`,
-                variant: "destructive",
-              })
-              setUserCards([])
-              setAvailableEpochs([])
-              setLoading(false)
-              return
-            }
-
-            if (cardsData && cardsData.length > 0) {
-              allCardsData.push(...cardsData)
-            }
-          }
-
-          if (allCardsData.length === 0) {
-            console.error("No card details found for card IDs:", cardIds)
-            console.error("User has card instances but no matching card details in cards table")
+          if (cardsError) {
+            console.error("Error fetching card details:", cardsError)
+            console.error("Error details:", {
+              message: cardsError.message,
+              code: cardsError.code,
+              details: cardsError.details,
+              hint: cardsError.hint,
+              cardIds: chunk,
+            })
             toast({
-              title: "Warning",
-              description: "Cards found but details not available. Some cards may be missing from the database.",
+              title: "Error",
+              description: `Failed to load card details: ${cardsError.message || "Unknown error"}`,
               variant: "destructive",
             })
             setUserCards([])
@@ -354,22 +291,56 @@ export default function CollectionPage() {
             return
           }
 
-          allCardsData.forEach((c) => {
-            cardMap.set(c.id, c)
-          })
+          if (cardsData && cardsData.length > 0) {
+            allCardsData.push(...cardsData)
+          }
         }
+
+        if (allCardsData.length === 0) {
+          console.error("No card details found for card IDs:", cardIds)
+          console.error("User has card instances but no matching card details in cards table")
+          toast({
+            title: "Warning",
+            description: "Cards found but details not available. Some cards may be missing from the database.",
+            variant: "destructive",
+          })
+          setUserCards([])
+          setAvailableEpochs([])
+          setLoading(false)
+          return
+        }
+
+        const cardMap = new Map()
+        allCardsData.forEach((c) => {
+          cardMap.set(c.id, c)
+        })
 
         // 5. Get available epochs from user's cards
         const epochs = [...new Set(Array.from(cardMap.values()).map((card: any) => card.epoch).filter(Boolean))] as number[]
         setAvailableEpochs(epochs.sort((a, b) => b - a)) // Sort newest first
 
+        const makePlaceholderDetails = (cardId: string) => ({
+          id: cardId,
+          name: "Unknown Card",
+          character: "Unknown",
+          image_url: "/placeholder.svg",
+          rarity: "unknown",
+          epoch: null,
+        })
+
         // 6. Combine the data
+        const missingDetailsCount = uniqueUserCards.filter(
+          (card) => !cardMap.get(card.card_id)
+        ).length
+        if (missingDetailsCount > 0) {
+          console.warn(`Missing card details for ${missingDetailsCount} card(s)`)
+        }
+
         const processedCards = uniqueUserCards
           .map((userCard) => {
-            const details = userCard.details || cardMap.get(userCard.card_id)
-            if (!details) {
-              console.warn(`Card details not found for card_id: ${userCard.card_id}`)
-              return null
+            const details = cardMap.get(userCard.card_id) || makePlaceholderDetails(userCard.card_id)
+            if (!details?.name) {
+              console.warn(`Card details missing for card_id: ${userCard.card_id}`)
             }
             // Use the first instance ID as the main ID
             const firstInstance = userCard.instances[0]
