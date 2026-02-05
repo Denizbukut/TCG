@@ -1800,14 +1800,13 @@ export default function Home() {
   return (
     <ProtectedRoute>
       <div 
-        className="flex flex-col min-h-screen text-white relative overflow-y-auto"
+        className="flex flex-col min-h-screen text-white relative"
         style={{
           backgroundImage: 'url("/hintergrund.webp.webp")',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
-          backgroundAttachment: 'fixed',
-          overscrollBehavior: 'none'
+          backgroundAttachment: 'fixed'
         }}
       >
         {/* Header with glass effect */}
@@ -1875,7 +1874,7 @@ export default function Home() {
           </div>
         </header>
 
-        <main className="w-full px-2 md:px-6 pb-16 flex-1 overflow-y-auto overscroll-contain"> {/* Padding hinzugefügt */}
+        <main className="w-full px-2 md:px-6 pb-16 flex-1"> {/* Padding hinzugefügt */}
           {user?.wallet_address && (
             <div className="mt-3 mb-4">
               <AniAds
