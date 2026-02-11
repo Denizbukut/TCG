@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Trophy, ChevronDown, ChevronUp } from "lucide-react"
+import { ArrowLeft, Trophy, ChevronDown, ChevronUp, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import CardItem from "@/components/card-item"
-import { WEEKLY_CONTEST_CONFIG, getContestEndTimestamp, getTimeUntilContestEnd } from "@/lib/weekly-contest-config"
+import { WEEKLY_CONTEST_CONFIG, getContestEndTimestamp, getTimeUntilContestEnd, isContestActive } from "@/lib/weekly-contest-config"
 import { useI18n } from "@/contexts/i18n-context"
 import { getSupabaseBrowserClient } from "@/lib/supabase"
 import {
@@ -14,6 +14,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
+import { motion } from "framer-motion"
+import ProtectedRoute from "@/components/protected-route"
 
 const WEEKLY_PRIZE_POOL = WEEKLY_CONTEST_CONFIG.prizePool
 
@@ -153,40 +155,85 @@ export default function WeeklyContestPage() {
   const contestEnded = countdown <= 0
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#18181b] to-[#232526] pb-24">
-      <header className="sticky top-0 z-10 bg-black/80 border-b border-yellow-400 px-4 py-3 flex items-center gap-2 backdrop-blur shadow-lg">
-        <Button variant="ghost" size="icon" onClick={() => router.push("/")}> <ArrowLeft className="h-5 w-5 text-yellow-400" /></Button>
-        <h1 className="text-xl font-extrabold flex items-center gap-2 bg-gradient-to-r from-yellow-200 via-yellow-400 to-yellow-600 bg-clip-text text-transparent animate-gradient-move drop-shadow-lg">
-          <span className="relative">
-            <Trophy className="w-7 h-7 text-yellow-400 animate-trophy-float" style={{ filter: 'drop-shadow(0 0 8px #FFD700)' }} />
-          </span>
-          {t("contest.title", "Weekly Contest")}
-        </h1>
-      </header>
-
-      <main className="max-w-md mx-auto p-4 space-y-6">
-        <div className="text-center text-lg font-bold">
-          {contestEnded ? (
-            <div className="text-red-500 text-2xl font-extrabold">{t("contest.ended", "Contest Ended")}</div>
-          ) : (
-            <div className="flex justify-center gap-4 text-base mt-2">
-              {time && (
-                <>
-                  <div className="flex flex-col items-center"><span className="text-yellow-300 text-2xl font-mono">{time.days}</span><span className="text-yellow-100 text-xs">D</span></div>
-                  <div className="flex flex-col items-center"><span className="text-yellow-300 text-2xl font-mono">{time.hours}</span><span className="text-yellow-100 text-xs">H</span></div>
-                  <div className="flex flex-col items-center"><span className="text-yellow-300 text-2xl font-mono">{time.minutes}</span><span className="text-yellow-100 text-xs">M</span></div>
-                  <div className="flex flex-col items-center"><span className="text-yellow-300 text-2xl font-mono">{time.seconds}</span><span className="text-yellow-100 text-xs">S</span></div>
-                </>
-              )}
+    <ProtectedRoute>
+      <div className="flex flex-col min-h-screen text-white relative bg-[#0a0a0a] overflow-y-auto">
+        {/* Premium Header - Coinbase Style */}
+        <header className="sticky top-0 z-30 backdrop-blur-xl bg-[#0a0a0a]/80 border-b border-[#1a1a1a]">
+          <div className="w-full px-4 py-2.5 flex items-center justify-between max-w-2xl mx-auto">
+            {/* Left: Back Button + Title */}
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => router.push("/")}
+                className="w-8 h-8 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10"
+              >
+                <ArrowLeft className="h-4 w-4 text-white/70" />
+              </Button>
+              <h1 className="text-base font-semibold tracking-tight text-white">
+                {t("contest.title", "Weekly Contest")}
+              </h1>
             </div>
-          )}
-        </div>
-
-        <div className="bg-gradient-to-br from-[#232526] to-[#18181b] border-2 border-yellow-400 rounded-2xl shadow-xl p-6 text-center mb-4">
-          <h2 className="text-xl font-bold text-yellow-300 mb-2">{t("contest.your_mission", "Your Mission:")}</h2>
-          <div className="text-2xl font-extrabold bg-gradient-to-r from-yellow-200 via-yellow-400 to-yellow-600 bg-clip-text text-transparent animate-gradient-move mb-4">
-            {t("contest.earn_points", "Earn as many Points as possible!")}
           </div>
+        </header>
+
+        <main className="w-full px-4 pb-32 flex-1 max-w-2xl mx-auto">
+          <div className="space-y-3 mt-4">
+            {/* Timer Card - Glassmorphism */}
+            {!contestEnded && time && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="relative rounded-2xl p-4 backdrop-blur-xl bg-white/5 border border-white/10"
+              >
+                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37] to-transparent"></div>
+                <div className="flex items-center justify-center gap-4">
+                  <div className="flex flex-col items-center">
+                    <span className="text-yellow-300 text-2xl font-mono drop-shadow-[0_0_8px_rgba(252,211,77,0.8)]">{time.days}</span>
+                    <span className="text-yellow-100 text-xs">D</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-yellow-300 text-2xl font-mono drop-shadow-[0_0_8px_rgba(252,211,77,0.8)]">{time.hours}</span>
+                    <span className="text-yellow-100 text-xs">H</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-yellow-300 text-2xl font-mono drop-shadow-[0_0_8px_rgba(252,211,77,0.8)]">{time.minutes}</span>
+                    <span className="text-yellow-100 text-xs">M</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-yellow-300 text-2xl font-mono drop-shadow-[0_0_8px_rgba(252,211,77,0.8)]">{time.seconds}</span>
+                    <span className="text-yellow-100 text-xs">S</span>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {contestEnded && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="relative rounded-2xl p-4 backdrop-blur-xl bg-white/5 border border-red-500/30"
+              >
+                <div className="text-center text-red-400 text-lg font-semibold">
+                  {t("contest.ended", "Contest Ended")}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Mission Card - Glassmorphism */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="relative rounded-2xl p-4 backdrop-blur-xl bg-white/5 border border-white/10"
+            >
+              <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37] to-transparent"></div>
+              <h2 className="text-base font-semibold text-white mb-3">{t("contest.your_mission", "Your Mission:")}</h2>
+              <div className="text-lg font-semibold text-[#d4af37] mb-4">
+                {t("contest.earn_points", "Earn as many Points as possible!")}
+              </div>
           
           {/* Double Points Today Banner - UNCOMMENT FOR SPECIAL EVENTS */}
           {/* <div className="mb-4 p-3 bg-gradient-to-r from-green-500/20 to-green-400/10 border border-green-400 rounded-lg">
@@ -198,169 +245,168 @@ export default function WeeklyContestPage() {
             <p className="text-sm text-green-200 mt-1">All points earned today are doubled!</p>
           </div> */}
           
-            <div className="text-sm text-yellow-100 space-y-1">
+              <div className="text-xs text-white/70 space-y-1">
               <Collapsible className="w-full" open={isDrawCardsOpen} onOpenChange={setIsDrawCardsOpen}>
-                <CollapsibleTrigger className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity py-0.5">
+                <CollapsibleTrigger className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity py-1">
                   <span>• {t("contest.draw_cards", "Draw Cards")}</span>
                   {isDrawCardsOpen ? (
-                    <ChevronUp className="h-4 w-4 text-yellow-400" />
+                    <ChevronUp className="h-3 w-3 text-white/40" />
                   ) : (
-                    <ChevronDown className="h-4 w-4 text-yellow-400" />
+                    <ChevronDown className="h-3 w-3 text-white/40" />
                   )}
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-1 space-y-1 text-xs pl-0 text-left">
-                  <div className="text-left">• {t("contest.common_cards", "Common Cards")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
-                  <div className="text-left">• {t("contest.rare_cards", "Rare Cards")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
-                  <div className="text-left">• {t("contest.epic_cards", "Epic Cards")} = <span className="font-bold text-yellow-400">10 {t("contest.points", "Points")}</span> <span className="text-green-400 font-bold">(2x Bonus!)</span></div>
-                  <div className="text-left">• {t("contest.legendary_cards", "Legendary Cards")} = <span className="font-bold text-yellow-400">40 {t("contest.points", "Points")}</span> <span className="text-green-400 font-bold">(2x Bonus!)</span></div>
+                  <div className="text-left">• {t("contest.common_cards", "Common Cards")} = <span className="font-semibold text-[#d4af37]">2 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.rare_cards", "Rare Cards")} = <span className="font-semibold text-[#d4af37]">2 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.epic_cards", "Epic Cards")} = <span className="font-semibold text-[#d4af37]">10 {t("contest.points", "Points")}</span> <span className="text-[#10b981] font-semibold">(2x Bonus!)</span></div>
+                  <div className="text-left">• {t("contest.legendary_cards", "Legendary Cards")} = <span className="font-semibold text-[#d4af37]">40 {t("contest.points", "Points")}</span> <span className="text-[#10b981] font-semibold">(2x Bonus!)</span></div>
                 </CollapsibleContent>
               </Collapsible>
               <Collapsible className="w-full" open={isTradeMarketOpen} onOpenChange={setIsTradeMarketOpen}>
-                <CollapsibleTrigger className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity py-0.5">
+                <CollapsibleTrigger className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity py-1">
                   <span>• {t("contest.trade_market", "Buying Cards on Trade Market")}</span>
                   {isTradeMarketOpen ? (
-                    <ChevronUp className="h-4 w-4 text-yellow-400" />
+                    <ChevronUp className="h-3 w-3 text-white/40" />
                   ) : (
-                    <ChevronDown className="h-4 w-4 text-yellow-400" />
+                    <ChevronDown className="h-3 w-3 text-white/40" />
                   )}
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-1 space-y-1 text-xs pl-0 text-left">
-                  <div className="text-left">• {t("contest.common_cards", "Common Cards")} = <span className="font-bold text-yellow-400">1 {t("contest.points", "Points")}</span></div>
-                  <div className="text-left">• {t("contest.rare_cards", "Rare Cards")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
-                  <div className="text-left">• {t("contest.epic_cards", "Epic Cards")} = <span className="font-bold text-yellow-400">3 {t("contest.points", "Points")}</span></div>
-                  <div className="text-left">• {t("contest.legendary_cards", "Legendary Cards")} = <span className="font-bold text-yellow-400">5 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.common_cards", "Common Cards")} = <span className="font-semibold text-[#d4af37]">1 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.rare_cards", "Rare Cards")} = <span className="font-semibold text-[#d4af37]">2 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.epic_cards", "Epic Cards")} = <span className="font-semibold text-[#d4af37]">3 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.legendary_cards", "Legendary Cards")} = <span className="font-semibold text-[#d4af37]">5 {t("contest.points", "Points")}</span></div>
                 </CollapsibleContent>
               </Collapsible>
               <Collapsible className="w-full" open={isWheelSpinsOpen} onOpenChange={setIsWheelSpinsOpen}>
-                <CollapsibleTrigger className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity py-0.5">
+                <CollapsibleTrigger className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity py-1">
                   <span>• {t("contest.lucky_wheel_spins", "Lucky Wheel Spins")}</span>
                   {isWheelSpinsOpen ? (
-                    <ChevronUp className="h-4 w-4 text-yellow-400" />
+                    <ChevronUp className="h-3 w-3 text-white/40" />
                   ) : (
-                    <ChevronDown className="h-4 w-4 text-yellow-400" />
+                    <ChevronDown className="h-3 w-3 text-white/40" />
                   )}
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-1 space-y-1 text-xs pl-0 text-left">
-                  <div className="text-left">• {t("contest.standard_wheel", "Standard Lucky Wheel Spin")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
-                  <div className="text-left">• {t("contest.premium_wheel", "Premium Lucky Wheel Spin")} = <span className="font-bold text-yellow-400">25 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.standard_wheel", "Standard Lucky Wheel Spin")} = <span className="font-semibold text-[#d4af37]">2 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.premium_wheel", "Premium Lucky Wheel Spin")} = <span className="font-semibold text-[#d4af37]">25 {t("contest.points", "Points")}</span></div>
                 </CollapsibleContent>
               </Collapsible>
               <Collapsible className="w-full" open={isOtherOpen} onOpenChange={setIsOtherOpen}>
-                <CollapsibleTrigger className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity py-0.5">
+                <CollapsibleTrigger className="flex items-center justify-between w-full text-left hover:opacity-80 transition-opacity py-1">
                   <span>• {t("contest.other", "Other")}</span>
                   {isOtherOpen ? (
-                    <ChevronUp className="h-4 w-4 text-yellow-400" />
+                    <ChevronUp className="h-3 w-3 text-white/40" />
                   ) : (
-                    <ChevronDown className="h-4 w-4 text-yellow-400" />
+                    <ChevronDown className="h-3 w-3 text-white/40" />
                   )}
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-1 space-y-1 text-xs pl-0 text-left">
-                  <div className="text-left">• {t("contest.ticket_shop", "Buying Tickets in Shop")} = <span className="font-bold text-yellow-400">2 {t("contest.points", "Points")}</span></div>
-                  <div className="text-left">• {t("contest.referrals", "Referrals")} = <span className="font-bold text-yellow-400">5 {t("contest.points", "Points")}</span></div>
-                  <div className="text-left">• {t("contest.special_deal", "Buying Special Deal")} = <span className="font-bold text-yellow-400">100 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.ticket_shop", "Buying Tickets in Shop")} = <span className="font-semibold text-[#d4af37]">2 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.referrals", "Referrals")} = <span className="font-semibold text-[#d4af37]">5 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.special_deal", "Buying Special Deal")} = <span className="font-semibold text-[#d4af37]">100 {t("contest.points", "Points")}</span></div>
                 </CollapsibleContent>
               </Collapsible>
             </div>
-            <div className="mt-3 pt-3 border-t border-yellow-400/30">
-              <p className="text-xs text-yellow-200 font-semibold mb-1">{t("contest.trade_market_rules_title", "Important: Trade Market Rules")}</p>
-              <p className="text-xs text-yellow-100/80">
-                {t("contest.trade_market_rules_desc", "Points are only counted when buying cards from different users. Every 24 hours, you can only buy a card from the same user once and receive points.")}
-              </p>
-            </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-[#232526] to-[#18181b] border-2 border-yellow-400 rounded-2xl shadow-xl p-6">
-          <h2 className="text-lg font-bold text-yellow-300 mb-2">{t("contest.your_progress", "Your Progress")}</h2>
-          {loading ? (
-            <p className="text-base text-gray-300">{t("contest.loading_stats", "Loading your stats...")}</p>
-          ) : userStats ? (
-            <div className="space-y-1">
-              <p className="text-lg text-yellow-100">
-                {t("contest.you_earned", "You earned")} <span className="font-extrabold text-yellow-400 text-2xl">{userStats.legendary_count}</span> {t("contest.points_this_week", "points this week.")}
-              </p>
-              {userStats.rank && (
-                <p className="text-base text-yellow-200">
-                  {t("contest.current_rank", "Current rank:")}: <span className="font-bold text-yellow-400">#{userStats.rank}</span>
+              <div className="mt-3 pt-3 border-t border-white/10">
+                <p className="text-xs text-white/80 font-semibold mb-1">{t("contest.trade_market_rules_title", "Important: Trade Market Rules")}</p>
+                <p className="text-xs text-white/60">
+                  {t("contest.trade_market_rules_desc", "Points are only counted when buying cards from different users. Every 24 hours, you can only buy a card from the same user once and receive points.")}
                 </p>
-              )}
-            </div>
-          ) : (
-            <p className="text-base text-gray-300">{t("contest.no_points", "No points earned yet this week.")}</p>
-          )}
-        </div>
+              </div>
+            </motion.div>
 
-        <div className="bg-gradient-to-br from-[#232526] to-[#18181b] border-2 border-yellow-400 rounded-2xl shadow-xl p-6 space-y-4">
-          <div>
-            <h2 className="text-lg font-bold text-yellow-300 mb-2">🏆 {t("contest.prize_pool", "Prize Pool")}</h2>
-            <ul className="text-lg text-yellow-100 space-y-2">
-              {WEEKLY_PRIZE_POOL.map((prize, idx) => (
-                <li key={prize.rank} className={`flex items-center gap-3 px-2 py-2 rounded-xl ${
-                  idx === 0 ? 'bg-gradient-to-r from-yellow-400/40 to-yellow-200/10 shadow-gold' :
-                  idx === 1 ? 'bg-gradient-to-r from-gray-300/30 to-yellow-100/10 shadow-lg' :
-                  idx === 2 ? 'bg-gradient-to-r from-amber-700/30 to-yellow-100/10 shadow-lg' :
-                  'bg-black/20'
-                }`}>
-                  <span className="text-2xl drop-shadow-lg">{prize.icon}</span>
-                  <span className="flex-1 font-bold text-yellow-200">{prize.rank.replace(/Place/g, t("contest.place", "Place"))}</span>
-                  <span className="font-extrabold bg-gradient-to-r from-yellow-200 via-yellow-400 to-yellow-600 bg-clip-text text-transparent animate-gradient-move">{prize.reward}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-[#232526] to-[#18181b] border-2 border-yellow-400 rounded-2xl shadow-xl p-6">
-          <h2 className="text-lg font-bold text-yellow-300 mb-2">{t("contest.leaderboard", "Leaderboard")}</h2>
-          {loading ? (
-            <p className="text-center text-gray-300">{t("contest.loading_leaderboard", "Loading leaderboard...")}</p>
-          ) : leaderboard.length === 0 ? (
-            <p className="text-center text-gray-300">{t("contest.no_entries", "No entries yet this week.")}</p>
-          ) : (
-            <div className="space-y-2">
-              {leaderboard.map((entry, index) => (
-                <div
-                  key={entry.user_id}
-                  className={`flex justify-between items-center px-4 py-3 rounded-xl text-lg font-semibold transition-all
-                    ${index === 0 ? 'bg-gradient-to-r from-yellow-400/60 to-yellow-200/20 text-yellow-900 shadow-gold' :
-                      index === 1 ? 'bg-gradient-to-r from-gray-300/40 to-yellow-100/10 text-gray-900' :
-                      index === 2 ? 'bg-gradient-to-r from-amber-700/40 to-yellow-100/10 text-amber-100' :
-                      'bg-black/30 text-yellow-100'}
-                    ${user?.username === entry.user_id ? 'border-2 border-yellow-400 shadow-gold' : 'border border-yellow-900/30'}
-                  `}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl font-extrabold w-8 text-yellow-200">{index + 1}</span>
-                    <span className="truncate max-w-[120px]">{entry.user_id.length > 14 ? `${entry.user_id.slice(0, 14)}…` : entry.user_id}</span>
-                  </div>
-                  <span className="font-extrabold text-yellow-300">{entry.legendary_count}</span>
+            {/* Progress Card - Glassmorphism */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+              className="relative rounded-2xl p-4 backdrop-blur-xl bg-white/5 border border-white/10"
+            >
+              <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37] to-transparent"></div>
+              <h2 className="text-base font-semibold text-white mb-3">{t("contest.your_progress", "Your Progress")}</h2>
+              {loading ? (
+                <p className="text-sm text-white/60">{t("contest.loading_stats", "Loading your stats...")}</p>
+              ) : userStats ? (
+                <div className="space-y-2">
+                  <p className="text-base text-white">
+                    {t("contest.you_earned", "You earned")} <span className="font-semibold text-[#d4af37] text-xl">{userStats.legendary_count}</span> {t("contest.points_this_week", "points this week.")}
+                  </p>
+                  {userStats.rank && (
+                    <p className="text-sm text-white/70">
+                      {t("contest.current_rank", "Current rank:")}: <span className="font-semibold text-[#d4af37]">#{userStats.rank}</span>
+                    </p>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </main>
-      <style jsx>{`
-        .animate-gradient-move {
-          background-size: 200% 200%;
-          animation: gradientMove 3s linear infinite;
-        }
-        @keyframes gradientMove {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        .animate-trophy-float {
-          animation: trophyFloat 2.5s ease-in-out infinite;
-        }
-        @keyframes trophyFloat {
-          0% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
-          100% { transform: translateY(0); }
-        }
-        .shadow-gold {
-          box-shadow: 0 0 24px 4px #FFD70044, 0 0 8px 2px #FFD70099;
-        }
-      `}</style>
-    </div>
+              ) : (
+                <p className="text-sm text-white/60">{t("contest.no_points", "No points earned yet this week.")}</p>
+              )}
+            </motion.div>
+
+            {/* Prize Pool Card - Glassmorphism */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="relative rounded-2xl p-4 backdrop-blur-xl bg-white/5 border border-white/10"
+            >
+              <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37] to-transparent"></div>
+              <h2 className="text-base font-semibold text-white mb-3">🏆 {t("contest.prize_pool", "Prize Pool")}</h2>
+              <ul className="text-sm text-white space-y-2">
+                {WEEKLY_PRIZE_POOL.map((prize, idx) => (
+                  <li key={prize.rank} className={`flex items-center gap-3 px-3 py-2 rounded-lg ${
+                    idx === 0 ? 'bg-[#d4af37]/10 border border-[#d4af37]/20' :
+                    idx === 1 ? 'bg-white/5 border border-white/10' :
+                    idx === 2 ? 'bg-white/5 border border-white/10' :
+                    'bg-white/5 border border-white/10'
+                  }`}>
+                    <span className="text-xl">{prize.icon}</span>
+                    <span className="flex-1 font-semibold text-white">{prize.rank.replace(/Place/g, t("contest.place", "Place"))}</span>
+                    <span className="font-semibold text-[#d4af37]">{prize.reward}</span>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+
+            {/* Leaderboard Card - Glassmorphism */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.25 }}
+              className="relative rounded-2xl p-4 backdrop-blur-xl bg-white/5 border border-white/10"
+            >
+              <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37] to-transparent"></div>
+              <h2 className="text-base font-semibold text-white mb-3">{t("contest.leaderboard", "Leaderboard")}</h2>
+              {loading ? (
+                <p className="text-center text-white/60 text-sm">{t("contest.loading_leaderboard", "Loading leaderboard...")}</p>
+              ) : leaderboard.length === 0 ? (
+                <p className="text-center text-white/60 text-sm">{t("contest.no_entries", "No entries yet this week.")}</p>
+              ) : (
+                <div className="space-y-2">
+                  {leaderboard.map((entry, index) => (
+                    <div
+                      key={entry.user_id}
+                      className={`flex justify-between items-center px-3 py-2 rounded-lg text-sm font-medium transition-all
+                        ${index === 0 ? 'bg-[#d4af37]/10 border border-[#d4af37]/20' :
+                          index === 1 ? 'bg-white/5 border border-white/10' :
+                          index === 2 ? 'bg-white/5 border border-white/10' :
+                          'bg-white/5 border border-white/10'}
+                        ${user?.username === entry.user_id ? 'border-[#d4af37] border-2' : ''}
+                      `}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-base font-semibold w-6 text-white/70">{index + 1}</span>
+                        <span className="truncate max-w-[120px] text-white">{entry.user_id.length > 14 ? `${entry.user_id.slice(0, 14)}…` : entry.user_id}</span>
+                      </div>
+                      <span className="font-semibold text-[#d4af37]">{entry.legendary_count}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          </div>
+        </main>
+      </div>
+    </ProtectedRoute>
   )
 }
