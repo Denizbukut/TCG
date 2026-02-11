@@ -11,6 +11,7 @@ import { AnixPriceProvider } from "@/contexts/AnixPriceContext"
 import { Poppins } from "next/font/google"
 import { I18nProvider } from "@/contexts/i18n-context"
 import { PaymentCurrencyProvider } from "@/contexts/payment-currency-context"
+import BottomNav from "@/components/bottom-nav"
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                   <AnixPriceProvider>
                     <PaymentCurrencyProvider>
                       {children}
+                      <BottomNav />
                     </PaymentCurrencyProvider>
                   </AnixPriceProvider>
                 </WldPriceProvider>

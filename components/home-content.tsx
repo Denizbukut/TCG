@@ -12,7 +12,7 @@ import MobileNav from "@/components/mobile-nav"
 import { Button } from "@/components/ui/button"
 import LanguageSwitcher from "@/components/language-switcher"
 import CardCatalog from "@/components/card-catalog"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { getTimeUntilContestEnd, isContestActive } from "@/lib/weekly-contest-config"
 
 // Add ChatOverlay component at the bottom of the file
@@ -41,6 +41,9 @@ import {
   Target,
   Star,
   Info,
+  Home as HomeIcon,
+  Globe,
+  Send,
 } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 import Link from "next/link"
@@ -48,6 +51,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { getSupabaseBrowserClient } from "@/lib/supabase"
 import DealOfTheDayDialog from "@/components/deal-of-the-day-dialog"
 import DailyDealsBatch from "@/components/daily-deals-batch"
+import { Badge } from "@/components/ui/badge"
 import { MiniKit } from "@worldcoin/minikit-js"
 import { useWldPrice } from "@/contexts/WldPriceContext"
 import { claimReferralRewardForUser } from "@/app/actions/referrals"
@@ -135,7 +139,7 @@ interface SpecialDeal {
   card_rarity: string
   card_character: string
   creator_address?: string
-  icon_tickets: number
+  // icon_tickets: number // Removed - no longer used
 }
 
 interface DealInteraction {
@@ -163,6 +167,7 @@ const xpPassBenefits = [
 export default function Home() {
   const { user, updateUserTickets, refreshUserData } = useAuth()
   const { t } = useI18n()
+  const pathname = usePathname()
   
   // Helper function to translate rarity
   const getDisplayRarity = (rarity: string) => {
@@ -1423,7 +1428,7 @@ export default function Home() {
           card_level: Number(deal.card_level),
           classic_tickets: Number(deal.classic_tickets),
           elite_tickets: Number(deal.elite_tickets),
-          icon_tickets: Number(deal.icon_tickets || 0),
+          // icon_tickets: Number(deal.icon_tickets || 0), // Removed - no longer used
           price: Number(deal.price),
           description: String(deal.description || ""),
           discount_percentage: Number(deal.discount_percentage),
@@ -1800,83 +1805,64 @@ export default function Home() {
   return (
     <ProtectedRoute>
       <div 
-        className="flex flex-col min-h-screen text-white relative"
-        style={{
-          backgroundImage: 'url("/hintergrund.webp.webp")',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-          backgroundAttachment: 'fixed'
-        }}
+        className="flex flex-col min-h-screen text-white relative bg-[#0a0a0a] overflow-y-auto"
       >
-        {/* Header with glass effect */}
-        <header className="sticky top-0 z-30 backdrop-blur-md bg-gradient-to-br from-[#232526]/90 to-[#414345]/90 border-b-2 border-yellow-400 shadow-sm">
-          <div className="w-full px-4 py-2 flex items-center justify-between">
-            {/* Left: App Name */}
-            <h1 className="text-base font-bold tracking-tight bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">
-              CRYPTO TCG
-            </h1>
-            
-            {/* Right: Icons and Tickets */}
-            <div className="flex items-center gap-3">
-              {/* X Icon */}
-              <a
-                href="https://x.com/ani_labs_world"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-7 h-7 rounded-full bg-black flex items-center justify-center transition-transform hover:scale-105 shadow border border-white"
-                aria-label="Twitter"
-              >
-                <span className="sr-only">Twitter</span>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-3.5 h-3.5 text-white">
-                  <path d="M17.53 3H21.5L14.36 10.66L22.75 21H16.28L11.22 14.73L5.52 21H1.54L9.04 12.76L1 3H7.6L12.18 8.67L17.53 3ZM16.4 19.13H18.18L7.45 4.76H5.54L16.4 19.13Z" fill="currentColor"/>
-                </svg>
-              </a>
-
-              {/* Telegram Icon */}
-              <a
-                href="https://t.me/+TNwjVcoRfnliY2Zi"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-7 h-7 rounded-full bg-gradient-to-br from-[#37aee2] to-[#1e96c8] flex items-center justify-center transition-transform hover:scale-105 shadow border border-[#37aee2]"
-                aria-label="Telegram"
-              >
-                <span className="sr-only">Telegram</span>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" className="w-3.5 h-3.5 text-white">
-                  <path
-                    fill="currentColor"
-                    d="M120 0C53.7 0 0 53.7 0 120s53.7 120 120 120 120-53.7 120-120S186.3 0 120 0zm58.6 81.3l-19.8 93.5c-1.5 6.6-5.4 8.2-11 5.1l-30.4-22.4-14.7 14.2c-1.6 1.6-2.9 2.9-5.8 2.9l2-28.7 52.2-47.2c2.3-2 0.3-3.1-2.6-1.1l-64.5 40.6-27.8-8.7c-6-1.9-6.1-6-1.3-8.8l108.8-49.9c5-2.3 9.4 1.2 7.6 8.7z"
-                  />
-                </svg>
-              </a>
-            
-              {/* Info Icon */}
-              <button
-                onClick={() => setShowInfoDialog(true)}
-                className="w-7 h-7 rounded-full bg-yellow-400 flex items-center justify-center transition-transform hover:scale-105 shadow border border-yellow-300"
-                aria-label="Info"
-              >
-                <Info className="h-3.5 w-3.5 text-black" />
-              </button>
+        {/* Premium Header - Coinbase Style */}
+        <header className="sticky top-0 z-30 backdrop-blur-xl bg-[#0a0a0a]/80 border-b border-[#1a1a1a]">
+          <div className="w-full px-4 py-2.5 flex items-center justify-between max-w-2xl mx-auto">
+            {/* Left: Logo + Social Buttons */}
+            <div className="flex items-center gap-4">
+              <h1 className="text-base font-semibold tracking-tight text-white">
+                CRYPTO TCG
+              </h1>
               
-              {/* Tickets Display */}
+              {/* Social Buttons - close to logo */}
               <div className="flex items-center gap-2">
-                <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#232526] to-[#414345] px-1.5 py-0.5 rounded-full shadow-sm border border-blue-400 min-w-[48px]">
-                  <Ticket className="h-3.5 w-3.5 text-blue-400 mx-auto" />
-                  <span className="font-medium text-xs text-center text-blue-100">{tickets}</span>
-                </div>
-                <div className="flex flex-col items-center justify-center bg-gradient-to-br from-[#232526] to-[#414345] px-1.5 py-0.5 rounded-full shadow-sm border border-purple-400 min-w-[48px]">
-                  <Ticket className="h-3.5 w-3.5 text-purple-400 mx-auto" />
-                  <span className="font-medium text-xs text-center text-purple-100">{eliteTickets}</span>
-                </div>
+                <a
+                  href="https://twitter.com/cryptotcg"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors"
+                  aria-label="X (Twitter)"
+                >
+                  <X className="h-4 w-4 text-white/70" />
+                </a>
+                <a
+                  href="https://t.me/cryptotcg"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors"
+                  aria-label="Telegram"
+                >
+                  <Send className="h-4 w-4 text-white/70" />
+                </a>
+                <button
+                  onClick={() => setShowInfoDialog(true)}
+                  className="w-8 h-8 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors"
+                  aria-label="Info"
+                >
+                  <Info className="h-4 w-4 text-white/70" />
+                </button>
+              </div>
+            </div>
+            
+            {/* Right: Tickets - with more spacing from buttons */}
+            <div className="flex items-center gap-2 ml-6">
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10">
+                <Ticket className="h-3.5 w-3.5 text-[#d4af37]" />
+                <span className="text-xs font-medium text-white">{tickets}</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10">
+                <Crown className="h-3.5 w-3.5 text-[#d4af37]" />
+                <span className="text-xs font-medium text-white">{eliteTickets}</span>
               </div>
             </div>
           </div>
         </header>
 
-        <main className="w-full px-2 md:px-6 pb-16 flex-1"> {/* Padding hinzugefügt */}
+        <main className="w-full px-4 pb-32 flex-1 max-w-2xl mx-auto"> {/* Coinbase-style centered max-width */}
           {user?.wallet_address && (
-            <div className="mt-3 mb-4">
+            <div className="mt-4 mb-4">
               <AniAds
                 creator_wallet="0x4bb270ef6dcb052a083bd5cff518e2e019c0f4ee" 
                 app_name="Crypto TCG"
@@ -1885,195 +1871,176 @@ export default function Home() {
             </div>
           )}
          
-          <div className="grid grid-cols-6 gap-3 mt-2 pb-4">
-            {/* Profile */}
-            <div className="col-span-3">
-              {/* ...Profile Card... */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-                className="bg-gradient-to-br from-[#232526] to-[#414345] rounded-xl shadow-lg p-3 flex flex-col justify-between min-h-[80px] h-full border-2 border-yellow-400 relative"
-              >
-                {/* Username and Level */}
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-yellow-100 truncate">
-                      {user?.username || 'User'}
-                    </p>
-                  </div>
-                  <span className="bg-yellow-400 text-black text-xs px-2 py-0.5 rounded-full font-bold ml-2 whitespace-nowrap">
-                    Lvl {user?.level || 1}
-                  </span>
-                </div>
-
-                {/* XP Progress Bar */}
-                <div className="mb-2">
-                  <div className="flex justify-between text-[10px] text-gray-400 mb-1">
-                    <span>XP</span>
-                    <span>{user?.experience || 0}/{user?.nextLevelExp || 500}</span>
-                  </div>
-                  <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r transition-all duration-300"
-                      style={{ 
-                        width: `${Math.min(((user?.experience || 0) / (user?.nextLevelExp || 500)) * 100, 100)}%`,
-                        backgroundImage: `linear-gradient(to right, ${XP_COLORS[currentXpColor as keyof typeof XP_COLORS]?.start || XP_COLORS.pink.start}, ${XP_COLORS[currentXpColor as keyof typeof XP_COLORS]?.end || XP_COLORS.pink.end})`
-                      }}
-                    />
+          <div className="space-y-3 mt-4">
+            {/* User Status Card - Glassmorphism - Kompakter */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="relative rounded-2xl p-4 backdrop-blur-xl bg-white/5 border border-white/10 overflow-visible"
+            >
+              {/* Subtle gold accent line */}
+              <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37]/50 to-transparent"></div>
+              
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-base font-semibold text-white mb-1 truncate">
+                    {user?.username || 'User'}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-[#d4af37] font-medium">Level {user?.level || 1}</span>
+                    <span className="text-xs text-white/40">•</span>
+                    <span className="text-xs text-white/60">{user?.experience || 0} XP</span>
                   </div>
                 </div>
-
-                {/* Language Switcher - Centered */}
-                <div className="flex justify-center">
-                  <div className="w-full">
+                <div className="flex items-center gap-2 ml-3">
+                  <div 
+                    className="w-10 h-10 rounded-full bg-gradient-to-br from-[#d4af37]/20 to-[#d4af37]/10 border border-[#d4af37]/30 flex items-center justify-center flex-shrink-0 cursor-pointer hover:bg-[#d4af37]/30 transition-colors"
+                    onClick={() => setShowReferralDialog(true)}
+                  >
+                    <Users className="h-5 w-5 text-[#d4af37]" />
+                  </div>
+                  <div className="flex-shrink-0 relative z-[100]">
                     <LanguageSwitcher />
                   </div>
                 </div>
+              </div>
+
+              {/* XP Progress Bar - Minimal */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs text-white/50">
+                  <span>Progress to Level {(user?.level || 1) + 1}</span>
+                  <span>{user?.experience || 0}/{user?.nextLevelExp || 500}</span>
+                </div>
+                <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ 
+                      width: `${Math.min(((user?.experience || 0) / (user?.nextLevelExp || 500)) * 100, 100)}%`
+                    }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    className="h-full bg-gradient-to-r from-[#d4af37] to-[#f4d03f] rounded-full"
+                  />
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Weekly Contest - Kompakt, nach oben verschoben */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="relative rounded-2xl p-4 backdrop-blur-xl bg-gradient-to-br from-white/8 to-white/5 border border-white/10 overflow-hidden cursor-pointer group"
+              onClick={() => router.push('/weekly-contest')}
+            >
+              {/* Gold accent line */}
+              <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37] to-transparent"></div>
+              
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#d4af37]/20 to-[#d4af37]/10 border border-[#d4af37]/30 flex items-center justify-center flex-shrink-0">
+                    <Trophy className="h-5 w-5 text-[#d4af37]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-semibold text-white mb-0.5 truncate">{t("contest.title", "Weekly Contest")}</h3>
+                    <p className="text-xs text-white/60 truncate">{t("contest.prize_home", "Win 200 WLD")}</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-white/40 group-hover:text-[#d4af37] transition-colors flex-shrink-0 ml-2" />
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* 2x Bonus Badge */}
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20">
+                  <span className="text-[10px] font-medium text-[#10b981]">Epic & Legendary: 2x Bonus</span>
+                </div>
+
+                {/* Countdown */}
+                {isContestActive() && (() => {
+                  const timeLeft = formatContestCountdown(contestCountdown)
+                  return timeLeft ? (
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <Clock className="h-3 w-3 text-[#d4af37]" style={{ filter: 'drop-shadow(0 0 4px #d4af37)' }} />
+                      <span className="text-[#d4af37] font-semibold" style={{ textShadow: '0 0 8px #d4af37, 0 0 12px #d4af37' }}>
+                        {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m
+                      </span>
+                    </div>
+                  ) : null
+                })()}
+              </div>
+            </motion.div>
+
+            {/* Game Pass + XP Pass + Shop Card - Grid 3 Spalten */}
+            <div className="grid grid-cols-3 gap-3">
+              {/* Game Pass Card */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.15 }}
+                className="relative rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10 overflow-hidden cursor-pointer group"
+                onClick={() => router.push('/pass')}
+              >
+                {/* Subtle gold accent */}
+                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37]/50 to-transparent"></div>
+                
+                <div className="relative p-3">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#d4af37]/20 to-[#d4af37]/10 border border-[#d4af37]/30 flex items-center justify-center flex-shrink-0">
+                      <Crown className="h-5 w-5 text-amber-800" />
+                    </div>
+                    <h3 className="text-xs font-semibold text-white text-center">{t("game_pass.title", "Game Pass")}</h3>
+                  </div>
+                </div>
               </motion.div>
-</div>
-            {/* Game Pass / XP Pass Carousel */}
-            <div className="col-span-3">
-              <div className="relative flex flex-col items-center">
-                <div className="w-full relative">
-                  {/* Left Arrow */}
-                  <button
-                    onClick={handlePrev}
-                    className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-full bg-white/70 hover:bg-white shadow transition opacity-100"
-                    style={{ pointerEvents: 'auto' }}
-                    aria-label="Previous Pass"
-                  >
-                    <ChevronLeft className="w-4 h-4 text-gray-400" />
-                  </button>
-                  {/* Right Arrow */}
-                  <button
-                    onClick={handleNext}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-full bg-white/70 hover:bg-white shadow transition opacity-100"
-                    style={{ pointerEvents: 'auto' }}
-                    aria-label="Next Pass"
-                  >
-                    <ChevronRight className="w-4 h-4 text-gray-400" />
-                  </button>
-                  <AnimatePresence initial={false} mode="wait">
-                    <motion.div
-                      key={passSlides[passIndex].key}
-                      initial={{ x: 100, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      exit={{ x: -100, opacity: 0 }}
-                      transition={{ duration: 0.5 }}
-                      className={`relative flex flex-col items-center justify-center rounded-xl p-3 min-h-[90px] shadow-lg font-bold text-center bg-gradient-to-b ${passSlides[passIndex].bg} border ${passSlides[passIndex].border} cursor-pointer`}
-                      onClick={() => router.push(passSlides[passIndex].href)}
-                      tabIndex={0}
-                      role="button"
-                      aria-label={`Open ${passSlides[passIndex].title}`}
-                    >
-                      <div className="w-14 h-14 rounded-full flex items-center justify-center bg-white/90 text-2xl mb-2 relative shadow-lg">
-                        {passSlides[passIndex].icon}
+
+              {/* Shop Card */}
+              <Link href="/shop" className="block">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.17 }}
+                  className="relative rounded-2xl p-3 backdrop-blur-xl bg-white/5 border border-white/10 overflow-hidden cursor-pointer group h-full"
+                >
+                  {/* Subtle gold accent */}
+                  <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37]/50 to-transparent"></div>
+                  
+                  <div className="flex flex-col items-center gap-2 h-full justify-center">
+                    <div className="relative">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#d4af37]/20 to-[#d4af37]/10 border border-[#d4af37]/30 flex items-center justify-center flex-shrink-0">
+                        <ShoppingCart className="h-5 w-5 text-[#d4af37]" />
                       </div>
-                      <div className={`text-lg font-bold ${passSlides[passIndex].color}`}>{passSlides[passIndex].title}</div>
-                      <div className="text-xs text-gray-700 font-medium">{passSlides[passIndex].text}</div>
-                      {/* Indicator dots in the card */}
-                      <div className="flex gap-2 mt-3 justify-center w-full">
-                        {passSlides.map((slide, idx) => (
-                          <span key={slide.key} className={`w-2 h-2 rounded-full ${passIndex === idx ? slide.dot : 'bg-gray-300'}`}></span>
-                        ))}
-                      </div>
-                    </motion.div>
-                  </AnimatePresence>
+                      {hasActiveDiscount && (
+                        <span className="absolute -top-1 -right-1 text-[8px] font-bold text-[#10b981] bg-[#10b981]/20 px-1 py-0.5 rounded border border-[#10b981]/30">
+                          -{discountValue}%
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-xs font-semibold text-white text-center">{t("shop.title", "Shop")}</h3>
+                  </div>
+                </motion.div>
+              </Link>
+
+              {/* XP Pass Card */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="relative rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10 overflow-hidden cursor-pointer group"
+                onClick={() => router.push('/xp-booster')}
+              >
+                {/* Subtle gold accent */}
+                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37]/50 to-transparent"></div>
+                
+                <div className="relative p-3">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#d4af37]/20 to-[#d4af37]/10 border border-[#d4af37]/30 flex items-center justify-center flex-shrink-0">
+                      <Sparkles className="h-5 w-5 text-blue-800" />
+                    </div>
+                    <h3 className="text-xs font-semibold text-white text-center">{t("xp_pass.title", "XP Pass")}</h3>
+                  </div>
                 </div>
-              </div>
+              </motion.div>
             </div>
-            {/* Weekly Contest (volle Breite) */}
-            <div className="col-span-6">
-<motion.div
-  initial={{ opacity: 0, y: 20, scale: 0.95 }}
-  animate={{ opacity: 1, y: 0, scale: 1 }}
-  transition={{ duration: 0.6, ease: 'easeOut', delay: 0.3 }}
-  whileHover={{ scale: 1.03, boxShadow: '0 0 32px 0 rgba(255, 215, 0, 0.25)' }}
-  className="relative w-full bg-gradient-to-br from-[#232526] to-[#414345] text-white rounded-2xl p-6 shadow-2xl flex items-center justify-between border-4 border-yellow-400 min-h-[90px] mt-3 overflow-hidden cursor-pointer"
-  onClick={() => router.push('/weekly-contest')}
->
-  {/* Shine Effekt */}
-  {/* <motion.div
-    className="absolute inset-0 pointer-events-none"
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-  >
-    <motion.div
-      className="absolute left-[-40%] top-0 w-1/2 h-full bg-gradient-to-r from-transparent via-yellow-200/40 to-transparent skew-x-[-20deg]"
-      animate={{ left: ['-40%', '120%'] }}
-      transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-    />
-  </motion.div> */}
-  <div className="flex items-center gap-4 z-10">
-    <motion.div
-      animate={{ y: [0, -12, 0] }}
-      transition={{ duration: 2, repeat: Infinity, repeatType: 'loop', ease: 'easeInOut' }}
-      className="flex flex-col items-center"
-    >
-      <Trophy className="w-10 h-10 text-yellow-400 drop-shadow-lg" />
-    </motion.div>
-    <div>
-      <div className="text-lg font-bold text-yellow-300 mb-1" style={{ letterSpacing: 1 }}>
-        {t("contest.prize_home", "Win 200 WLD")}
-      </div>
-        <h3 className="text-xl font-bold text-yellow-100 mb-1">{t("contest.title", "Weekly Contest")}</h3>
-        <p className="text-sm text-white/80 font-medium">{t("contest.subtitle", "Compete for the top spot!")}</p>
-        <p className="text-xs text-green-300 font-semibold mt-1"> Epic & Legendary Cards: 2x Bonus!</p>
-        {isContestActive() && (() => {
-        const timeLeft = formatContestCountdown(contestCountdown)
-        return timeLeft ? (
-          <>
-            <div className="mt-3">
-            <div className="bg-gradient-to-r from-yellow-400/20 to-orange-400/20 border border-yellow-400/40 rounded-xl p-3 backdrop-blur-sm shadow-lg">
-              <div className="flex items-center justify-center gap-2">
-                <div className="relative">
-                  <Clock className="w-4 h-4 text-yellow-300 animate-pulse" />
-                  <div className="absolute inset-0 w-4 h-4 bg-yellow-300/20 rounded-full animate-ping"></div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 bg-yellow-400/30 rounded-lg px-2 py-1">
-                    <span className="text-sm font-bold text-yellow-300">{timeLeft.days}</span>
-                    <span className="text-xs text-yellow-200">d</span>
-                  </div>
-                  <span className="text-yellow-300 font-bold">:</span>
-                  <div className="flex items-center gap-1 bg-yellow-400/30 rounded-lg px-2 py-1">
-                    <span className="text-sm font-bold text-yellow-300">{timeLeft.hours}</span>
-                    <span className="text-xs text-yellow-200">h</span>
-                  </div>
-                  <span className="text-yellow-300 font-bold">:</span>
-                  <div className="flex items-center gap-1 bg-yellow-400/30 rounded-lg px-2 py-1">
-                    <span className="text-sm font-bold text-yellow-300">{timeLeft.minutes}</span>
-                    <span className="text-xs text-yellow-200">m</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          </>
-        ) : null
-      })()}
-    </div>
-  </div>
-  <motion.div
-    className="bg-yellow-400/20 rounded-full p-3 backdrop-blur-sm z-10 border-2 border-yellow-300 shadow-lg"
-    animate={{ x: [0, 5, 0] }}
-    transition={{ duration: 1.5, repeat: Infinity, repeatType: 'reverse' }}
-  >
-    <ChevronRight className="w-6 h-6 text-yellow-300" />
-  </motion.div>
-  {/* Animierter Schatten */}
-  {/* <motion.div
-    className="absolute inset-0 rounded-2xl pointer-events-none"
-    animate={{ boxShadow: [
-      '0 4px 24px 0 rgba(255, 215, 0, 0.10)',
-      '0 8px 32px 0 rgba(255, 215, 0, 0.18)',
-      '0 4px 24px 0 rgba(255, 215, 0, 0.10)'
-    ] }}
-    transition={{ duration: 2.5, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' }}
-  /> */}
-</motion.div>
-      </div>
             {/* $ANI Card (replaces Chat) - COMMENTED OUT */}
             {/* <div className="col-span-2">
               <div
@@ -2090,216 +2057,151 @@ export default function Home() {
               </div>
             </div> */}
 
-            {/* Shop in der Mitte, Card Gallery daneben, Referrals rechts */}
-            <div className="col-span-6 grid grid-cols-3 gap-3">
-              {/* Card Gallery */}
-              {/* Missions */}
-              <div className="relative">
-                <Link href="/missions" className="block w-full h-full">
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3, duration: 0.4 }}
-                    whileHover={{ scale: 1.04, boxShadow: '0 0 32px 0 rgba(255, 215, 0, 0.25)' }}
-                    className="relative bg-gradient-to-br from-[#232526] to-[#414345] rounded-xl shadow-lg p-3 h-full border-2 border-yellow-400 cursor-pointer flex flex-col items-center justify-center text-center"
-                  >
-                    {hasClaimableMission && (
-                      <span className="absolute right-3 top-3 flex h-3 w-3">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75"></span>
-                        <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500"></span>
-                      </span>
-                    )}
-                    <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center mb-1 border border-yellow-300">
-                      <Target className="h-5 w-5 text-white drop-shadow-lg" />
-                    </div>
-                    <div className="text-sm font-bold text-yellow-100">{t("daily_missions.header.title", "Daily Missions")}</div>
-                   </motion.div>
-                </Link>
-              </div>
+            {/* Daily Deals - Kompakter (zuerst) */}
+            {user?.wallet_address && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.22 }}
+                className="rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10 p-2"
+              >
+                <DailyDealsBatch
+                  walletAddress={user.wallet_address}
+                  onPurchaseSuccess={handleDailyDealPurchaseSuccess}
+                />
+              </motion.div>
+            )}
 
-              {/* Shop */}
-              <div className="relative">
-                {hasActiveDiscount && (
-                  <div className="absolute -top-2 -right-2 bg-white text-red-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow z-10">
-                    -{discountValue}%
-                  </div>
-                )}
-                <Link href="/shop" className="block w-full h-full">
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2, duration: 0.4 }}
-                    whileHover={{ scale: 1.04, boxShadow: hasActiveDiscount ? '0 0 32px 0 rgba(239, 68, 68, 0.4)' : '0 0 32px 0 rgba(255, 215, 0, 0.25)' }}
-                    className={`relative rounded-2xl p-3 shadow-2xl flex flex-col items-center justify-center min-h-[70px] h-full text-center border-2 transition overflow-hidden ${
-                      hasActiveDiscount 
-                        ? 'bg-gradient-to-br from-red-600 to-red-800 border-red-400 animate-pulse' 
-                        : 'bg-gradient-to-br from-[#232526] to-[#414345] border-yellow-400'
-                    }`}
-                  >
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 border ${
-                      hasActiveDiscount 
-                        ? 'bg-red-400 shadow-[0_0_8px_2px_rgba(239,68,68,0.3)] border-red-300' 
-                        : 'bg-yellow-400 shadow-[0_0_8px_2px_rgba(251,191,36,0.18)] border-yellow-300'
-                    }`}>
-                      <ShoppingCart className="h-5 w-5 text-white drop-shadow-lg" />
-                    </div>
-                    <div className={`text-sm font-extrabold drop-shadow-sm tracking-wide ${
-                      hasActiveDiscount ? 'text-red-100' : 'text-yellow-100'
-                    }`}>{t("ticket_shop.title", "Shop")}</div>
-                    <div className={`text-xs font-semibold mt-0.5 ${
-                      hasActiveDiscount ? 'text-red-200' : 'text-sky-400'
-                    }`}></div>
-                  </motion.div>
-                </Link>
-              </div>
-
-              {/* Referrals/SBC Slide System */}
-              <div className="relative w-full h-full rounded-xl overflow-hidden">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={referralSbcSlides[referralSbcIndex].key}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.3 }}
-                    className={`w-full h-full rounded-xl bg-gradient-to-br ${referralSbcSlides[referralSbcIndex].bg} p-2 shadow-lg flex flex-col items-center justify-center min-h-[70px] text-center font-bold border-2 ${referralSbcSlides[referralSbcIndex].border} relative cursor-pointer`}
-                    onClick={referralSbcSlides[referralSbcIndex].action}
-                  >
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 border`}>
-                      {referralSbcSlides[referralSbcIndex].icon}
-                    </div>
-                    <div className={`text-sm font-bold ${referralSbcSlides[referralSbcIndex].color}`}>
-                      {referralSbcSlides[referralSbcIndex].title}
-                    </div>
-                    
-                    {/* Navigation arrows - only show if more than one slide */}
-                    {referralSbcSlides.length > 1 && (
-                      <>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleReferralSbcPrev()
-                          }}
-                          className="absolute top-1 left-1 w-4 h-4 bg-white/20 rounded-full flex items-center justify-center text-white text-xs hover:bg-white/30 transition"
-                        >
-                          ‹
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleReferralSbcNext()
-                          }}
-                          className="absolute top-1 right-1 w-4 h-4 bg-white/20 rounded-full flex items-center justify-center text-white text-xs hover:bg-white/30 transition"
-                        >
-                          ›
-                        </button>
-                      </>
-                    )}
-                    
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-            </div>
-            {/* Deals nebeneinander im Grid */}
-            <div className="col-span-6 flex gap-2 w-full">
-              {/* Daily Deals Batch - 4 Deals */}
-              <div className="w-1/2">
-                {user?.wallet_address && (
-                  <DailyDealsBatch
-                    walletAddress={user.wallet_address}
-                    onPurchaseSuccess={handleDailyDealPurchaseSuccess}
-                  />
-                )}
-              </div>
-              
-              {/* Special Deal */}
-              <div
-                className="w-1/2 flex flex-col items-center rounded-md p-3 h-full text-white cursor-pointer relative overflow-hidden"
-                style={{
-                  backgroundImage: 'url("/specialdeal.webp.webp")',
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  backgroundRepeat: 'no-repeat'
-                }}
+            {/* Special Deal Card - Kompakt (nach Daily Deals) */}
+            {specialDeal && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.25 }}
+                className="relative rounded-2xl p-4 backdrop-blur-xl bg-gradient-to-br from-white/8 to-white/5 border border-white/10 overflow-visible cursor-pointer group"
                 onClick={() => setShowSpecialDealDialog(true)}
               >
-                {/* Overlay für bessere Lesbarkeit */}
-                <div className="absolute inset-0 bg-black/10 rounded-md"></div>
-                {/* Content über dem Overlay */}
-                <div className="relative z-10 w-full h-full flex flex-col items-center">
-                {specialDeal ? (
-                  <>
-                    <div className={`w-3/5 aspect-[3/4] max-h-[140px] rounded-md flex items-center justify-center mb-1 relative border-2 bg-black/20 mx-auto overflow-hidden ${
-                      specialDeal.card_rarity === 'basic' ? 'border-0' :
-                      specialDeal.card_rarity === 'common' ? 'border-gray-400' :
-                      specialDeal.card_rarity === 'uncommon' ? 'border-green-400' :
-                      specialDeal.card_rarity === 'rare' ? 'border-blue-400' :
-                      specialDeal.card_rarity === 'epic' ? 'border-purple-400' :
-                      specialDeal.card_rarity === 'legendary' ? 'border-yellow-400' :
-                      specialDeal.card_rarity === 'mythic' ? 'border-red-400' :
-                      'border-gray-400'
-                    }`}>
-                      <img
-                        src={getCloudflareImageUrl(specialDeal.card_image_url)}
-                        alt={specialDeal.card_name}
-                        className="w-full h-full object-cover rounded-md scale-105"
-                      />
-                      <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 text-[10px] px-1.5 py-0.5 rounded-full font-bold flex items-center gap-1">
-                        {renderStars(specialDeal.card_level, "xs")}
-                      </div>
-                    </div>
-                    <div className="text-lg font-bold text-center mb-0.5">{t("deals.special_deal", "Special Deal")}</div>
-                    <div className="text-sm text-white/80 text-center mb-1">
-                      {specialDeal.card_name} <span className="text-white/70">·</span>
-                      <span className="inline-block px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold align-middle ml-1">{getDisplayRarity(specialDeal.card_rarity)}</span>
-                    </div>
-                    <div className="flex gap-2 mb-1 justify-center">
-                      {specialDeal.classic_tickets > 0 && (
-                        <span className="inline-block px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 text-sm font-bold flex items-center gap-1 border border-white">
-                          <Ticket className="h-3 w-3 text-blue-500" />+{specialDeal.classic_tickets}
-                        </span>
-                      )}
-                      {specialDeal.elite_tickets > 0 && (
-                        <span className="inline-block px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 text-sm font-bold flex items-center gap-1 border border-white">
-                          <Crown className="h-3 w-3 text-purple-500" />+{specialDeal.elite_tickets}
-                        </span>
-                      )}
-                      {/* {specialDeal.icon_tickets > 0 && (
-                        <span className="inline-block px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-sm font-bold flex items-center gap-1 border border-white">
-                          <Crown className="h-3 w-3 text-indigo-500" />+{specialDeal.icon_tickets}
-                        </span>
-                      )} */}
-                    </div>
-                    <div className="flex flex-col items-center gap-1 mb-1">
-                      {specialDeal.discount_percentage && specialDeal.discount_percentage > 0 ? (
-                        <>
-                            <span className="text-sm line-through text-gray-400">
-                            {formatPrice(specialDeal.price)}
-                            </span>
-                            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">
-                              -{specialDeal.discount_percentage}%
-                            </span>
-                          <span className="text-white font-semibold">
-                            {formatPrice(specialDeal.price * (1 - specialDeal.discount_percentage / 100))}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-lg font-bold text-white">
-                          {formatPrice(specialDeal.price)}
-                        </span>
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex flex-1 items-center justify-center h-full text-white/70">{t("deals.no_special_deal", "No special deal available")}</div>
-                )}
+                {/* Special Deal Badge - Top Right Overlapping (outside the card) */}
+                <div className="absolute top-0 right-0 z-30">
+                  <Badge className="bg-gradient-to-r from-[#d4af37] to-[#f4d03f] text-black px-2 py-1 text-[10px] font-bold shadow-lg shadow-[#d4af37]/50 border border-[#d4af37]/50 -translate-y-1/2 translate-x-1/2 -translate-x-2">
+                    {t("deals.special_deal", "Special Deal")}
+                  </Badge>
                 </div>
-              </div>
-              <Dialog open={showSpecialDealDialog} onOpenChange={(open) => {
-                if (!open && !buyingSpecialDeal && !showSpecialDealSuccess) {
-                  setShowSpecialDealDialog(false);
-                }
-              }}>
+                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37] to-transparent"></div>
+                
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="relative w-16 h-24 rounded-lg overflow-hidden border border-white/20 flex-shrink-0">
+                    <img
+                      src={getCloudflareImageUrl(specialDeal.card_image_url)}
+                      alt={specialDeal.card_name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
+                      {renderStars(specialDeal.card_level, "xs")}
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#d4af37]/20 text-[#d4af37] font-medium border border-[#d4af37]/30">
+                        {getDisplayRarity(specialDeal.card_rarity)}
+                      </span>
+                      {specialDeal.discount_percentage != null && Number(specialDeal.discount_percentage) > 0 && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#10b981]/20 text-[#10b981] font-medium border border-[#10b981]/30">
+                          -{specialDeal.discount_percentage}%
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-sm font-semibold text-white mb-1 truncate">{specialDeal.card_name}</h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {Number(specialDeal.classic_tickets) > 0 && (
+                        <div className="flex items-center gap-1 text-[10px] text-white/60">
+                          <Ticket className="h-3 w-3 text-blue-400" />
+                          <span>+{specialDeal.classic_tickets}</span>
+                        </div>
+                      )}
+                      {Number(specialDeal.elite_tickets) > 0 && (
+                        <div className="flex items-center gap-1 text-[10px] text-white/60">
+                          <Crown className="h-3 w-3 text-purple-400" />
+                          <span>+{specialDeal.elite_tickets}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-white/40 group-hover:text-[#d4af37] transition-colors flex-shrink-0" />
+                </div>
+                
+                <div className="flex items-center justify-between pt-3 border-t border-white/10">
+                  <div>
+                    <p className="text-[10px] text-white/50 mb-0.5">{t("common.price", "Price")}</p>
+                    {specialDealHasDiscount && specialDealDiscountedPrice !== null ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs line-through text-white/40">{formatPrice(specialDeal.price)}</span>
+                        <span className="text-base font-semibold text-white">{formatPrice(specialDealDiscountedPrice)}</span>
+                      </div>
+                    ) : (
+                      <p className="text-base font-semibold text-white">{formatPrice(specialDeal.price)}</p>
+                    )}
+                  </div>
+                  <Button
+                    size="sm"
+                    className="bg-[#d4af37] hover:bg-[#c9a030] text-black font-medium rounded-lg px-3 text-xs h-8"
+                  >
+                    {t("deals.buy", "View Deal")}
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Quick Actions - Icon Based (ohne Shop, da Shop jetzt oben) */}
+            <div className="grid grid-cols-3 gap-3">
+              <Link href="/missions" className="block">
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="relative rounded-xl p-3 backdrop-blur-xl bg-white/5 border border-white/10 flex flex-col items-center justify-center cursor-pointer group hover:bg-white/10 transition-colors"
+                >
+                  {hasClaimableMission && (
+                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#10b981] opacity-75"></span>
+                      <span className="relative inline-flex h-3 w-3 rounded-full bg-[#10b981]"></span>
+                    </span>
+                  )}
+                  <Target className="h-4 w-4 text-white/70 group-hover:text-[#d4af37] transition-colors mb-1.5" />
+                  <span className="text-[10px] font-medium text-white/70 group-hover:text-white transition-colors">{t("daily_missions.header.title", "Missions")}</span>
+                </motion.div>
+              </Link>
+
+              <Link href="/catalog" className="block">
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.35 }}
+                  className="rounded-xl p-3 backdrop-blur-xl bg-white/5 border border-white/10 flex flex-col items-center justify-center cursor-pointer group hover:bg-white/10 transition-colors"
+                >
+                  <BookOpen className="h-4 w-4 text-white/70 group-hover:text-[#d4af37] transition-colors mb-1.5" />
+                  <span className="text-[10px] font-medium text-white/70 group-hover:text-white transition-colors">{t("collection.gallery_btn", "Gallery")}</span>
+                </motion.div>
+              </Link>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                onClick={handleClaimBonus}
+                className="rounded-xl p-3 backdrop-blur-xl bg-white/5 border border-white/10 flex flex-col items-center justify-center cursor-pointer group hover:bg-white/10 transition-colors"
+              >
+                <span className="text-[10px] font-medium text-white/70 group-hover:text-white transition-colors">
+                  {alreadyClaimed ? ticketTimerDisplay : t("home.ticket_claim_title", "Ticket Claim")}
+                </span>
+              </motion.div>
+            </div>
+
+            <Dialog open={showSpecialDealDialog} onOpenChange={(open) => {
+              if (!open && !buyingSpecialDeal && !showSpecialDealSuccess) {
+                setShowSpecialDealDialog(false);
+              }
+            }}>
                 {specialDeal && (
                   <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-xl border-0 bg-gray-900 text-white">
                     <DialogTitle className="sr-only">{t("deals.special_deal", "Special Deal")}</DialogTitle>
@@ -2413,35 +2315,29 @@ export default function Home() {
                             </div>
                           </div>
                           {/* Classic Tickets */}
-                          <div className={`flex items-center ${specialDeal.classic_tickets > 0 ? '' : 'opacity-50'}`}> 
-                            <div className="w-9 h-9 rounded-md bg-blue-900/30 border border-blue-700/50 flex items-center justify-center mr-3">
-                              <Ticket className="h-4 w-4 text-blue-400" />
+                          {specialDeal.classic_tickets > 0 && (
+                            <div className="flex items-center"> 
+                              <div className="w-9 h-9 rounded-md bg-blue-900/30 border border-blue-700/50 flex items-center justify-center mr-3">
+                                <Ticket className="h-4 w-4 text-blue-400" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-white">{specialDeal.classic_tickets} {t("deals.regular_tickets", "Regular Tickets")}</p>
+                                <p className="text-xs text-gray-400">{t("deals.for_regular_packs", "For regular card packs")}</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-sm font-medium text-white">{specialDeal.classic_tickets} {t("deals.regular_tickets", "Regular Tickets")}</p>
-                              <p className="text-xs text-gray-400">{t("deals.for_regular_packs", "For regular card packs")}</p>
+                          )}
+                          {/* Legendary Tickets (elite_tickets) - only show if > 0 */}
+                          {specialDeal.elite_tickets != null && Number(specialDeal.elite_tickets) > 0 && (
+                            <div className="flex items-center"> 
+                              <div className="w-9 h-9 rounded-md bg-purple-900/30 border border-purple-700/50 flex items-center justify-center mr-3">
+                                <Crown className="h-4 w-4 text-purple-400" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-white">{specialDeal.elite_tickets} {t("deals.legendary_tickets", "Legendary Tickets")}</p>
+                                <p className="text-xs text-gray-400">{t("deals.for_legendary_packs", "For legendary card packs")}</p>
+                              </div>
                             </div>
-                          </div>
-                          {/* Elite Tickets */}
-                          <div className={`flex items-center ${specialDeal.elite_tickets > 0 ? '' : 'opacity-50'}`}> 
-                            <div className="w-9 h-9 rounded-md bg-purple-900/30 border border-purple-700/50 flex items-center justify-center mr-3">
-                              <Crown className="h-4 w-4 text-purple-400" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-white">{specialDeal.elite_tickets} {t("deals.legendary_tickets", "Legendary Tickets")}</p>
-                              <p className="text-xs text-gray-400">{t("deals.for_legendary_packs", "For legendary card packs")}</p>
-                            </div>
-                          </div>
-                          {/* Icon Tickets */}
-                          {/* <div className={`flex items-center ${specialDeal.icon_tickets > 0 ? '' : 'opacity-50'}`}> 
-                            <div className="w-9 h-9 rounded-md bg-indigo-900/30 border border-indigo-700/50 flex items-center justify-center mr-3">
-                              <Crown className="h-4 w-4 text-indigo-400" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-white">{specialDeal.icon_tickets} Icon Tickets</p>
-                              <p className="text-xs text-gray-400">For icon rewards</p>
-                            </div>
-                          </div> */}
+                          )}
                         </div>
                       </div>
                       {/* Creator Info */}
@@ -2502,84 +2398,10 @@ export default function Home() {
                   </DialogContent>
                 )}
               </Dialog>
-            </div>
 
-            {/* Ticket Claim & Missions */}
-            <div className="col-span-6 mb-3">
-              <div className="grid grid-cols-2 gap-2">
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.25, duration: 0.4 }}
-                  className="bg-gradient-to-br from-[#232526] to-[#414345] rounded-xl shadow-lg px-3 py-3 h-full border-2 border-yellow-400 flex flex-col items-center text-center justify-between"
-                >
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="w-9 h-9 rounded-full bg-yellow-400 flex items-center justify-center border border-yellow-300 shadow-md">
-                      <Gift className="h-4 w-4 text-white" />
-                    </div>
-                    <h3 className="text-xs font-bold text-yellow-100 uppercase tracking-wide">
-                      {t("home.ticket_claim_title", "Ticket Claim")}
-                    </h3>
-                    <p className="text-[11px] leading-snug text-yellow-200 max-w-[170px]">
-                      {t("home.ticket_claim_desc", "Get {count} tickets every 24 hours", { count: ticketClaimAmount as unknown as number })}
-                    </p>
-                  </div>
-                  <Button
-                    onClick={handleClaimBonus}
-                    disabled={claimLoading || alreadyClaimed}
-                    size="sm"
-                    className={`rounded-full px-4 py-1.5 ${
-                      alreadyClaimed
-                        ? "bg-gray-600 text-gray-300 hover:bg-gray-600"
-                        : "bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-white"
-                    }`}
-                  >
-                    {claimLoading ? (
-                      <div className="flex items-center">
-                        <div className="h-3 w-3 border-2 border-t-transparent border-current rounded-full animate-spin mr-2"></div>
-                        <span className="text-[11px]">Claiming...</span>
-                      </div>
-                    ) : alreadyClaimed ? (
-                      <div className="flex items-center">
-                        <Clock className="h-3 w-3 mr-1" />
-                        <span className="text-[11px]">{ticketTimerDisplay}</span>
-                      </div>
-                    ) : (
-                      <span className="text-[11px]">{t("common.claim_now", "Claim Now")}</span>
-                    )}
-                  </Button>
-                </motion.div>
-
-                <Link href="/catalog" className="block h-full">
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3, duration: 0.4 }}
-                    whileHover={{ scale: 1.04, boxShadow: '0 0 32px 0 rgba(255, 215, 0, 0.25)' }}
-                    className="bg-gradient-to-br from-[#232526] to-[#414345] rounded-xl shadow-lg px-3 py-3 h-full border-2 border-yellow-400 cursor-pointer flex flex-col items-center text-center justify-between"
-                  >
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="w-9 h-9 rounded-full bg-yellow-400 flex items-center justify-center border border-yellow-300 shadow-md">
-                        <BookOpen className="h-4 w-4 text-white" />
-                      </div>
-                      <div className="text-xs font-bold text-yellow-100 uppercase tracking-wide">
-                        {t("collection.gallery_btn", "Card Gallery")}
-                      </div>
-                      <div className="text-[11px] leading-snug text-yellow-200 max-w-[170px]">
-                        {t("collection.view_cards", "Browse Cards")}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 text-yellow-100 text-[11px] font-semibold">
-                      {t("home.cta_view", "View")}
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </div>
-                  </motion.div>
-                </Link>
-              </div>
-            </div>
           </div>
-          <div className="mb-6" />
         </main>
+
         
 
         {showClaimAnimation && (
@@ -2757,9 +2579,8 @@ export default function Home() {
 
       
 
-      <MobileNav />
       
-      {/* Info Dialog */}
+      {/* Card Bonus Dialog */}
       <Dialog open={showInfoDialog} onOpenChange={setShowInfoDialog}>
         <DialogContent className="bg-gradient-to-br from-[#1a1a1a] via-[#2d2d2d] to-[#1a1a1a] border-2 border-yellow-400 text-white max-w-sm mx-auto max-h-[90vh] overflow-y-auto shadow-2xl backdrop-blur-sm">
           <DialogTitle className="text-lg font-bold text-white mb-1 text-center bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">

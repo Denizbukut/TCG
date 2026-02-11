@@ -348,9 +348,9 @@ export default function DailyDealsBatch({ walletAddress, onPurchaseSuccess }: Da
   return (
     <>
       {/* Preview Card */}
-      <div className="relative h-full">
+      <div className="relative min-h-[90px]">
         <motion.div
-          className="bg-gradient-to-br from-violet-900/30 via-purple-900/20 to-fuchsia-900/30 rounded-xl shadow-2xl border-2 border-violet-500/60 p-5 h-full cursor-pointer relative overflow-hidden group"
+          className="bg-gradient-to-br from-violet-900/30 via-purple-900/20 to-fuchsia-900/30 rounded-xl shadow-2xl border-2 border-violet-500/60 p-2 min-h-[90px] cursor-pointer relative overflow-hidden group"
           onClick={() => setIsDialogOpen(true)}
           whileHover={{ scale: 1.02, borderColor: "rgba(167, 139, 250, 0.9)" }}
           whileTap={{ scale: 0.98 }}
@@ -386,7 +386,7 @@ export default function DailyDealsBatch({ walletAddress, onPurchaseSuccess }: Da
           
           <div className="relative z-10 flex flex-col items-center justify-center h-full">
             {/* 4 Card Icons Grid with enhanced styling */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-1.5 w-full">
               {deals.slice(0, 4).map((deal, index) => {
                 const rarityStyle = rarityStyles[deal.card_rarity as keyof typeof rarityStyles] || rarityStyles.common
                 return (
@@ -395,8 +395,8 @@ export default function DailyDealsBatch({ walletAddress, onPurchaseSuccess }: Da
                     initial={{ opacity: 0, scale: 0.8, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     transition={{ delay: index * 0.1, duration: 0.3 }}
-                    whileHover={{ scale: 1.1, z: 10 }}
-                    className={`relative w-18 h-24 rounded-lg border-2 ${rarityStyle.border} overflow-hidden bg-black/50 backdrop-blur-sm shadow-lg group/card`}
+                    whileHover={{ scale: 1.05, z: 10 }}
+                    className={`relative w-full h-20 rounded-md border-2 ${rarityStyle.border} overflow-hidden bg-black/50 backdrop-blur-sm shadow-lg group/card`}
                   >
                     {/* Card glow effect */}
                     <div className={`absolute inset-0 ${rarityStyle.glow} opacity-0 group-hover/card:opacity-100 transition-opacity duration-300`} />
@@ -427,8 +427,8 @@ export default function DailyDealsBatch({ walletAddress, onPurchaseSuccess }: Da
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          <Badge className="bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white px-3 py-1.5 text-xs font-bold shadow-lg shadow-violet-500/50 border border-violet-400/50 -translate-y-1/2 translate-x-1/2 -translate-x-2">
-            <Sparkles className="h-3 w-3 mr-1 inline" />
+          <Badge className="bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white px-2 py-1 text-[10px] font-bold shadow-lg shadow-violet-500/50 border border-violet-400/50 -translate-y-1/2 translate-x-1/2 -translate-x-2">
+            <Sparkles className="h-2.5 w-2.5 mr-0.5 inline" />
             {t("deals.daily_deals", "Daily Deals")}
           </Badge>
         </motion.div>
