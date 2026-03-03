@@ -4,7 +4,8 @@ import { useState, useRef } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useI18n } from "@/contexts/i18n-context"
 import ProtectedRoute from "@/components/protected-route"
-import MobileNav from "@/components/mobile-nav"
+import { useRouter } from "next/navigation"
+import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Ticket, Info, Check, Crown, Clock, Sword, CircleDot } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
@@ -29,6 +30,7 @@ import { ethers } from "ethers"
 export default function ShopPage() {
   const { user, updateUserTickets } = useAuth()
   const { t } = useI18n()
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState<Record<string, boolean>>({})
   const [tickets, setTickets] = useState<number>(user?.tickets ? Number(user.tickets) : 0)
   const [eliteTickets, setEliteTickets] = useState<number>(
@@ -183,8 +185,8 @@ export default function ShopPage() {
       if (!supabase) return
 
       try {
-        const { data: userData, error: userError } = await supabase
-          .from("users")
+        const { data: userData, error: userError } = await (supabase
+          .from("users") as any)
           .select("clan_id")
           .eq("username", user.username)
           .single()
@@ -197,8 +199,8 @@ export default function ShopPage() {
         const clanId = userData.clan_id
 
         // Fetch user role in clan
-        const { data: memberData, error: memberError } = await supabase
-          .from("clan_members")
+        const { data: memberData, error: memberError } = await (supabase
+          .from("clan_members") as any)
           .select("role")
           .eq("clan_id", clanId)
           .eq("user_id", user.username)
@@ -212,8 +214,8 @@ export default function ShopPage() {
         setUserClanRole(memberData.role as string)
 
         // Fetch member count
-        const { count, error: countError } = await supabase
-          .from("clan_members")
+        const { count, error: countError } = await (supabase
+          .from("clan_members") as any)
           .select("*", { count: "exact", head: true })
           .eq("clan_id", clanId)
 
@@ -598,8 +600,8 @@ export default function ShopPage() {
       }
 
       // Get current ticket counts
-      const { data: userData, error: fetchError } = await supabase
-        .from("users")
+      const { data: userData, error: fetchError } = await (supabase
+        .from("users") as any)
         .select("tickets, elite_tickets, icon_tickets")
         .eq("username", user.username)
         .single()
@@ -628,14 +630,14 @@ export default function ShopPage() {
       }
 
       // Update tickets in database
-      const { error: updateError } = await supabase
-        .from("users")
+      const { error: updateError } = await ((supabase
+        .from("users") as any)
         .update({
           tickets: newTicketCount,
           elite_tickets: newEliteTicketCount,
           icon_tickets: newIconTicketCount,
         })
-        .eq("username", user.username)
+        .eq("username", user.username) as any)
 
       if (updateError) {
         throw new Error("Failed to update tickets")
@@ -661,14 +663,14 @@ export default function ShopPage() {
         : ""
       
         // Log the purchase
-await supabase.from("ticket_purchases").insert({
+await ((supabase.from("ticket_purchases") as any).insert({
   wallet_address: user.wallet_address,
   ticket_type: ticketType === "regular" ? "classic" : ticketType === "legendary" ? "elite" : "icon",
   amount: ticketAmount,
   price_usd: getDiscountedPrice(packageId.startsWith("reg") ? regularPackages.find(p => p.id === packageId)?.price ?? 0 : legendaryPackages.find(p => p.id === packageId)?.price ?? 0),
   price_wld: price ? (getDiscountedPrice(packageId.startsWith("reg") ? regularPackages.find(p => p.id === packageId)?.price ?? 0 : legendaryPackages.find(p => p.id === packageId)?.price ?? 0) / price).toFixed(3) : null,
   discounted: getDiscountedPrice(packageId.startsWith("reg") ? regularPackages.find(p => p.id === packageId)?.price ?? 0 : legendaryPackages.find(p => p.id === packageId)?.price ?? 0) < (packageId.startsWith("reg") ? regularPackages.find(p => p.id === packageId)?.price ?? 0 : legendaryPackages.find(p => p.id === packageId)?.price ?? 0),
-})
+}) as any)
 
       // Weekly Contest: Ticket Shop Punkte vergeben (2 Punkte pro Kauf)
       try {
@@ -744,109 +746,103 @@ await supabase.from("ticket_purchases").insert({
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-b from-[#181a20] to-[#23262f] pb-20 text-white">
-        {/* Shop Header mit Ticket-Anzeige */}
-        <div className="flex flex-col max-w-lg mx-auto px-4 py-3 gap-2">
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-gray-200 to-gray-400 bg-clip-text text-transparent drop-shadow-lg whitespace-nowrap">
-              {t("shop.title_short", "Shop")}
-            </h1>
-            <div className="flex items-center gap-1 shrink-0">
-              <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-full shadow-sm border border-blue-400/30 backdrop-blur-md">
-                <Ticket className="h-2.5 w-2.5 text-blue-400" />
-                <span className="font-medium text-[11px] text-blue-100">{tickets}</span>
+      <div className="flex flex-col min-h-screen text-white relative bg-[#0a0a0a] overflow-y-auto">
+        {/* Premium Header - Coinbase Style */}
+        <header className="sticky top-0 z-30 backdrop-blur-xl bg-[#0a0a0a]/80 border-b border-[#1a1a1a]">
+          <div className="w-full px-4 py-2.5 flex items-center justify-between max-w-2xl mx-auto">
+            {/* Left: Back Button + Title */}
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => router.push("/")}
+                className="w-8 h-8 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10"
+              >
+                <ArrowLeft className="h-4 w-4 text-white/70" />
+              </Button>
+              <h1 className="text-base font-semibold tracking-tight text-white">
+                {t("shop.title", "Ticket Shop")}
+              </h1>
+            </div>
+            
+            {/* Right: Tickets */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10">
+                <Ticket className="h-3.5 w-3.5 text-[#d4af37]" />
+                <span className="text-xs font-medium text-white">{tickets}</span>
               </div>
-              <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-full shadow-sm border border-purple-400/30 backdrop-blur-md">
-                <Ticket className="h-2.5 w-2.5 text-purple-400" />
-                <span className="font-medium text-[11px] text-purple-100">{eliteTickets}</span>
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10">
+                <Crown className="h-3.5 w-3.5 text-[#d4af37]" />
+                <span className="text-xs font-medium text-white">{eliteTickets}</span>
               </div>
             </div>
           </div>
-          {/* Currency Toggle and Balance - Under Shop */}
-          <div className="flex items-center gap-2">
-            <PaymentCurrencyToggle
-              size="sm"
-              className="max-w-[210px] shadow-[0_0_22px_rgba(46,113,255,0.25)]"
-            />
-            {tokenBalances[paymentCurrency] !== null && (
-              <div className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-full shadow-sm border border-gray-400/30 backdrop-blur-md">
-                <span className="font-medium text-[11px] text-gray-100">
-                  {tokenBalances[paymentCurrency]} {paymentCurrency}
-                </span>
-              </div>
+        </header>
+
+        <main className="w-full px-4 pb-32 flex-1 max-w-2xl mx-auto">
+          <div className="space-y-3 mt-4">
+            {/* Time-based Discount Banner */}
+            {timeDiscount?.isActive && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="relative rounded-2xl p-4 backdrop-blur-xl bg-white/5 border border-white/10"
+              >
+                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37] to-transparent"></div>
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <Clock className="h-4 w-4 text-[#d4af37]" />
+                  <p className="font-bold text-sm tracking-wide text-white">{t("shop.limited_offer", "LIMITED TIME OFFER!")}</p>
+                </div>
+                <p className="text-xs text-white/70 mb-2 text-center">
+                  {t("shop.discount_off", "{percent}% off all tickets!", { percent: Math.round(timeDiscount.value * 100) })}
+                </p>
+                <div className="flex items-center justify-center gap-1">
+                  <span className="text-xs text-white/60">{t("shop.ends_in", "Ends in:")}:</span>
+                  <span className="font-mono font-bold text-sm text-[#d4af37]">{discountTimeLeft}</span>
+                </div>
+              </motion.div>
             )}
-          </div>
-        </div>
 
-        <main className="p-4 space-y-6 max-w-lg mx-auto">
-          {/* Time-based Discount Banner */}
-          {timeDiscount?.isActive && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-gradient-to-r from-red-600/80 to-red-800/80 text-white rounded-xl p-3 text-center shadow-lg border border-red-400/30 backdrop-blur-md"
-            >
-              <div className="flex items-center justify-center gap-2 mb-1">
-                <Clock className="h-4 w-4 text-red-200" />
-                <p className="font-bold text-sm tracking-wide">🔥 {t("shop.limited_offer", "LIMITED TIME OFFER!")}</p>
-              </div>
-              <p className="text-xs opacity-90 mb-2">
-                {t("shop.discount_off", "{percent}% off all tickets!", { percent: Math.round(timeDiscount.value * 100) })}
-              </p>
-              <div className="flex items-center justify-center gap-1">
-                <span className="text-xs opacity-75">{t("shop.ends_in", "Ends in:")}:</span>
-                <span className="font-mono font-bold text-sm text-red-200">{discountTimeLeft}</span>
-              </div>
-            </motion.div>
-          )}
+            {/* Existing Discount Banner */}
+            {(userClanRole === "cheap_hustler" || (userClanRole === "leader" && clanMemberCount >= 30)) && !timeDiscount?.isActive && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="relative rounded-2xl p-4 backdrop-blur-xl bg-white/5 border border-white/10"
+              >
+                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37] to-transparent"></div>
+                <p className="font-semibold text-sm tracking-wide text-white text-center mb-1">{t("shop.discount_active", "Discount Active!")}</p>
+                <p className="text-xs text-white/70 text-center">
+                  {userClanRole === "cheap_hustler"
+                    ? t("shop.cheap_hustler_discount", "You get 10% off all ticket purchases as a Cheap Hustler!")
+                    : t("shop.leader_discount", "You get 10% off all ticket purchases as a Leader of a 30+ member clan!")}
+                </p>
+              </motion.div>
+            )}
 
-          {/* Existing Discount Banner */}
-          {(userClanRole === "cheap_hustler" || (userClanRole === "leader" && clanMemberCount >= 30)) && !timeDiscount?.isActive && (
-  <motion.div
-    initial={{ opacity: 0, y: -10 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="bg-gradient-to-r from-gray-700/80 to-gray-900/80 text-gray-100 rounded-xl p-3 text-center shadow-lg border border-gray-400/30 backdrop-blur-md"
-  >
-    <p className="font-semibold text-sm tracking-wide">🎉 {t("shop.discount_active", "Discount Active!")}</p>
-    <p className="text-xs opacity-90">
-      {userClanRole === "cheap_hustler"
-        ? t("shop.cheap_hustler_discount", "You get 10% off all ticket purchases as a Cheap Hustler!")
-        : t("shop.leader_discount", "You get 10% off all ticket purchases as a Leader of a 30+ member clan!")}
-    </p>
-  </motion.div>
-)}
+            {/* Currency Toggle */}
+            <div className="flex justify-center mb-3">
+              <PaymentCurrencyToggle size="sm" />
+            </div>
 
-                    {/* Main Shop Tabs */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-            {/* <Tabs defaultValue="tickets" className="w-full">
-              <TabsList className="grid w-full grid-cols-1 h-12 rounded-2xl p-1 bg-gradient-to-r from-gray-900/60 via-gray-800/40 to-gray-900/60 mb-6 shadow-lg backdrop-blur-md">
-                <TabsTrigger
-                  value="tickets"
-                  className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-yellow-300 data-[state=active]:text-yellow-200 data-[state=active]:shadow transition-all font-semibold tracking-wide"
-                >
-                  <Ticket className="h-4 w-4 mr-2 text-yellow-300" />
-                  Tickets
-                </TabsTrigger>
-              </TabsList> */}
-
-              {/* Tickets Tab Content */}
-              {/* <TabsContent value="tickets" className="mt-0"> */}
-                <Tabs defaultValue="regular" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 h-12 rounded-2xl p-1 bg-gradient-to-r from-gray-900/60 via-gray-800/40 to-gray-900/60 mb-6 shadow-lg backdrop-blur-md">
-                    <TabsTrigger
-                      value="regular"
-                      className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-blue-300 data-[state=active]:text-blue-200 data-[state=active]:shadow transition-all font-semibold tracking-wide"
-                    >
-                      <Ticket className="h-[18px] w-[18px] mr-2 text-blue-300 flex-shrink-0" />
-                      {t("shop.regular_tickets", "Regular Tickets")}
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="legendary"
-                      className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-purple-400 data-[state=active]:text-purple-200 data-[state=active]:shadow transition-all font-semibold tracking-wide"
-                    >
-                      <Crown className="h-[18px] w-[18px] mr-2 text-purple-300 flex-shrink-0" />
-                      {t("shop.legendary_tickets", "Legendary Tickets")}
-                    </TabsTrigger>
+            {/* Main Shop Tabs */}
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+              <Tabs defaultValue="regular" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 h-12 rounded-xl p-1 bg-white/5 backdrop-blur-sm border border-white/10 mb-4">
+                  <TabsTrigger
+                    value="regular"
+                    className="rounded-lg data-[state=active]:bg-[#d4af37]/20 data-[state=active]:border data-[state=active]:border-[#d4af37]/30 data-[state=active]:text-white transition-all font-semibold tracking-wide text-white/70"
+                  >
+                    <Ticket className="h-[18px] w-[18px] mr-2 flex-shrink-0" />
+                    {t("shop.regular_tickets", "Regular Tickets")}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="legendary"
+                    className="rounded-lg data-[state=active]:bg-[#d4af37]/20 data-[state=active]:border data-[state=active]:border-[#d4af37]/30 data-[state=active]:text-white transition-all font-semibold tracking-wide text-white/70"
+                  >
+                    <Crown className="h-[18px] w-[18px] mr-2 flex-shrink-0" />
+                    {t("shop.legendary_tickets", "Legendary Tickets")}
+                  </TabsTrigger>
                     {/* <TabsTrigger
                       value="icon"
                       className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:border-2 data-[state=active]:border-yellow-200 data-[state=active]:text-yellow-100 data-[state=active]:shadow transition-all font-semibold tracking-wide"
@@ -854,319 +850,182 @@ await supabase.from("ticket_purchases").insert({
                       <span className="font-extrabold text-yellow-200 mr-2">★</span>
                       Icon Tickets
                     </TabsTrigger> */}
-                                    </TabsList>
+                </TabsList>
 
-                  {/* Regular Tickets Content */}
-    <TabsContent value="regular" className="mt-0 space-y-6">
-      <div className="grid grid-cols-2 gap-3">
-        {regularPackages.map((pkg) => {
-          const originalPrice = pkg.price
-          const discountedPrice = getDiscountedPrice(originalPrice)
-          const hasDiscount = discountedPrice < originalPrice
-          return (
-            <motion.div
-              key={pkg.id}
-              whileHover={{ scale: 1.03, boxShadow: '0 0 32px 0 rgba(212,175,55,0.10)' }}
-              className="relative h-full"
-            >
-              <Card
-                className="overflow-hidden border-2 border-blue-300/30 bg-gradient-to-br from-gray-900/60 to-gray-800/40 rounded-xl shadow-md backdrop-blur-md transition-all p-2 h-full flex flex-col"
-              >
-                {/* Shine Effekt */}
-                <motion.div
-                  className="absolute left-[-40%] top-0 w-1/2 h-full bg-gradient-to-r from-transparent via-blue-100/10 to-transparent skew-x-[-20deg] pointer-events-none"
-                  animate={{ left: ['-40%', '120%'] }}
-                  transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                />
-                {hasDiscount && (
-                  <div className="absolute top-0 right-0 bg-gradient-to-r from-blue-400 to-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10">
-                    -{Math.round((1 - discountedPrice / originalPrice) * 100)}%
-                  </div>
-                )}
-                <CardHeader className="p-2 pb-1 space-y-0">
-                  <CardTitle className="text-base font-extrabold flex items-center text-blue-200 drop-shadow">
-                    <span className="mr-1">{pkg.amount}</span>
-                    <Ticket className="h-4 w-4 text-blue-300 drop-shadow-lg mx-1" />
-                    <span className="ml-1 text-xs">{pkg.amount === 1 ? t("shop.regular_ticket", "Regular Ticket") : t("shop.regular_tickets", "Regular Tickets")}</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-2 pt-0 pb-1 flex-1">
-                  <Separator className="my-2 border-blue-300/20" />
-                  <div className="flex items-center justify-between">
-                    <div className="flex flex-col items-start">
-                      {hasDiscount && (
-                        <span className="text-xs text-blue-200/60 line-through">
-                          {formatPrice(originalPrice)}
-                         </span>
-                       )}
-                       <span className="text-base font-bold text-blue-100">
-                        {formatPrice(discountedPrice)}
-                       </span>
-                       <span className="text-xs text-blue-100/80">
-                         (~${discountedPrice.toFixed(2)})
-                       </span>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="p-2 pt-0">
-                  <Button
-                    size="sm"
-                    className="w-full bg-gradient-to-r from-gray-800/80 to-blue-200/30 text-blue-100 font-bold border-0 hover:scale-105 hover:shadow-lg transition backdrop-blur-md"
-                    onClick={() => sendPayment(originalPrice, pkg.id, pkg.amount, 'regular')}
-                    disabled={isLoading[pkg.id]}
-                  >
-                    {isLoading[pkg.id] ? (
-                      <>
-                        <div className="h-4 w-4 border-2 border-t-transparent border-blue-300 rounded-full animate-spin mr-2"></div>
-                        {t("shop.processing", "Processing...")}
-                      </>
-                    ) : (
-                      t("shop.purchase", "Purchase")
-                    )}
-                  </Button>
-                </CardFooter>
-              </Card>
-            </motion.div>
-          )
-        })}
-      </div>
-    </TabsContent>
-
-    {/* Legendary Tickets Content */}
-    <TabsContent value="legendary" className="mt-0 space-y-6">
-      <div className="grid grid-cols-2 gap-2">
-        {legendaryPackages.map((pkg) => {
-          const originalPrice = pkg.price
-          const discountedPrice = getDiscountedPrice(originalPrice)
-          const hasDiscount = discountedPrice < originalPrice
-          return (
-            <motion.div
-              key={pkg.id}
-              whileHover={{ scale: 1.03, boxShadow: '0 0 32px 0 rgba(180,180,180,0.10)' }}
-              className="relative h-full"
-            >
-              <Card
-                className="overflow-hidden border-2 border-purple-400/30 bg-gradient-to-br from-gray-900/60 to-gray-800/40 rounded-xl shadow-md backdrop-blur-md transition-all p-2 h-full flex flex-col"
-              >
-                <motion.div
-                  className="absolute left-[-40%] top-0 w-1/2 h-full bg-gradient-to-r from-transparent via-purple-200/10 to-transparent skew-x-[-20deg] pointer-events-none"
-                  animate={{ left: ['-40%', '120%'] }}
-                  transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                />
-                {hasDiscount && (
-                  <div className="absolute top-0 right-0 bg-gradient-to-r from-purple-400 to-purple-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10">
-                    -{Math.round((1 - discountedPrice / originalPrice) * 100)}%
-                  </div>
-                )}
-                <CardHeader className="p-2 pb-1 space-y-0">
-                  <CardTitle className="text-base font-extrabold flex items-center text-purple-200 drop-shadow">
-                    <span className="mr-1">{pkg.amount}</span>
-                    <Crown className="h-4 w-4 text-purple-300 drop-shadow-lg mx-1" />
-                    <span className="ml-1 text-xs">{pkg.amount === 1 ? t("shop.legendary_ticket", "Legendary Ticket") : t("shop.legendary_tickets", "Legendary Tickets")}</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-2 pt-0 pb-1 flex-1">
-                  <Separator className="my-2 border-purple-400/20" />
-                  <div className="flex flex-col items-start">
-                    {hasDiscount && (
-                      <span className="text-xs text-purple-200/60 line-through">
-                        {formatPrice(originalPrice)}
-                      </span>
-                    )}
-                    <span className="text-base font-bold text-purple-100">
-                      {formatPrice(discountedPrice)}
-                    </span>
-                    <span className="text-xs text-purple-100/80">
-                      (~${discountedPrice.toFixed(2)})
-                    </span>
-                  </div>
-                </CardContent>
-                <CardFooter className="p-2 pt-0">
-                  <Button
-                    size="sm"
-                    className="w-full bg-gradient-to-r from-gray-800/80 to-purple-400/30 text-purple-100 font-bold border-0 hover:scale-105 hover:shadow-lg transition backdrop-blur-md"
-                    onClick={() => sendPayment(originalPrice, pkg.id, pkg.amount, 'legendary')}
-                    disabled={isLoading[pkg.id]}
-                  >
-                    {isLoading[pkg.id] ? (
-                      <>
-                        <div className="h-4 w-4 border-2 border-t-transparent border-purple-300 rounded-full animate-spin mr-2"></div>
-                        {t("shop.processing", "Processing...")}
-                      </>
-                    ) : (
-                      t("shop.purchase", "Purchase")
-                    )}
-                  </Button>
-                </CardFooter>
-              </Card>
-            </motion.div>
-          )
-        })}
-      </div>
-    </TabsContent>
-
-    {/* Icon Tickets Content - REMOVED */}
-                </Tabs>
-              {/* </TabsContent> */}
-
-              {/* PvP Tab Content */}
-              {/* <TabsContent value="pvp" className="mt-0"> */}
-                {/* {battleLimit && (
-                  <div className="space-y-6">
-                    <div className="bg-gradient-to-r from-amber-800/40 to-orange-900/40 border border-amber-700/50 rounded-xl p-4">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <CircleDot className="h-6 w-6 text-orange-300" />
-                          <div>
-                            <h3 className="text-lg font-bold text-orange-200">Additional PvP Battles</h3>
-                            <p className="text-sm text-orange-100">
-                              {battleLimit.canBattle 
-                                ? `${battleLimit.battlesRemaining} battles remaining`
-                                : `All ${battleLimit.dailyLimit} battles used`
-                              }
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xs text-orange-200/80">
-                            {battleLimit.battlesUsed}/{battleLimit.dailyLimit}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        {pvpBattlePackages.map((pkg) => {
-                          const originalPrice = pkg.price
-                          const discountedPrice = getDiscountedPrice(originalPrice)
-                          const hasDiscount = discountedPrice < originalPrice
-                          return (
-                            <motion.div
-                              key={pkg.id}
-                              whileHover={{ scale: 1.03, boxShadow: '0 0 32px 0 rgba(255,140,0,0.10)' }}
-                              className="relative"
+                {/* Regular Tickets Content */}
+                <TabsContent value="regular" className="mt-0 space-y-6">
+                  <div className="grid grid-cols-2 gap-3">
+                    {regularPackages.map((pkg) => {
+                      const originalPrice = pkg.price
+                      const discountedPrice = getDiscountedPrice(originalPrice)
+                      const hasDiscount = discountedPrice < originalPrice
+                      return (
+                        <motion.div
+                          key={pkg.id}
+                          whileHover={{ scale: 1.03, boxShadow: '0 0 32px 0 rgba(212,175,55,0.10)' }}
+                          className="relative h-full"
+                        >
+                          <div
+                            className="relative rounded-xl p-3 backdrop-blur-xl bg-white/5 border border-white/10 h-full flex flex-col"
+                          >
+                            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37] to-transparent"></div>
+                            {hasDiscount && (
+                              <div className="absolute top-2 right-2 bg-[#d4af37] text-black text-xs font-bold px-2 py-0.5 rounded-full z-10">
+                                -{Math.round((1 - discountedPrice / originalPrice) * 100)}%
+                              </div>
+                            )}
+                            <div className="flex items-center gap-2 mb-2">
+                              <Ticket className="h-4 w-4 text-[#d4af37]" />
+                              <span className="text-sm font-semibold text-white">
+                                {pkg.amount} {pkg.amount === 1 ? t("shop.regular_ticket", "Regular Ticket") : t("shop.regular_tickets", "Regular Tickets")}
+                              </span>
+                            </div>
+                            <div className="flex flex-col gap-1 mb-3 flex-1">
+                              {hasDiscount && (
+                                <span className="text-xs text-white/50 line-through">
+                                  {formatPrice(originalPrice)}
+                                </span>
+                              )}
+                              <span className="text-base font-bold text-white">
+                                {formatPrice(discountedPrice)}
+                              </span>
+                              <span className="text-xs text-white/60">
+                                (~${discountedPrice.toFixed(2)})
+                              </span>
+                            </div>
+                            <Button
+                              size="sm"
+                              className="w-full bg-gradient-to-r from-[#d4af37] to-[#f4d03f] hover:from-[#f4d03f] hover:to-[#d4af37] text-black font-semibold rounded-lg"
+                              onClick={() => sendPayment(originalPrice, pkg.id, pkg.amount, 'regular')}
+                              disabled={isLoading[pkg.id]}
                             >
-                              <Card
-                                className="overflow-hidden border-2 border-orange-400/30 bg-gradient-to-br from-gray-900/60 to-gray-800/40 rounded-xl shadow-md backdrop-blur-md transition-all p-2"
-                              >
-                                <motion.div
-                                  className="absolute left-[-40%] top-0 w-1/2 h-full bg-gradient-to-r from-transparent via-orange-200/10 to-transparent skew-x-[-20deg] pointer-events-none"
-                                  animate={{ left: ['-40%', '120%'] }}
-                                  transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                                />
-                                {hasDiscount && (
-                                  <div className="absolute top-0 right-0 bg-gradient-to-r from-orange-400 to-orange-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10">
-                                    -{Math.round((1 - discountedPrice / originalPrice) * 100)}%
-                                  </div>
-                                )}
-                                <CardHeader className="p-2 pb-1 space-y-0">
-                                  <CardTitle className="text-base font-extrabold flex items-center text-orange-200 drop-shadow">
-                                    <span className="mr-1">{pkg.amount}</span>
-                                    <CircleDot className="h-4 w-4 text-orange-300 drop-shadow-lg mx-1" />
-                                    <span className="ml-1 text-xs">{pkg.amount === 1 ? "PvP Battle" : "PvP Battles"}</span>
-                                  </CardTitle>
-                                </CardHeader>
-                                <CardContent className="p-2 pt-0 pb-1">
-                                  <Separator className="my-2 border-orange-400/20" />
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex flex-col items-start">
-                                      {hasDiscount && (
-                                        <span className="text-xs text-orange-200/60 line-through">
-                                          {formatPrice(originalPrice)}
-                                        </span>
-                                      )}
-                                      <span className="text-base font-bold text-orange-100">
-                                        {formatPrice(discountedPrice)}
-                                      </span>
-                                      <span className="text-xs text-orange-100/80">
-                                        (~${discountedPrice.toFixed(2)})
-                                      </span>
-                                    </div>
-                                  </div>
-                                </CardContent>
-                                <CardFooter className="p-2 pt-0">
-                                  <Button
-                                    size="sm"
-                                    className={`w-full font-bold border-0 transition backdrop-blur-md ${
-                                      battleLimit.canBattle
-                                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                                        : 'bg-gradient-to-r from-gray-800/80 to-orange-400/30 text-orange-100 hover:scale-105 hover:shadow-lg'
-                                    }`}
-                                    onClick={() => sendPvpBattlePayment(originalPrice, pkg.id, pkg.amount)}
-                                    disabled={isLoading[pkg.id] || battleLimit.canBattle}
-                                  >
-                                    {isLoading[pkg.id] ? (
-                                      <>
-                                        <div className="h-4 w-4 border-2 border-t-transparent border-orange-400 rounded-full animate-spin mr-2"></div>
-                                        Processing...
-                                      </>
-                                    ) : battleLimit.canBattle ? (
-                                      "Not Available"
-                                    ) : (
-                                      "Purchase"
-                                    )}
-                                  </Button>
-                                </CardFooter>
-                              </Card>
-                            </motion.div>
-                          )
-                        })}
-                      </div>
-                    </div>
+                              {isLoading[pkg.id] ? (
+                                <>
+                                  <div className="h-4 w-4 border-2 border-t-transparent border-black rounded-full animate-spin mr-2"></div>
+                                  {t("shop.processing", "Processing...")}
+                                </>
+                              ) : (
+                                t("shop.purchase", "Purchase")
+                              )}
+                            </Button>
+                          </div>
+                        </motion.div>
+                      )
+                    })}
                   </div>
-                )} */}
-              {/* </TabsContent> */}
-            {/* </Tabs> */}
-          </motion.div>
+                </TabsContent>
 
+                {/* Legendary Tickets Content */}
+                <TabsContent value="legendary" className="mt-0 space-y-6">
+                  <div className="grid grid-cols-2 gap-2">
+                    {legendaryPackages.map((pkg) => {
+                      const originalPrice = pkg.price
+                      const discountedPrice = getDiscountedPrice(originalPrice)
+                      const hasDiscount = discountedPrice < originalPrice
+                      return (
+                        <motion.div
+                          key={pkg.id}
+                          whileHover={{ scale: 1.03, boxShadow: '0 0 32px 0 rgba(180,180,180,0.10)' }}
+                          className="relative h-full"
+                        >
+                          <div
+                            className="relative rounded-xl p-3 backdrop-blur-xl bg-white/5 border border-white/10 h-full flex flex-col"
+                          >
+                            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37] to-transparent"></div>
+                            {hasDiscount && (
+                              <div className="absolute top-2 right-2 bg-[#d4af37] text-black text-xs font-bold px-2 py-0.5 rounded-full z-10">
+                                -{Math.round((1 - discountedPrice / originalPrice) * 100)}%
+                              </div>
+                            )}
+                            <div className="flex items-center gap-2 mb-2">
+                              <Crown className="h-4 w-4 text-[#d4af37]" />
+                              <span className="text-sm font-semibold text-white">
+                                {pkg.amount} {pkg.amount === 1 ? t("shop.legendary_ticket", "Legendary Ticket") : t("shop.legendary_tickets", "Legendary Tickets")}
+                              </span>
+                            </div>
+                            <div className="flex flex-col gap-1 mb-3 flex-1">
+                              {hasDiscount && (
+                                <span className="text-xs text-white/50 line-through">
+                                  {formatPrice(originalPrice)}
+                                </span>
+                              )}
+                              <span className="text-base font-bold text-white">
+                                {formatPrice(discountedPrice)}
+                              </span>
+                              <span className="text-xs text-white/60">
+                                (~${discountedPrice.toFixed(2)})
+                              </span>
+                            </div>
+                            <Button
+                              size="sm"
+                              className="w-full bg-gradient-to-r from-[#d4af37] to-[#f4d03f] hover:from-[#f4d03f] hover:to-[#d4af37] text-black font-semibold rounded-lg"
+                              onClick={() => sendPayment(originalPrice, pkg.id, pkg.amount, 'legendary')}
+                              disabled={isLoading[pkg.id]}
+                            >
+                              {isLoading[pkg.id] ? (
+                                <>
+                                  <div className="h-4 w-4 border-2 border-t-transparent border-black rounded-full animate-spin mr-2"></div>
+                                  {t("shop.processing", "Processing...")}
+                                </>
+                              ) : (
+                                t("shop.purchase", "Purchase")
+                              )}
+                            </Button>
+                          </div>
+                        </motion.div>
+                      )
+                    })}
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </motion.div>
 
-          {/* Payment info section */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.4 }}
-            className="bg-white/10 rounded-xl p-5 shadow-lg space-y-4 border border-gray-400/20 backdrop-blur-md"
-          >
-            <div className="flex items-center justify-between">
-              <h3 className="font-medium text-gray-100">{t("shop.payment_info", "Payment Information")}</h3>
-              <Badge variant="outline" className="text-gray-300 bg-gray-900/30 border-gray-400/30">
-                {t("shop.secure", "Secure")}
-              </Badge>
-            </div>
+            {/* Payment info section */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.4 }}
+              className="relative rounded-2xl p-4 backdrop-blur-xl bg-white/5 border border-white/10"
+            >
+              <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37] to-transparent"></div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-white">{t("shop.payment_info", "Payment Information")}</h3>
+                <Badge className="bg-[#d4af37]/20 border border-[#d4af37]/30 text-[#d4af37]">
+                  {t("shop.secure", "Secure")}
+                </Badge>
+              </div>
 
-            <Separator className="border-gray-400/20" />
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <div className="flex items-center text-sm text-gray-200/80">
-                  <Check className="h-4 w-4 text-yellow-200 mr-2" />
-                  {t("shop.instant_delivery", "Instant delivery")}
+              <div className="grid grid-cols-2 gap-4 mb-3">
+                <div className="space-y-2">
+                  <div className="flex items-center text-sm text-white/70">
+                    <Check className="h-4 w-4 text-[#d4af37] mr-2" />
+                    {t("shop.instant_delivery", "Instant delivery")}
+                  </div>
+                  <div className="flex items-center text-sm text-white/70">
+                    <Check className="h-4 w-4 text-[#d4af37] mr-2" />
+                    {t("shop.secure_transactions", "Secure transactions")}
+                  </div>
                 </div>
-                <div className="flex items-center text-sm text-gray-200/80">
-                  <Check className="h-4 w-4 text-yellow-200 mr-2" />
-                  {t("shop.secure_transactions", "Secure transactions")}
+                <div className="space-y-2">
+                  <div className="flex items-center text-sm text-white/70">
+                    <Check className="h-4 w-4 text-[#d4af37] mr-2" />
+                    {t("shop.no_hidden_fees", "No hidden fees")}
+                  </div>
+                  <div className="flex items-center text-sm text-white/70">
+                    <Check className="h-4 w-4 text-[#d4af37] mr-2" />
+                    {t("shop.support_24_7", "24/7 support")}
+                  </div>
                 </div>
               </div>
-              <div className="space-y-2">
-                <div className="flex items-center text-sm text-gray-200/80">
-                  <Check className="h-4 w-4 text-yellow-200 mr-2" />
-                  {t("shop.no_hidden_fees", "No hidden fees")}
-                </div>
-                <div className="flex items-center text-sm text-gray-200/80">
-                  <Check className="h-4 w-4 text-yellow-200 mr-2" />
-                  {t("shop.support_24_7", "24/7 support")}
-                </div>
-              </div>
-            </div>
 
-            <div className="pt-2">
-              <p className="text-xs text-gray-200/70">
-                {t("shop.wld_description", "WLD is the Worldcoin token used for payments in this app. All transactions are processed securely and tickets are added instantly to your account.")}
-              </p>
-            </div>
-          </motion.div>
+              <div className="pt-2">
+                <p className="text-xs text-white/60">
+                  {t("shop.wld_description", "WLD is the Worldcoin token used for payments in this app. All transactions are processed securely and tickets are added instantly to your account.")}
+                </p>
+              </div>
+            </motion.div>
+          </div>
         </main>
-
-        <MobileNav />
       </div>
     </ProtectedRoute>
   )

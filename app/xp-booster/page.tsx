@@ -1,5 +1,5 @@
 'use client'
-import { Sparkles, CheckCircle, Clock, Zap, Home, Star, TrendingUp, Target, Award } from "lucide-react";
+import { Sparkles, CheckCircle, Clock, Zap, Home, Star, TrendingUp, Target, Award, ArrowLeft } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
@@ -13,6 +13,9 @@ import { PaymentCurrencyToggle } from "@/components/payment-currency-toggle"
 import { usePaymentCurrency } from "@/contexts/payment-currency-context"
 import { ERC20_TRANSFER_ABI, PAYMENT_RECIPIENT, getTransferDetails } from "@/lib/payment-utils"
 import { useAnixPrice } from "@/contexts/AnixPriceContext"
+import { useRouter } from "next/navigation"
+import ProtectedRoute from "@/components/protected-route"
+import { motion } from "framer-motion"
 
 const benefitList = [
   {
@@ -55,6 +58,7 @@ export default function XpBoosterPage() {
   const { price } = useWldPrice();
   const { price: anixPrice } = useAnixPrice();
   const { t } = useI18n();
+  const router = useRouter();
   const [buying, setBuying] = useState(false);
   const [hasXpPass, setHasXpPass] = useState(false);
   const [xpPassExpiryDate, setXpPassExpiryDate] = useState<Date | null>(null);
@@ -92,8 +96,8 @@ export default function XpBoosterPage() {
         }
 
         // Fetch XP pass status from database
-        const { data: xpData, error: xpError } = await supabase
-          .from("xp_passes")
+        const { data: xpData, error: xpError } = await (supabase
+          .from("xp_passes") as any)
           .select("*")
           .eq("wallet_address", user.wallet_address)
           .eq("active", true)
@@ -108,11 +112,11 @@ export default function XpBoosterPage() {
           if (now > expiry) {
             // XP Pass is expired - deactivate
             console.log("XP Pass expired, deactivating...");
-            await supabase
-              .from("xp_passes")
+            await ((supabase
+              .from("xp_passes") as any)
               .update({ active: false })
               .eq("wallet_address", user.wallet_address)
-              .eq("id", xpData.id as string);
+              .eq("id", xpData.id as string) as any);
 
             setHasXpPass(false);
             setXpPassExpiryDate(null);
@@ -195,134 +199,160 @@ export default function XpBoosterPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-blue-800 via-blue-400 to-cyan-300 animate-gradient-x">
-      {/* Back to Home Button */}
-      <Link href="/" className="fixed top-4 left-4 z-20">
-        <Button variant="outline" className="flex items-center gap-2 px-4 py-2 rounded-full shadow bg-white/80 hover:bg-white">
-          <Home className="h-5 w-5 text-blue-600" />
-          <span className="font-semibold text-blue-700">{t("common.back", "Back to Home")}</span>
-        </Button>
-      </Link>
-      
-      {/* Animated background sparkles */}
-      <div className="absolute inset-0 pointer-events-none z-0">
-        <div className="absolute left-1/4 top-1/4 w-96 h-96 bg-blue-300 opacity-30 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute right-1/4 bottom-1/4 w-96 h-96 bg-cyan-200 opacity-30 rounded-full blur-3xl animate-pulse delay-2000" />
-        <div className="absolute left-1/2 top-2/3 w-72 h-72 bg-blue-400 opacity-20 rounded-full blur-2xl animate-pulse delay-1000" />
-      </div>
-      
-      <main className="relative z-10 w-full max-w-4xl mx-auto flex flex-col items-center justify-center px-4 py-8">
-        <div className="bg-white/80 backdrop-blur-2xl rounded-3xl shadow-2xl border border-blue-200 p-8 flex flex-col items-center w-full animate-fade-in drop-shadow-xl" style={{boxShadow:'0 8px 40px 0 rgba(0,80,200,0.18)'}}>
-          {/* Header Section */}
-          <div className="flex flex-col items-center mb-8">
-            <div className="flex items-center gap-3 mb-4">
-              <Sparkles className="h-10 w-10 text-blue-500 animate-bounce drop-shadow-lg" />
-              <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-700 via-cyan-500 to-blue-400 tracking-tight drop-shadow-lg">{t("xp_pass.title", "XP Pass")}</h1>
-            </div>
-            <p className="text-gray-700 text-center text-base max-w-sm mb-6">{t("xp_pass.boost_text", "Boost your XP gain and unlock rewards faster!")}</p>
-            
-            {/* Main Benefits */}
-            <div className="grid grid-cols-2 gap-4 w-full max-w-md mb-8">
-              {benefitList.map((b, i) => (
-                <div key={b.title} className="flex flex-col items-center p-4 rounded-xl shadow-lg bg-gradient-to-br from-blue-400 to-blue-600 text-white transition-transform hover:scale-105 hover:shadow-2xl animate-fade-in" style={{animationDelay:`${i*0.1}s`}}>
-                  <div className="mb-2">{b.icon}</div>
-                  <div className="font-bold text-sm mb-1 drop-shadow">{b.title === 'Double XP' ? t("xp_pass.double_xp", "Double XP") : t("xp_pass.faster_rewards", "Faster Rewards")}</div>
-                  <div className="text-xs opacity-90 text-center drop-shadow">{b.desc === '7 days' ? t("xp_pass.seven_days", "7 days") : t("xp_pass.unlock_quicker", "Unlock quicker")}</div>
-                </div>
-              ))}
+    <ProtectedRoute>
+      <div className="flex flex-col min-h-screen text-white relative bg-[#0a0a0a] overflow-y-auto">
+        {/* Premium Header - Coinbase Style */}
+        <header className="sticky top-0 z-30 backdrop-blur-xl bg-[#0a0a0a]/80 border-b border-[#1a1a1a]">
+          <div className="w-full px-4 py-2.5 flex items-center justify-between max-w-2xl mx-auto">
+            {/* Left: Back Button + Title */}
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => router.push("/")}
+                className="w-8 h-8 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10"
+              >
+                <ArrowLeft className="h-4 w-4 text-white/70" />
+              </Button>
+              <h1 className="text-base font-semibold tracking-tight text-white">
+                {t("xp_pass.title", "XP Pass")}
+              </h1>
             </div>
           </div>
+        </header>
 
-          {/* Features Grid */}
-          <div className="w-full mb-8">
-            <h2 className="text-xl font-semibold text-gray-800 text-center mb-6">{t("xp_pass.boost_your_xp", "Boost your XP!")}</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {featureList.map((feature, index) => (
-                <div key={feature.title} className="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-blue-200 hover:bg-white/80 transition-all duration-200 hover:scale-105">
-                  <div className="flex flex-col items-center text-center">
-                    <div className="mb-2">{feature.icon}</div>
-                    <h3 className="font-semibold text-sm text-gray-800 mb-1">
-                      {feature.title === 'Level Up Faster' ? t("xp_pass.level_up_faster", "Level Up Faster") :
-                       feature.title === 'Better Progress' ? t("xp_pass.better_progress", "Better Progress") :
-                       feature.title === 'Achieve Goals' ? t("xp_pass.achieve_goals", "Achieve Goals") :
-                       t("xp_pass.exclusive_benefits", "Exclusive Benefits")}
-                    </h3>
-                    <p className="text-xs text-gray-600">
-                      {feature.desc === 'Gain experience twice as fast' ? t("xp_pass.gain_twice_fast", "Gain experience twice as fast") :
-                       feature.desc === 'Unlock rewards quicker' ? t("xp_pass.unlock_rewards_quicker", "Unlock rewards quicker") :
-                       feature.desc === 'Reach milestones faster' ? t("xp_pass.reach_milestones", "Reach milestones faster") :
-                       t("xp_pass.access_premium", "Access premium features")}
-                    </p>
-                  </div>
+        <main className="w-full px-4 pb-32 flex-1 max-w-2xl mx-auto">
+          <div className="space-y-3 mt-4">
+            {/* Main Card - Glassmorphism */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="relative rounded-2xl p-6 backdrop-blur-xl bg-white/5 border border-white/10"
+            >
+              <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37] to-transparent"></div>
+              {/* Header Section */}
+              <div className="flex flex-col items-center mb-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <h1 className="text-xl font-semibold text-white">{t("xp_pass.title", "XP Pass")}</h1>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Purchase Section */}
-          <div className="w-full max-w-md">
-            {loading ? (
-              <div className="flex flex-col items-center gap-2 mt-2">
-                <div className="animate-spin h-8 w-8 border-2 border-t-transparent border-blue-500 rounded-full"></div>
-                <div className="text-gray-600">{t("xp_pass.loading_status", "Loading XP Pass status...")}</div>
+                <p className="text-white/70 text-center text-sm max-w-sm mb-6">{t("xp_pass.boost_text", "Boost your XP gain and unlock rewards faster!")}</p>
+                
+                {/* Main Benefits */}
+                <div className="grid grid-cols-2 gap-3 w-full max-w-md mb-6">
+                  {benefitList.map((b, i) => (
+                    <motion.div 
+                      key={b.title} 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      className="flex flex-col items-center p-3 rounded-xl bg-white/5 border border-white/10 text-white transition-transform hover:scale-105"
+                    >
+                      <div className="mb-2">{b.icon}</div>
+                      <div className="font-semibold text-xs mb-1">{b.title === 'Double XP' ? t("xp_pass.double_xp", "Double XP") : t("xp_pass.faster_rewards", "Faster Rewards")}</div>
+                      <div className="text-[10px] opacity-70 text-center">{b.desc === '7 days' ? t("xp_pass.seven_days", "7 days") : t("xp_pass.unlock_quicker", "Unlock quicker")}</div>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
-            ) : hasXpPass ? (
-              <div className="flex flex-col items-center gap-4 mt-2">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-8 w-8 text-green-500" />
-                  <div className="text-green-700 font-bold text-xl">{t("xp_pass.active_status", "XP Pass Active!")}</div>
+
+              {/* Features Grid */}
+              <div className="w-full mb-6">
+                <h2 className="text-base font-semibold text-white text-center mb-4">{t("xp_pass.boost_your_xp", "Boost your XP!")}</h2>
+                <div className="grid grid-cols-2 gap-3">
+                  {featureList.map((feature, index) => (
+                    <motion.div 
+                      key={feature.title} 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="bg-white/5 backdrop-blur-sm rounded-lg p-3 border border-white/10 hover:bg-white/10 transition-all duration-200"
+                    >
+                      <div className="flex flex-col items-center text-center">
+                        <h3 className="font-semibold text-xs text-white mb-1">
+                          {feature.title === 'Level Up Faster' ? t("xp_pass.level_up_faster", "Level Up Faster") :
+                           feature.title === 'Better Progress' ? t("xp_pass.better_progress", "Better Progress") :
+                           feature.title === 'Achieve Goals' ? t("xp_pass.achieve_goals", "Achieve Goals") :
+                           t("xp_pass.exclusive_benefits", "Exclusive Benefits")}
+                        </h3>
+                        <p className="text-[10px] text-white/60">
+                          {feature.desc === 'Gain experience twice as fast' ? t("xp_pass.gain_twice_fast", "Gain experience twice as fast") :
+                           feature.desc === 'Unlock rewards quicker' ? t("xp_pass.unlock_rewards_quicker", "Unlock rewards quicker") :
+                           feature.desc === 'Reach milestones faster' ? t("xp_pass.reach_milestones", "Reach milestones faster") :
+                           t("xp_pass.access_premium", "Access premium features")}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
-                {xpPassExpiryDate && (
+              </div>
+
+              {/* Purchase Section */}
+              <div className="w-full max-w-md">
+                {loading ? (
+                  <div className="flex flex-col items-center gap-2 mt-2">
+                    <div className="animate-spin h-8 w-8 border-2 border-t-transparent border-[#d4af37] rounded-full"></div>
+                    <div className="text-white/70 text-sm">{t("xp_pass.loading_status", "Loading XP Pass status...")}</div>
+                  </div>
+                ) : hasXpPass ? (
+                  <div className="flex flex-col items-center gap-4 mt-2">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-8 w-8 text-[#10b981]" />
+                      <div className="text-[#10b981] font-semibold text-lg">{t("xp_pass.active_status", "XP Pass Active!")}</div>
+                    </div>
+                    {xpPassExpiryDate && (
+                      <div className="text-center">
+                        <div className="text-white/70 text-sm">{t("xp_pass.expires_on", "Expires on")}</div>
+                        <div className="text-[#d4af37] font-semibold">
+                          {xpPassExpiryDate.toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })} at {xpPassExpiryDate.toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                        <div className="text-white/60 text-xs mt-1">
+                          {t("xp_pass.days_remaining", "{days} days remaining", { days: Math.ceil((xpPassExpiryDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
                   <div className="text-center">
-                    <div className="text-gray-600 text-sm">{t("xp_pass.expires_on", "Expires on")}</div>
-                    <div className="text-blue-700 font-semibold">
-                      {xpPassExpiryDate.toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })} at {xpPassExpiryDate.toLocaleTimeString('en-US', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+                    <div className="mb-4 flex justify-center">
+                      <PaymentCurrencyToggle size="sm" />
                     </div>
-                    <div className="text-gray-500 text-xs mt-1">
-                      {t("xp_pass.days_remaining", "{days} days remaining", { days: Math.ceil((xpPassExpiryDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) })}
+                    <div className="mb-4">
+                      <div className="text-lg font-semibold text-[#d4af37]">
+                        {priceDisplay}
+                      </div>
+                      <div className="text-sm text-white/60">
+                        (~${fixedUsdPrice.toFixed(2)} USD)
+                      </div>
                     </div>
+                    <Button
+                      onClick={handleBuy}
+                      disabled={buying || !priceDetails}
+                      className="w-full py-3 text-base font-semibold rounded-lg bg-gradient-to-r from-[#d4af37] to-[#f4d03f] hover:from-[#f4d03f] hover:to-[#d4af37] text-black shadow-xl transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {buying ? (
+                        <span className="flex items-center gap-2">
+                          <span className="animate-spin h-5 w-5 border-2 border-t-transparent border-black rounded-full"></span> 
+                          {t("common.processing", "Processing...")}
+                        </span>
+                      ) : (
+                        <span>{t("xp_pass.buy_xp_pass", "Purchase XP Pass")}</span>
+                      )}
+                    </Button>
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="text-center">
-                <div className="mb-4 flex justify-center">
-                  <PaymentCurrencyToggle size="sm" />
-                </div>
-                <div className="mb-4">
-                  <div className="text-lg font-bold text-blue-700">
-                    {priceDisplay}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    (~${fixedUsdPrice.toFixed(2)} USD)
-                  </div>
-                </div>
-                <Button
-                  onClick={handleBuy}
-                  disabled={buying || !priceDetails}
-                  className="w-full py-3 text-lg font-bold rounded-full bg-gradient-to-r from-blue-600 to-cyan-400 hover:from-blue-700 hover:to-cyan-500 shadow-xl transition-all duration-150 animate-glow disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {buying ? (
-                    <span className="flex items-center gap-2">
-                      <span className="animate-spin h-5 w-5 border-2 border-t-transparent border-white rounded-full"></span> 
-{t("common.processing", "Processing...")}
-                    </span>
-                  ) : (
-                    <span>{t("xp_pass.buy_xp_pass", "Purchase XP Pass")}</span>
-                  )}
-                </Button>
-              </div>
-            )}
+            </motion.div>
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </ProtectedRoute>
   );
 } 

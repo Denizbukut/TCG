@@ -171,8 +171,8 @@ export default function WeeklyContestPage() {
                 <ArrowLeft className="h-4 w-4 text-white/70" />
               </Button>
               <h1 className="text-base font-semibold tracking-tight text-white">
-                {t("contest.title", "Weekly Contest")}
-              </h1>
+          {t("contest.title", "Weekly Contest")}
+        </h1>
             </div>
           </div>
         </header>
@@ -218,7 +218,7 @@ export default function WeeklyContestPage() {
               >
                 <div className="text-center text-red-400 text-lg font-semibold">
                   {t("contest.ended", "Contest Ended")}
-                </div>
+        </div>
               </motion.div>
             )}
 
@@ -232,8 +232,8 @@ export default function WeeklyContestPage() {
               <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37] to-transparent"></div>
               <h2 className="text-base font-semibold text-white mb-3">{t("contest.your_mission", "Your Mission:")}</h2>
               <div className="text-lg font-semibold text-[#d4af37] mb-4">
-                {t("contest.earn_points", "Earn as many Points as possible!")}
-              </div>
+            {t("contest.earn_points", "Earn as many Points as possible!")}
+          </div>
           
           {/* Double Points Today Banner - UNCOMMENT FOR SPECIAL EVENTS */}
           {/* <div className="mb-4 p-3 bg-gradient-to-r from-green-500/20 to-green-400/10 border border-green-400 rounded-lg">
@@ -311,9 +311,9 @@ export default function WeeklyContestPage() {
               <div className="mt-3 pt-3 border-t border-white/10">
                 <p className="text-xs text-white/80 font-semibold mb-1">{t("contest.trade_market_rules_title", "Important: Trade Market Rules")}</p>
                 <p className="text-xs text-white/60">
-                  {t("contest.trade_market_rules_desc", "Points are only counted when buying cards from different users. Every 24 hours, you can only buy a card from the same user once and receive points.")}
-                </p>
-              </div>
+                {t("contest.trade_market_rules_desc", "Points are only counted when buying cards from different users. Every 24 hours, you can only buy a card from the same user once and receive points.")}
+              </p>
+            </div>
             </motion.div>
 
             {/* Progress Card - Glassmorphism */}
@@ -325,22 +325,22 @@ export default function WeeklyContestPage() {
             >
               <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37] to-transparent"></div>
               <h2 className="text-base font-semibold text-white mb-3">{t("contest.your_progress", "Your Progress")}</h2>
-              {loading ? (
+          {loading ? (
                 <p className="text-sm text-white/60">{t("contest.loading_stats", "Loading your stats...")}</p>
-              ) : userStats ? (
+          ) : userStats ? (
                 <div className="space-y-2">
                   <p className="text-base text-white">
                     {t("contest.you_earned", "You earned")} <span className="font-semibold text-[#d4af37] text-xl">{userStats.legendary_count}</span> {t("contest.points_this_week", "points this week.")}
-                  </p>
-                  {userStats.rank && (
+              </p>
+              {userStats.rank && (
                     <p className="text-sm text-white/70">
                       {t("contest.current_rank", "Current rank:")}: <span className="font-semibold text-[#d4af37]">#{userStats.rank}</span>
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <p className="text-sm text-white/60">{t("contest.no_points", "No points earned yet this week.")}</p>
+                </p>
               )}
+            </div>
+          ) : (
+                <p className="text-sm text-white/60">{t("contest.no_points", "No points earned yet this week.")}</p>
+          )}
             </motion.div>
 
             {/* Prize Pool Card - Glassmorphism */}
@@ -353,19 +353,19 @@ export default function WeeklyContestPage() {
               <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37] to-transparent"></div>
               <h2 className="text-base font-semibold text-white mb-3">🏆 {t("contest.prize_pool", "Prize Pool")}</h2>
               <ul className="text-sm text-white space-y-2">
-                {WEEKLY_PRIZE_POOL.map((prize, idx) => (
+              {WEEKLY_PRIZE_POOL.map((prize, idx) => (
                   <li key={prize.rank} className={`flex items-center gap-3 px-3 py-2 rounded-lg ${
                     idx === 0 ? 'bg-[#d4af37]/10 border border-[#d4af37]/20' :
                     idx === 1 ? 'bg-white/5 border border-white/10' :
                     idx === 2 ? 'bg-white/5 border border-white/10' :
                     'bg-white/5 border border-white/10'
-                  }`}>
+                }`}>
                     <span className="text-xl">{prize.icon}</span>
                     <span className="flex-1 font-semibold text-white">{prize.rank.replace(/Place/g, t("contest.place", "Place"))}</span>
                     <span className="font-semibold text-[#d4af37]">{prize.reward}</span>
-                  </li>
-                ))}
-              </ul>
+                </li>
+              ))}
+            </ul>
             </motion.div>
 
             {/* Leaderboard Card - Glassmorphism */}
@@ -377,36 +377,36 @@ export default function WeeklyContestPage() {
             >
               <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37] to-transparent"></div>
               <h2 className="text-base font-semibold text-white mb-3">{t("contest.leaderboard", "Leaderboard")}</h2>
-              {loading ? (
+          {loading ? (
                 <p className="text-center text-white/60 text-sm">{t("contest.loading_leaderboard", "Loading leaderboard...")}</p>
-              ) : leaderboard.length === 0 ? (
+          ) : leaderboard.length === 0 ? (
                 <p className="text-center text-white/60 text-sm">{t("contest.no_entries", "No entries yet this week.")}</p>
-              ) : (
-                <div className="space-y-2">
-                  {leaderboard.map((entry, index) => (
-                    <div
-                      key={entry.user_id}
+          ) : (
+            <div className="space-y-2">
+              {leaderboard.map((entry, index) => (
+                <div
+                  key={entry.user_id}
                       className={`flex justify-between items-center px-3 py-2 rounded-lg text-sm font-medium transition-all
                         ${index === 0 ? 'bg-[#d4af37]/10 border border-[#d4af37]/20' :
                           index === 1 ? 'bg-white/5 border border-white/10' :
                           index === 2 ? 'bg-white/5 border border-white/10' :
                           'bg-white/5 border border-white/10'}
                         ${user?.username === entry.user_id ? 'border-[#d4af37] border-2' : ''}
-                      `}
-                    >
+                  `}
+                >
                       <div className="flex items-center gap-2">
                         <span className="text-base font-semibold w-6 text-white/70">{index + 1}</span>
                         <span className="truncate max-w-[120px] text-white">{entry.user_id.length > 14 ? `${entry.user_id.slice(0, 14)}…` : entry.user_id}</span>
-                      </div>
+                  </div>
                       <span className="font-semibold text-[#d4af37]">{entry.legendary_count}</span>
-                    </div>
-                  ))}
                 </div>
-              )}
+              ))}
+            </div>
+          )}
             </motion.div>
-          </div>
-        </main>
-      </div>
+        </div>
+      </main>
+    </div>
     </ProtectedRoute>
   )
 }

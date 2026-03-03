@@ -1,11 +1,10 @@
 "use client"
 
+import React from "react"
 import { useState, useEffect, useRef } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { getSupabaseBrowserClient } from "@/lib/supabase"
-import MobileNav from "@/components/mobile-nav"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
 import { toast } from "@/components/ui/use-toast"
 import { motion, AnimatePresence } from "framer-motion"
 import { useI18n } from "@/contexts/i18n-context"
@@ -25,6 +24,7 @@ import {
   ChevronUp,
   ArrowRight,
   Home,
+  ArrowLeft,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -34,6 +34,8 @@ import Link from "next/link"
 import { PaymentCurrencyToggle } from "@/components/payment-currency-toggle"
 import { usePaymentCurrency } from "@/contexts/payment-currency-context"
 import { ERC20_TRANSFER_ABI, getTransferDetails, PAYMENT_RECIPIENT } from "@/lib/payment-utils"
+import { useRouter } from "next/navigation"
+import ProtectedRoute from "@/components/protected-route"
 
 const PREMIUM_PASS_PRICE_USD = 5
 const XP_PASS_PRICE_USD = 5
@@ -48,6 +50,7 @@ interface LevelReward {
 export default function PremiumPassPage() {
   const { user, updateUserTickets } = useAuth()
   const { t } = useI18n()
+  const router = useRouter()
   
   // Helper function to translate rarity
   const getDisplayRarity = (rarity: string) => {
@@ -318,8 +321,8 @@ const handlePurchaseXpPass = async () => {
 
     if (existingPass) {
       // Update existing XP pass
-      const { error: updateError } = await supabase
-        .from("xp_passes")
+      const { error: updateError } = await (supabase
+        .from("xp_passes") as any)
         .update({
           active: true,
           purchased_at: new Date().toISOString(),
@@ -330,7 +333,7 @@ const handlePurchaseXpPass = async () => {
       error = updateError
     } else {
       // Create new XP pass record
-      const { error: insertError } = await supabase.from("xp_passes").insert({
+      const { error: insertError } = await (supabase.from("xp_passes") as any).insert({
         user_id: user.username,
         active: true,
         purchased_at: new Date().toISOString(),
@@ -355,14 +358,14 @@ const handlePurchaseXpPass = async () => {
       const dollarAmount = 5.00
       const wldAmount = price ? dollarAmount / price : dollarAmount
       
-      const { error: logError } = await supabase.from("ticket_purchases").insert({
+      const { error: logError } = await ((supabase.from("ticket_purchases") as any).insert({
         username: user.username,
         ticket_type: "xp_pass",
         amount: 1,
         price_usd: dollarAmount,
         price_wld: wldAmount.toFixed(3),
         discounted: false,
-      })
+      }) as any)
       
       if (logError) {
         console.error("Error logging XP pass purchase:", logError)
@@ -403,8 +406,8 @@ const handlePurchaseXpPass = async () => {
 
       try {
         // Get user data including tickets and elite tickets
-        const { data: userData, error: userError } = await supabase
-          .from("users")
+        const { data: userData, error: userError } = await (supabase
+          .from("users") as any)
           .select("tickets, elite_tickets")
           .eq("username", user.username)
           .single()
@@ -444,8 +447,8 @@ const handlePurchaseXpPass = async () => {
             console.log("Premium pass expired, updating database...")
 
             // Update premium_passes table
-            const { error: updatePassError } = await supabase
-              .from("premium_passes")
+            const { error: updatePassError } = await (supabase
+              .from("premium_passes") as any)
               .update({ active: false })
               .eq("wallet_address", user.wallet_address)
               .eq("id", premiumData.id)
@@ -455,8 +458,8 @@ const handlePurchaseXpPass = async () => {
             }
 
             // Update users table
-            const { error: updateUserError } = await supabase
-              .from("users")
+            const { error: updateUserError } = await (supabase
+              .from("users") as any)
               .update({ has_premium: false })
               .eq("username", user.username)
 
@@ -508,8 +511,8 @@ const handlePurchaseXpPass = async () => {
         }
 
         // 👇 XP PASS LADEN (aus xp_passes Tabelle)
-        const { data: xpData, error: xpError } = await supabase
-          .from("xp_passes")
+        const { data: xpData, error: xpError } = await (supabase
+          .from("xp_passes") as any)
           .select("*")
           .eq("user_id", user.username)
           .eq("active", true)
@@ -524,8 +527,8 @@ const handlePurchaseXpPass = async () => {
           if (now > expiry) {
             // XP-Pass ist abgelaufen – deaktiviere
             console.log("XP Pass expired, deactivating...")
-            await supabase
-              .from("xp_passes")
+            await (supabase
+              .from("xp_passes") as any)
               .update({ active: false })
               .eq("user_id", user.username)
               .eq("id", xpData.id as string)
@@ -632,11 +635,11 @@ const handlePurchaseXpPass = async () => {
       if (!supabase) return
 
       // Update last claim time
-      const { error: updateError } = await supabase
-        .from("premium_passes")
+      const { error: updateError } = await ((supabase
+        .from("premium_passes") as any)
         .update({ last_elite_claim: new Date().toISOString() })
         .eq("wallet_address", user.wallet_address)
-        .eq("active", true)
+        .eq("active", true) as any)
 
       if (updateError) {
         console.error("Error updating last claim time:", updateError)
@@ -651,10 +654,10 @@ const handlePurchaseXpPass = async () => {
       // Update user's elite tickets in the database
       const newEliteTicketCount = (eliteTickets || 0) + 1
 
-      const { error: ticketUpdateError } = await supabase
-        .from("users")
+      const { error: ticketUpdateError } = await ((supabase
+        .from("users") as any)
         .update({ elite_tickets: newEliteTicketCount })
-        .eq("username", user.username)
+        .eq("username", user.username) as any)
 
       if (ticketUpdateError) {
         console.error("Error updating legendary tickets:", ticketUpdateError)
@@ -754,10 +757,10 @@ const handlePurchaseXpPass = async () => {
                 premium_claimed: hasPremium ? true : existingReward.premium_claimed,
               }
 
-              await supabase
-                .from("claimed_rewards")
+              await ((supabase
+                .from("claimed_rewards") as any)
                 .update(updateData)
-                .eq("id", existingReward.id as string)
+                .eq("id", existingReward.id as string) as any)
             } else {
               // Create new reward record
               const insertData = {
@@ -767,7 +770,7 @@ const handlePurchaseXpPass = async () => {
                 premium_claimed: hasPremium,
               }
 
-              await supabase.from("claimed_rewards").insert(insertData)
+              await ((supabase.from("claimed_rewards") as any).insert(insertData) as any)
             }
           }
         }
@@ -777,13 +780,13 @@ const handlePurchaseXpPass = async () => {
         const newEliteTicketCount = (eliteTickets || 0) + eliteTicketsToAdd
 
         // Update user's tickets in the database
-        const { error: ticketUpdateError } = await supabase
-          .from("users")
+        const { error: ticketUpdateError } = await ((supabase
+          .from("users") as any)
           .update({
             tickets: newTicketCount,
             elite_tickets: newEliteTicketCount,
           })
-          .eq("username", user.username)
+          .eq("username", user.username) as any)
 
         if (ticketUpdateError) {
           console.error("Error updating tickets:", ticketUpdateError)
@@ -936,24 +939,24 @@ const handlePurchaseXpPass = async () => {
 
       if (existingPass) {
         // Update existing premium pass
-        const { error: updateError } = await supabase
-          .from("premium_passes")
+        const { error: updateError } = await ((supabase
+          .from("premium_passes") as any)
           .update({
             active: true,
             purchased_at: new Date().toISOString(),
             expires_at: expiryDate.toISOString(),
           })
-          .eq("wallet_address", user.wallet_address)
+          .eq("wallet_address", user.wallet_address) as any)
 
         error = updateError
       } else {
         // Create new premium pass record
-        const { error: insertError } = await supabase.from("premium_passes").insert({
+        const { error: insertError } = await ((supabase.from("premium_passes") as any).insert({
           wallet_address: user.wallet_address,
           active: true,
           purchased_at: new Date().toISOString(),
           expires_at: expiryDate.toISOString(),
-        })
+        }) as any)
 
         error = insertError
       }
@@ -969,10 +972,10 @@ const handlePurchaseXpPass = async () => {
       }
 
       // Always update user's premium status to true
-      const { error: updateError } = await supabase
-        .from("users")
+      const { error: updateError } = await ((supabase
+        .from("users") as any)
         .update({ has_premium: true })
-        .eq("username", user.username)
+        .eq("username", user.username) as any)
 
       if (updateError) {
         console.error("Error updating user premium status:", updateError)
@@ -1041,21 +1044,21 @@ const handlePurchaseXpPass = async () => {
     ]
 
     return (
-      <div className="mt-3 bg-white rounded-lg p-3">
+      <div className="mt-3 bg-white/5 rounded-lg p-3 border border-white/10">
         <div className="grid grid-cols-3 gap-2 mb-3">
-          <div className="text-xs font-medium text-center">Rarity</div>
-          <div className="text-xs font-medium text-center">{t("game_pass.regular", "Regular")}</div>
-          <div className="text-xs font-medium text-center">{t("game_pass.with_pass", "With Pass")}</div>
+          <div className="text-xs font-semibold text-white/70 text-center">Rarity</div>
+          <div className="text-xs font-semibold text-white/70 text-center">{t("game_pass.regular", "Regular")}</div>
+          <div className="text-xs font-semibold text-white/70 text-center">{t("game_pass.with_pass", "With Pass")}</div>
         </div>
 
         {regularRates.map((item, index) => (
           <div key={item.rarity} className="grid grid-cols-3 gap-2 items-center mb-2">
-            <div className="text-xs font-medium">{getDisplayRarity(item.rarity)}</div>
+            <div className="text-xs font-medium text-white">{getDisplayRarity(item.rarity)}</div>
 
             {/* Regular rate */}
             <div className="flex items-center justify-center">
               <div
-                className={`w-8 h-8 rounded-full ${item.color} flex items-center justify-center text-white text-xs font-bold`}
+                className={`w-8 h-8 rounded-full ${item.color} flex items-center justify-center text-white text-xs font-semibold`}
               >
                 {item.rate}%
               </div>
@@ -1063,9 +1066,9 @@ const handlePurchaseXpPass = async () => {
 
             {/* Improved rate with arrow */}
             <div className="flex items-center justify-center">
-              <ArrowRight className="h-3 w-3 text-blue-500 mr-1" />
+              <ArrowRight className="h-3 w-3 text-[#d4af37] mr-1" />
               <div
-                className={`w-8 h-8 rounded-full ${item.color} flex items-center justify-center text-white text-xs font-bold`}
+                className={`w-8 h-8 rounded-full ${item.color} flex items-center justify-center text-white text-xs font-semibold`}
               >
                 {improvedRegularRates[index].rate}%
               </div>
@@ -1073,7 +1076,7 @@ const handlePurchaseXpPass = async () => {
           </div>
         ))}
 
-        <p className="text-xs text-gray-500 mt-3 italic text-center">
+        <p className="text-xs text-white/60 mt-3 italic text-center">
           {t("game_pass.pass_significantly_increases", "Premium Pass significantly increases your chances of getting rare, epic, and legendary cards in regular packs!")}
         </p>
       </div>
@@ -1081,85 +1084,52 @@ const handlePurchaseXpPass = async () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f9ff] pb-20">
-      {/* Header */}
-      <header className="sticky top-0 z-10 backdrop-blur-md bg-white/80 border-b border-gray-100">
-        <div className="max-w-lg mx-auto px-4 py-3 flex flex-col gap-2">
-          <div className="flex justify-between items-center">
-            <h1 className="text-lg font-medium">Game Pass</h1>
-            {/* Ticket Anzeige */}
-            <div className="flex items-center gap-2">
-              {/* Classic Ticket */}
-              <div className="flex items-center gap-1 bg-white px-3 py-1.5 rounded-full shadow-sm border border-gray-100">
-                <Ticket className="h-3.5 w-3.5 text-violet-500" />
-                <span className="font-medium text-sm">{tickets}</span>
-              </div>
-              {/* Elite Ticket */}
-              <div className="flex items-center gap-1 bg-white px-3 py-1.5 rounded-full shadow-sm border border-gray-100">
-                <Ticket className="h-3.5 w-3.5 text-blue-500" />
-                <span className="font-medium text-sm">{eliteTickets}</span>
-              </div>
-            </div>
-          </div>
-          <div className="flex justify-end">
-            <PaymentCurrencyToggle size="sm" className="shadow-sm" />
-          </div>
-          {/* Back to Home Button mittig */}
-          <div className="flex justify-center mt-2">
-            <Link href="/">
-              <Button variant="outline" className="flex items-center gap-2 px-4 py-2 rounded-full shadow bg-white/80 hover:bg-white">
-                <Home className="h-5 w-5 text-blue-600" />
-                <span className="font-semibold text-blue-700">Back to Home</span>
+    <ProtectedRoute>
+      <div className="flex flex-col min-h-screen text-white relative bg-[#0a0a0a] overflow-y-auto">
+        {/* Premium Header - Coinbase Style */}
+        <header className="sticky top-0 z-30 backdrop-blur-xl bg-[#0a0a0a]/80 border-b border-[#1a1a1a]">
+          <div className="w-full px-4 py-2.5 flex items-center justify-between max-w-2xl mx-auto">
+            {/* Left: Back Button + Title */}
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => router.push("/")}
+                className="w-8 h-8 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10"
+              >
+                <ArrowLeft className="h-4 w-4 text-white/70" />
               </Button>
-            </Link>
+              <h1 className="text-base font-semibold tracking-tight text-white">
+                {t("game_pass.title", "Game Pass")}
+              </h1>
+            </div>
+            
+            {/* Right: Payment Toggle + Tickets */}
+            <div className="flex items-center gap-2">
+              <PaymentCurrencyToggle size="sm" currencies={["WLD", "USDC"]} />
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10">
+                <Ticket className="h-3.5 w-3.5 text-[#d4af37]" />
+                <span className="text-xs font-medium text-white">{tickets}</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10">
+                <Crown className="h-3.5 w-3.5 text-[#d4af37]" />
+                <span className="text-xs font-medium text-white">{eliteTickets}</span>
+              </div>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="p-4 max-w-lg mx-auto space-y-5">
-        {/* User Level */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="bg-white rounded-2xl p-4 shadow-sm"
-        >
-          <div className="flex flex-col">
-            <div className="flex justify-between items-center mb-1">
-              <h2 className="font-semibold text-base">Level {user?.level || 1}</h2>
-              <div className="flex items-center"></div>
-            </div>
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-xs text-gray-500">
-                {user?.experience || 0} / {user?.nextLevelExp || 500} XP
-              </span>
-              <span className="text-xs font-medium">
-                {Math.floor(((user?.experience || 0) / (user?.nextLevelExp || 500)) * 100)}%
-              </span>
-            </div>
-            <Progress
-              value={user?.experience ? (user.experience / user.nextLevelExp) * 100 : 0}
-              className="h-1.5 bg-gray-100"
-              indicatorClassName="bg-gradient-to-r from-violet-500 to-fuchsia-500"
-            />
-          </div>
-        </motion.div>
-
-        {/* Premium Pass Status */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.4 }}
-          className="bg-white rounded-2xl shadow-sm overflow-hidden"
-        >
-          <div className="relative">
-            {/* Premium background pattern */}
-            <div className="absolute inset-0 overflow-hidden">
-              <div className="absolute -right-16 -top-16 w-32 h-32 rounded-full bg-gradient-to-br from-blue-400/20 to-blue-600/20"></div>
-              <div className="absolute -left-16 -bottom-16 w-32 h-32 rounded-full bg-gradient-to-tr from-blue-400/20 to-blue-600/20"></div>
-            </div>
-
-            <div className="relative p-4">
+        <main className="w-full px-4 pb-32 flex-1 max-w-2xl mx-auto">
+          <div className="space-y-3 mt-4">
+            {/* Premium Pass Status - Glassmorphism */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.5 }}
+              className="relative rounded-2xl p-4 backdrop-blur-xl bg-white/5 border border-white/10 overflow-visible"
+            >
+              <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37] to-transparent"></div>
+              <div className="relative">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-r from-orange-400 to-orange-600 flex items-center justify-center relative">
@@ -1172,16 +1142,16 @@ const handlePurchaseXpPass = async () => {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-medium text-lg">{t("game_pass.premium_pass", "Premium Pass")}</h3>
+                      <h3 className="font-semibold text-base text-white">{t("game_pass.premium_pass", "Premium Pass")}</h3>
                       {hasPremium && (
-                        <Badge className="bg-gradient-to-r from-orange-400 to-orange-600 text-white">{t("game_pass.active", "Active")}</Badge>
+                        <Badge className="bg-[#d4af37]/20 border border-[#d4af37]/30 text-[#d4af37]">{t("game_pass.active", "Active")}</Badge>
                       )}
                     </div>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-white/70">
                       {hasPremium ? t("game_pass.enjoy_rewards", "Enjoy exclusive rewards!") : t("game_pass.unlock_rewards", "Unlock exclusive rewards!")}
                     </p>
                     {hasPremium && premiumExpiryDate && (
-                      <div className="flex items-center gap-1 mt-1 text-xs text-orange-600">
+                      <div className="flex items-center gap-1 mt-1 text-xs text-[#d4af37]">
                         <Calendar className="h-3 w-3" />
                         <span>Valid until {formatDate(premiumExpiryDate)}</span>
                       </div>
@@ -1191,7 +1161,7 @@ const handlePurchaseXpPass = async () => {
                 {!hasPremium && (
                   <Button
                     onClick={sendPayment}
-                    className="bg-gradient-to-r from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white rounded-full"
+                    className="bg-gradient-to-r from-[#d4af37] to-[#f4d03f] hover:from-[#f4d03f] hover:to-[#d4af37] text-black font-semibold rounded-lg"
                   >
                     <Crown className="h-4 w-4 mr-2" />
                     {t("game_pass.get_premium", "Get Premium")}
@@ -1199,130 +1169,114 @@ const handlePurchaseXpPass = async () => {
                 )}
               </div>
 
-              {/* Limited Time Offer - Only show for non-premium users */}
-              {!hasPremium && (
-                <div className="bg-white rounded-xl p-3 mb-4 relative overflow-hidden border border-gray-200 shadow-sm">
-                  <div className="relative flex items-center">
-                    <div className="mr-3 bg-gray-100 p-2 rounded-lg">
-                      <Sparkles className="h-5 w-5 text-blue-500" />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-bold text-gray-900 text-sm">{t("game_pass.support_game", "Support the Game")}</h4>
-                      <p className="text-gray-700 text-sm">
-                        {t(
-                          "game_pass.support_game_desc",
-                          "Get Premium Pass for only {price} and enjoy full benefits!",
-                          { price: premiumPriceDisplay },
-                        )}
-                      </p>
+                {/* Limited Time Offer - Only show for non-premium users */}
+                {!hasPremium && (
+                  <div className="bg-white/5 rounded-xl p-3 mb-4 relative overflow-hidden border border-white/10">
+                    <div className="relative flex items-center">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-white text-sm">{t("game_pass.support_game", "Support the Game")}</h4>
+                        <p className="text-white/70 text-sm">
+                          {t(
+                            "game_pass.support_game_desc",
+                            "Get Premium Pass for only {price} and enjoy full benefits!",
+                            { price: premiumPriceDisplay },
+                          )}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Premium Benefits Highlight Box - Collapsible */}
-              <div className="bg-white rounded-xl p-4 mb-4 border border-gray-200 shadow-sm">
-                <button
-                  onClick={() => setBenefitsExpanded(!benefitsExpanded)}
-                  className="w-full flex items-center justify-between font-medium text-gray-800 mb-2"
-                >
-                  <div className="flex items-center">
-                    <Sparkles className="h-4 w-4 mr-2 text-orange-500" />
-                    {t("game_pass.benefits", "Benefits")}
-                    {hasPremium && (
-                      <div className="ml-2 bg-green-500 rounded-full p-0.5">
-                        <Check className="h-3 w-3 text-white" />
-                      </div>
+                {/* Premium Benefits Highlight Box - Collapsible */}
+                <div className="bg-white/5 rounded-xl p-4 mb-4 border border-white/10">
+                  <button
+                    onClick={() => setBenefitsExpanded(!benefitsExpanded)}
+                    className="w-full flex items-center justify-between font-semibold text-white mb-2"
+                  >
+                    <div className="flex items-center">
+                      {t("game_pass.benefits", "Benefits")}
+                      {hasPremium && (
+                        <div className="ml-2 bg-[#10b981]/20 border border-[#10b981]/30 rounded-full p-0.5">
+                          <Check className="h-3 w-3 text-[#10b981]" />
+                        </div>
+                      )}
+                    </div>
+                    {benefitsExpanded ? (
+                      <ChevronUp className="h-4 w-4 text-white/70" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-white/70" />
                     )}
-                  </div>
-                  {benefitsExpanded ? (
-                    <ChevronUp className="h-4 w-4 text-orange-500" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 text-orange-500" />
-                  )}
-                </button>
+                  </button>
 
-                {benefitsExpanded && (
-                  <div className="space-y-3">
-                    {/* Daily Legendary Ticket */}
-                    <div className="bg-white rounded-lg p-3 border border-gray-100">
-                      <div className="flex items-center">
-                        <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mr-2">
-                          <Ticket className="h-3 w-3 text-blue-600" />
+                  {benefitsExpanded && (
+                    <div className="space-y-3">
+                      {/* Daily Legendary Ticket */}
+                      <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                        <div className="flex items-center">
+                          <span className="text-sm text-white">Daily Legendary Ticket</span>
                         </div>
-                        <span className="text-sm">Daily Legendary Ticket</span>
+
+                        <p className="text-xs text-white/70 mt-2">
+                          Claim <b className="text-white">1 legendary ticket</b> every <b className="text-white">24 hours</b>
+                        </p>
                       </div>
 
-                      <p className="text-xs text-gray-600 mt-2 pl-7">
-                        Claim <b>1 legendary ticket</b> every <b>24 hours</b>
-                      </p>
-                    </div>
-
-                    {/* Premium Level Rewards */}
-                    <div className="bg-white rounded-lg p-3 border border-gray-100">
-                      <div className="flex items-center">
-                        <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mr-2">
-                          <Gift className="h-3 w-3 text-orange-600" />
+                      {/* Premium Level Rewards */}
+                      <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                        <div className="flex items-center">
+                          <span className="text-sm text-white">{t("game_pass.premium_level_rewards_title", "Premium Level Rewards")}</span>
                         </div>
-                        <span className="text-sm">{t("game_pass.premium_level_rewards_title", "Premium Level Rewards")}</span>
+
+                        <p className="text-xs text-white/70 mt-2">
+                          {t("game_pass.premium_level_rewards_desc", "Get 1 legendary ticket for each level up (2 tickets every 5 levels)")}
+                        </p>
                       </div>
 
-                      <p className="text-xs text-gray-600 mt-2 pl-7">
-                        {t("game_pass.premium_level_rewards_desc", "Get 1 legendary ticket for each level up (2 tickets every 5 levels)")}
-                      </p>
-                    </div>
-
-                    {/* Improved Drop Rates */}
-                    <div className="bg-white rounded-lg p-3 border border-gray-100">
-                      <div className="flex items-center">
-                        <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mr-2">
-                          <BarChart3 className="h-3 w-3 text-blue-600" />
+                      {/* Improved Drop Rates */}
+                      <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                        <div className="flex items-center">
+                          <span className="text-sm text-white">
+                            {t("game_pass.improved_drop_rates", "Improved Regular Pack Drop Rates")}
+                          </span>
                         </div>
-                        <span className="text-sm">
-                          {t("game_pass.improved_drop_rates", "Improved Regular Pack Drop Rates")}
-                        </span>
+
+                        {renderDropRateComparison()}
                       </div>
 
-                      {renderDropRateComparison()}
-                    </div>
-
-                    {/* 30 Days Duration */}
-                    <div className="bg-white rounded-lg p-3 border border-gray-100">
-                      <div className="flex items-center">
-                        <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mr-2">
-                          <Calendar className="h-3 w-3 text-orange-600" />
+                      {/* 30 Days Duration */}
+                      <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                        <div className="flex items-center">
+                          <span className="text-sm text-white">{t("game_pass.seven_days_duration", "7 Days Duration")}</span>
                         </div>
-                        <span className="text-sm">{t("game_pass.seven_days_duration", "7 Days Duration")}</span>
-                      </div>
 
-                      <p className="text-xs text-gray-600 mt-2 pl-7">
-                        {t("game_pass.pass_valid_desc", "Premium Pass is valid for 7 days from purchase")}
-                      </p>
-                    </div>
+                        <p className="text-xs text-white/70 mt-2">
+                          {t("game_pass.pass_valid_desc", "Premium Pass is valid for 7 days from purchase")}
+                        </p>
+                      </div>
                   </div>
                 )}
               </div>
 
-              {/* Daily Legendary Ticket Claim */}
-              {hasPremium && (
-                <div className="flex items-center gap-3 bg-white p-3 rounded-lg mb-3 border border-gray-200 shadow-sm">
-                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                    <Ticket className="h-4 w-4 text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-medium text-sm">{t("game_pass.daily_legendary", "Daily Legendary Ticket")}</h4>
-                    <p className="text-xs text-gray-500">{t("game_pass.claim_legendary_daily", "Claim 1 legendary ticket every 24 hours")}</p>
-                  </div>
-                  <Button
-                    onClick={handleClaimLegendaryTicket}
-                    disabled={!canClaimLegendary || isClaimingLegendary}
-                    size="sm"
-                    className={`rounded-full px-3 ${
-                      canClaimLegendary
-                        ? "bg-gradient-to-r from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white"
-                        : "bg-gray-100 text-gray-500 hover:bg-gray-100"
-                    }`}
-                  >
+                {/* Daily Legendary Ticket Claim */}
+                {hasPremium && (
+                  <div className="flex items-center gap-3 bg-white/5 p-3 rounded-lg mb-3 border border-white/10">
+                    <div className="w-8 h-8 rounded-full bg-[#d4af37]/20 flex items-center justify-center">
+                      <Ticket className="h-4 w-4 text-[#d4af37]" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-sm text-white">{t("game_pass.daily_legendary", "Daily Legendary Ticket")}</h4>
+                      <p className="text-xs text-white/70">{t("game_pass.claim_legendary_daily", "Claim 1 legendary ticket every 24 hours")}</p>
+                    </div>
+                    <Button
+                      onClick={handleClaimLegendaryTicket}
+                      disabled={!canClaimLegendary || isClaimingLegendary}
+                      size="sm"
+                      className={`rounded-lg px-3 ${
+                        canClaimLegendary
+                          ? "bg-gradient-to-r from-[#d4af37] to-[#f4d03f] hover:from-[#f4d03f] hover:to-[#d4af37] text-black font-semibold"
+                          : "bg-white/10 text-white/50 hover:bg-white/10"
+                      }`}
+                    >
                     {isClaimingLegendary ? (
                       <div className="flex items-center">
                         <div className="h-3 w-3 border-2 border-t-transparent border-current rounded-full animate-spin mr-2"></div>
@@ -1340,37 +1294,36 @@ const handlePurchaseXpPass = async () => {
                 </div>
               )}
 
-              {!hasPremium && (
-                <Alert className="bg-white border-gray-200 mb-2">
-                  <AlertTitle className="text-gray-800 flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-blue-500" />
-                    {t("game_pass.get_tickets_now", "Get {count} Legendary Tickets Now!", { count: calculatePotentialEliteTickets() })}
-                  </AlertTitle>
-                  <AlertDescription className="text-gray-600 text-sm">
-                    {t("game_pass.get_tickets_now_desc", "Purchase Premium Pass now and claim legendary tickets for all your previous level ups!")}
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
-          </div>
-        </motion.div>
+                {!hasPremium && (
+                  <Alert className="bg-white/5 border-white/10 mb-2">
+                    <AlertTitle className="text-white flex items-center gap-2">
+                      {t("game_pass.get_tickets_now", "Get {count} Legendary Tickets Now!", { count: calculatePotentialEliteTickets() })}
+                    </AlertTitle>
+                    <AlertDescription className="text-white/70 text-sm">
+                      {t("game_pass.get_tickets_now_desc", "Purchase Premium Pass now and claim legendary tickets for all your previous level ups!")}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            </motion.div>
 
 
-        {/* Level Rewards Timeline */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.4 }}
-          className="bg-white rounded-2xl shadow-sm p-4"
-        >
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-medium text-lg">{t("game_pass.pass_rewards_title", "Pass Rewards")}</h3>
+            {/* Level Rewards Timeline - Glassmorphism */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="relative rounded-2xl p-4 backdrop-blur-xl bg-white/5 border border-white/10"
+            >
+              <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37] to-transparent"></div>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-semibold text-base text-white">{t("game_pass.pass_rewards_title", "Pass Rewards")}</h3>
             {unclaimedRewards > 0 && (
               <Button
                 onClick={handleClaimAllRewards}
                 disabled={isClaimingReward}
                 size="sm"
-                className="bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600 text-white rounded-full"
+                className="bg-gradient-to-r from-[#d4af37] to-[#f4d03f] hover:from-[#f4d03f] hover:to-[#d4af37] text-black font-semibold rounded-lg"
               >
                 {isClaimingReward ? (
                   <div className="flex items-center">
@@ -1405,25 +1358,25 @@ const handlePurchaseXpPass = async () => {
                         ${
                           reward.level <= (user?.level || 1)
                             ? reward.standardClaimed
-                              ? "bg-gray-100"
+                              ? "bg-white/5 border border-white/10"
                               : reward.isSpecialLevel
-                                ? "bg-violet-200"
-                                : "bg-violet-100"
-                            : "bg-gray-100"
+                                ? "bg-[#d4af37]/20 border border-[#d4af37]/30"
+                                : "bg-white/5 border border-white/10"
+                            : "bg-white/5 border border-white/10 opacity-50"
                         }
                       `}
                       >
-                        <Ticket className="h-5 w-5 text-violet-500 mb-1" />
-                        <span className="text-xs font-medium">{t("game_pass.tickets_count", "{count} Tickets", { count: reward.isSpecialLevel ? 3 : 1 })}</span>
+                        <Ticket className="h-5 w-5 text-[#d4af37] mb-1" />
+                        <span className="text-xs font-medium text-white">{t("game_pass.tickets_count", "{count} Tickets", { count: reward.isSpecialLevel ? 3 : 1 })}</span>
                         {reward.isSpecialLevel && !reward.standardClaimed && reward.level <= (user?.level || 1) && (
-                          <span className="absolute -top-2 -right-2 bg-violet-500 text-white text-[10px] px-1 rounded-full">
+                          <span className="absolute -top-2 -right-2 bg-[#d4af37] text-black text-[10px] px-1 rounded-full font-semibold">
                             3x
                           </span>
                         )}
 
                         {reward.standardClaimed && (
-                          <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-0.5">
-                            <Check className="h-3 w-3 text-white" />
+                          <div className="absolute -top-1 -right-1 bg-[#10b981]/20 border border-[#10b981]/30 rounded-full p-0.5">
+                            <Check className="h-3 w-3 text-[#10b981]" />
                           </div>
                         )}
                       </div>
@@ -1434,7 +1387,7 @@ const handlePurchaseXpPass = async () => {
 
               {/* Level markers (middle) */}
               <div className="flex items-center h-10 relative">
-                <div className="absolute left-0 right-0 h-0.5 bg-gray-200"></div>
+                <div className="absolute left-0 right-0 h-0.5 bg-white/10"></div>
 
                 {levelRewards.map((reward) => (
                   <div
@@ -1447,16 +1400,16 @@ const handlePurchaseXpPass = async () => {
                       w-6 h-6 rounded-full flex items-center justify-center
                       ${
                         reward.level === (user?.level || 1)
-                          ? "bg-violet-500 text-white"
+                          ? "bg-[#d4af37] text-black"
                           : reward.level < (user?.level || 1)
-                            ? "bg-violet-200"
-                            : "bg-gray-200"
+                            ? "bg-[#d4af37]/20 border border-[#d4af37]/30 text-white"
+                            : "bg-white/5 border border-white/10 text-white/50"
                       }
                     `}
                     >
-                      <span className="text-xs font-medium">{reward.level}</span>
+                      <span className="text-xs font-semibold">{reward.level}</span>
                     </div>
-                    <span className="text-[10px] mt-0.5">{t("game_pass.level_number", "Level {level}", { level: reward.level })}</span>
+                    <span className="text-[10px] mt-0.5 text-white/70">{t("game_pass.level_number", "Level {level}", { level: reward.level })}</span>
                   </div>
                 ))}
               </div>
@@ -1473,36 +1426,36 @@ const handlePurchaseXpPass = async () => {
                           reward.level <= (user?.level || 1)
                             ? hasPremium
                               ? reward.premiumClaimed
-                                ? "bg-gray-100"
+                                ? "bg-white/5 border border-white/10"
                                 : reward.isSpecialLevel
-                                  ? "bg-blue-200"
-                                  : "bg-blue-100"
-                              : "bg-gray-100"
-                            : "bg-gray-100"
+                                  ? "bg-[#d4af37]/20 border border-[#d4af37]/30"
+                                  : "bg-white/5 border border-white/10"
+                              : "bg-white/5 border border-white/10"
+                            : "bg-white/5 border border-white/10 opacity-50"
                         }
                         ${!hasPremium ? "opacity-60" : ""}
                       `}
                       >
                         {!hasPremium && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/10 rounded-lg">
-                            <Lock className="h-4 w-4 text-gray-600" />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-lg">
+                            <Lock className="h-4 w-4 text-white/50" />
                           </div>
                         )}
 
-                        <Ticket className="h-5 w-5 text-blue-500 mb-1" />
-                        <span className="text-xs font-medium">{reward.isSpecialLevel ? "2" : "1"} {t("rarity.legendary", "Legendary")}</span>
+                        <Crown className="h-5 w-5 text-[#d4af37] mb-1" />
+                        <span className="text-xs font-medium text-white">{reward.isSpecialLevel ? "2" : "1"} {t("rarity.legendary", "Legendary")}</span>
                         {reward.isSpecialLevel &&
                           !reward.premiumClaimed &&
                           hasPremium &&
                           reward.level <= (user?.level || 1) && (
-                            <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-[10px] px-1 rounded-full">
+                            <span className="absolute -top-2 -right-2 bg-[#d4af37] text-black text-[10px] px-1 rounded-full font-semibold">
                               2x
                             </span>
                           )}
 
                         {reward.premiumClaimed && (
-                          <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-0.5">
-                            <Check className="h-3 w-3 text-white" />
+                          <div className="absolute -top-1 -right-1 bg-[#10b981]/20 border border-[#10b981]/30 rounded-full p-0.5">
+                            <Check className="h-3 w-3 text-[#10b981]" />
                           </div>
                         )}
                       </div>
@@ -1514,26 +1467,24 @@ const handlePurchaseXpPass = async () => {
           </div>
 
           {/* Legend */}
-          <div className="mt-6 flex justify-center gap-4 text-xs text-gray-500">
+          <div className="mt-6 flex justify-center gap-4 text-xs text-white/70">
             <div className="flex items-center">
-              <div className="w-3 h-3 rounded-full bg-violet-200 mr-1"></div>
+              <div className="w-3 h-3 rounded-full bg-white/5 border border-white/10 mr-1"></div>
               <span>Standard Reward</span>
             </div>
             <div className="flex items-center">
-              <div className="w-3 h-3 rounded-full bg-blue-100 mr-1"></div>
+              <div className="w-3 h-3 rounded-full bg-[#d4af37]/20 border border-[#d4af37]/30 mr-1"></div>
               <span>Premium Reward</span>
             </div>
             <div className="flex items-center">
-              <div className="w-3 h-3 rounded-full bg-green-500 mr-1"></div>
+              <div className="w-3 h-3 rounded-full bg-[#10b981]/20 border border-[#10b981]/30 mr-1"></div>
               <span>Claimed</span>
             </div>
           </div>
         </motion.div>
 
-      </main>
-
-      {/* XP Gain Animation */}
-      <AnimatePresence>
+            {/* XP Gain Animation */}
+            <AnimatePresence>
         {showXpAnimation && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -1542,7 +1493,7 @@ const handlePurchaseXpPass = async () => {
             className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center"
           >
             <motion.div
-              className="bg-white rounded-xl p-4 shadow-lg flex flex-col items-center gap-2 border-2 border-violet-300"
+              className="backdrop-blur-xl bg-white/10 rounded-xl p-4 shadow-lg flex flex-col items-center gap-2 border border-white/20"
               initial={{ scale: 0, opacity: 0 }}
               animate={{
                 scale: [0, 1.2, 1],
@@ -1553,9 +1504,9 @@ const handlePurchaseXpPass = async () => {
                 times: [0, 0.3, 0.5, 1],
               }}
             >
-              <div className="text-xl font-bold text-violet-600">+{xpGained} XP</div>
+              <div className="text-xl font-semibold text-[#d4af37]">+{xpGained} XP</div>
               <div className="flex items-center gap-2">
-                <Star className="h-6 w-6 text-violet-500" />
+                <Star className="h-6 w-6 text-[#d4af37]" />
               </div>
             </motion.div>
           </motion.div>
@@ -1573,7 +1524,7 @@ const handlePurchaseXpPass = async () => {
           >
             <div className="absolute inset-0 bg-black/70" />
             <motion.div
-              className="relative z-10 bg-white rounded-xl p-6 shadow-lg flex flex-col items-center gap-4 border-2 border-amber-400"
+              className="relative z-10 backdrop-blur-xl bg-white/10 rounded-xl p-6 shadow-lg flex flex-col items-center gap-4 border border-white/20"
               initial={{ scale: 0, opacity: 0 }}
               animate={{
                 scale: [0, 1.2, 1],
@@ -1589,8 +1540,8 @@ const handlePurchaseXpPass = async () => {
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.3, duration: 0.5 }}
               >
-                <div className="w-20 h-20 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 flex items-center justify-center mb-2">
-                  <Crown className="h-10 w-10 text-white" />
+                <div className="w-20 h-20 rounded-full bg-gradient-to-r from-[#d4af37] to-[#f4d03f] flex items-center justify-center mb-2">
+                  <Crown className="h-10 w-10 text-black" />
                 </div>
               </motion.div>
               <motion.div
@@ -1598,8 +1549,8 @@ const handlePurchaseXpPass = async () => {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.5, duration: 0.5 }}
               >
-                <h2 className="text-2xl font-bold text-center">Level Up!</h2>
-                <p className="text-lg font-medium text-center text-blue-600">You reached Level {newLevel}!</p>
+                <h2 className="text-2xl font-semibold text-center text-white">Level Up!</h2>
+                <p className="text-lg font-medium text-center text-[#d4af37]">You reached Level {newLevel}!</p>
               </motion.div>
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
@@ -1609,18 +1560,18 @@ const handlePurchaseXpPass = async () => {
               >
                 <div className="flex flex-col items-center">
                   <div className="flex items-center gap-1 mb-1">
-                    <Ticket className="h-4 w-4 text-violet-500" />
-                    <span className="font-medium">x3</span>
+                    <Ticket className="h-4 w-4 text-[#d4af37]" />
+                    <span className="font-medium text-white">x3</span>
                   </div>
-                  <span className="text-xs text-gray-500">Regular Tickets</span>
+                  <span className="text-xs text-white/70">Regular Tickets</span>
                 </div>
                 {hasPremium && (
                   <div className="flex flex-col items-center">
                     <div className="flex items-center gap-1 mb-1">
-                      <Ticket className="h-4 w-4 text-blue-500" />
-                      <span className="font-medium">x1</span>
+                      <Ticket className="h-4 w-4 text-[#d4af37]" />
+                      <span className="font-medium text-white">x1</span>
                     </div>
-                    <span className="text-xs text-gray-500">Legendary Ticket</span>
+                    <span className="text-xs text-white/70">Legendary Ticket</span>
                   </div>
                 )}
               </motion.div>
@@ -1630,7 +1581,7 @@ const handlePurchaseXpPass = async () => {
             {Array.from({ length: 30 }).map((_, i) => (
               <motion.div
                 key={i}
-                className="absolute w-2 h-2 rounded-full bg-blue-400"
+                className="absolute w-2 h-2 rounded-full bg-[#d4af37]"
                 initial={{
                   x: "50%",
                   y: "50%",
@@ -1663,49 +1614,50 @@ const handlePurchaseXpPass = async () => {
           >
             <div className="absolute inset-0 bg-black/50" onClick={() => setShowClaimPopup(false)} />
             <motion.div
-              className="relative z-10 bg-white rounded-xl p-6 shadow-lg flex flex-col items-center gap-4 border-2 border-violet-300 max-w-xs w-full"
+              className="relative z-10 backdrop-blur-xl bg-white/10 rounded-xl p-6 shadow-lg flex flex-col items-center gap-4 border border-white/20 max-w-xs w-full"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
             >
-              <h2 className="text-xl font-bold text-center">Rewards Claimed!</h2>
+              <h2 className="text-xl font-semibold text-center text-white">Rewards Claimed!</h2>
 
               {claimedRewardsInfo.standardTickets > 0 && (
-                <div className="flex items-center gap-3 bg-violet-50 p-3 rounded-lg w-full">
-                  <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center">
-                    <Ticket className="h-5 w-5 text-violet-500" />
+                <div className="flex items-center gap-3 bg-white/5 border border-white/10 p-3 rounded-lg w-full">
+                  <div className="w-10 h-10 rounded-full bg-[#d4af37]/20 border border-[#d4af37]/30 flex items-center justify-center">
+                    <Ticket className="h-5 w-5 text-[#d4af37]" />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-medium">Regular Tickets</h4>
-                    <p className="text-sm text-violet-600 font-bold">+{claimedRewardsInfo.standardTickets}</p>
+                    <h4 className="font-semibold text-white">Regular Tickets</h4>
+                    <p className="text-sm text-[#d4af37] font-semibold">+{claimedRewardsInfo.standardTickets}</p>
                   </div>
                 </div>
               )}
 
               {claimedRewardsInfo.eliteTickets > 0 && (
-                <div className="flex items-center gap-3 bg-blue-50 p-3 rounded-lg w-full">
-                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                    <Ticket className="h-5 w-5 text-blue-500" />
+                <div className="flex items-center gap-3 bg-white/5 border border-white/10 p-3 rounded-lg w-full">
+                  <div className="w-10 h-10 rounded-full bg-[#d4af37]/20 border border-[#d4af37]/30 flex items-center justify-center">
+                    <Crown className="h-5 w-5 text-[#d4af37]" />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-medium">Legendary Tickets</h4>
-                    <p className="text-sm text-blue-600 font-bold">+{claimedRewardsInfo.eliteTickets}</p>
+                    <h4 className="font-semibold text-white">Legendary Tickets</h4>
+                    <p className="text-sm text-[#d4af37] font-semibold">+{claimedRewardsInfo.eliteTickets}</p>
                   </div>
                 </div>
               )}
 
               <Button
                 onClick={() => setShowClaimPopup(false)}
-                className="bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600 text-white w-full mt-2"
+                className="bg-gradient-to-r from-[#d4af37] to-[#f4d03f] hover:from-[#f4d03f] hover:to-[#d4af37] text-black font-semibold w-full mt-2 rounded-lg"
               >
                 Continue
               </Button>
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
-
-      <MobileNav />
-    </div>
+            </AnimatePresence>
+          </div>
+        </main>
+      </div>
+    </ProtectedRoute>
   )
 }

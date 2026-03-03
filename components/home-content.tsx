@@ -1813,38 +1813,38 @@ export default function Home() {
             {/* Left: Logo + Social Buttons */}
             <div className="flex items-center gap-4">
               <h1 className="text-base font-semibold tracking-tight text-white">
-                CRYPTO TCG
-              </h1>
-              
+              CRYPTO TCG
+            </h1>
+            
               {/* Social Buttons - close to logo */}
               <div className="flex items-center gap-2">
-                <a
+              <a
                   href="https://twitter.com/cryptotcg"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                target="_blank"
+                rel="noopener noreferrer"
                   className="w-8 h-8 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors"
                   aria-label="X (Twitter)"
-                >
+              >
                   <X className="h-4 w-4 text-white/70" />
-                </a>
-                <a
+              </a>
+              <a
                   href="https://t.me/cryptotcg"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                target="_blank"
+                rel="noopener noreferrer"
                   className="w-8 h-8 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors"
-                  aria-label="Telegram"
-                >
+                aria-label="Telegram"
+              >
                   <Send className="h-4 w-4 text-white/70" />
-                </a>
-                <button
-                  onClick={() => setShowInfoDialog(true)}
+              </a>
+              <button
+                onClick={() => setShowInfoDialog(true)}
                   className="w-8 h-8 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors"
-                  aria-label="Info"
-                >
+                aria-label="Info"
+              >
                   <Info className="h-4 w-4 text-white/70" />
-                </button>
-              </div>
-            </div>
+              </button>
+                </div>
+                </div>
             
             {/* Right: Tickets - with more spacing from buttons */}
             <div className="flex items-center gap-2 ml-6">
@@ -1873,9 +1873,9 @@ export default function Home() {
          
           <div className="space-y-3 mt-4">
             {/* User Status Card - Glassmorphism - Kompakter */}
-            <motion.div
+              <motion.div
               initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+                animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
               className="relative rounded-2xl p-4 backdrop-blur-xl bg-white/5 border border-white/10 overflow-visible"
             >
@@ -1883,10 +1883,10 @@ export default function Home() {
               <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#d4af37]/50 to-transparent"></div>
               
               <div className="flex items-center justify-between mb-3">
-                <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0">
                   <p className="text-base font-semibold text-white mb-1 truncate">
-                    {user?.username || 'User'}
-                  </p>
+                      {user?.username || 'User'}
+                    </p>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-[#d4af37] font-medium">Level {user?.level || 1}</span>
                     <span className="text-xs text-white/40">•</span>
@@ -1904,14 +1904,14 @@ export default function Home() {
                     <LanguageSwitcher />
                   </div>
                 </div>
-              </div>
+                </div>
 
               {/* XP Progress Bar - Minimal */}
               <div className="space-y-1">
                 <div className="flex justify-between text-xs text-white/50">
                   <span>Progress to Level {(user?.level || 1) + 1}</span>
-                  <span>{user?.experience || 0}/{user?.nextLevelExp || 500}</span>
-                </div>
+                    <span>{user?.experience || 0}/{user?.nextLevelExp || 500}</span>
+                  </div>
                 <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
@@ -1920,13 +1920,13 @@ export default function Home() {
                     }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
                     className="h-full bg-gradient-to-r from-[#d4af37] to-[#f4d03f] rounded-full"
-                  />
+                    />
+                  </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
 
             {/* Weekly Contest - Kompakt, nach oben verschoben */}
-            <motion.div
+                    <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
@@ -1940,11 +1940,11 @@ export default function Home() {
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#d4af37]/20 to-[#d4af37]/10 border border-[#d4af37]/30 flex items-center justify-center flex-shrink-0">
                     <Trophy className="h-5 w-5 text-[#d4af37]" />
-                  </div>
+                      </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-base font-semibold text-white mb-0.5 truncate">{t("contest.title", "Weekly Contest")}</h3>
-                    <p className="text-xs text-white/60 truncate">{t("contest.prize_home", "Win 200 WLD")}</p>
-                  </div>
+                    <p className="text-xs text-white/60 truncate">{t("contest.prize_home", "Win 150 WLD")}</p>
+                      </div>
                 </div>
                 <ChevronRight className="h-4 w-4 text-white/40 group-hover:text-[#d4af37] transition-colors flex-shrink-0 ml-2" />
               </div>
@@ -1953,21 +1953,21 @@ export default function Home() {
                 {/* 2x Bonus Badge */}
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20">
                   <span className="text-[10px] font-medium text-[#10b981]">Epic & Legendary: 2x Bonus</span>
-                </div>
+            </div>
 
                 {/* Countdown */}
-                {isContestActive() && (() => {
-                  const timeLeft = formatContestCountdown(contestCountdown)
-                  return timeLeft ? (
+        {isContestActive() && (() => {
+        const timeLeft = formatContestCountdown(contestCountdown)
+        return timeLeft ? (
                     <div className="flex items-center gap-1.5 text-xs">
                       <Clock className="h-3 w-3 text-[#d4af37]" style={{ filter: 'drop-shadow(0 0 4px #d4af37)' }} />
                       <span className="text-[#d4af37] font-semibold" style={{ textShadow: '0 0 8px #d4af37, 0 0 12px #d4af37' }}>
                         {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m
                       </span>
-                    </div>
+                </div>
                   ) : null
                 })()}
-              </div>
+                  </div>
             </motion.div>
 
             {/* Game Pass + XP Pass + Shop Card - Grid 3 Spalten */}
@@ -1987,7 +1987,7 @@ export default function Home() {
                   <div className="flex flex-col items-center gap-2">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#d4af37]/20 to-[#d4af37]/10 border border-[#d4af37]/30 flex items-center justify-center flex-shrink-0">
                       <Crown className="h-5 w-5 text-amber-800" />
-                    </div>
+                  </div>
                     <h3 className="text-xs font-semibold text-white text-center">{t("game_pass.title", "Game Pass")}</h3>
                   </div>
                 </div>
@@ -2008,20 +2008,20 @@ export default function Home() {
                     <div className="relative">
                       <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#d4af37]/20 to-[#d4af37]/10 border border-[#d4af37]/30 flex items-center justify-center flex-shrink-0">
                         <ShoppingCart className="h-5 w-5 text-[#d4af37]" />
-                      </div>
+              </div>
                       {hasActiveDiscount && (
                         <span className="absolute -top-1 -right-1 text-[8px] font-bold text-[#10b981] bg-[#10b981]/20 px-1 py-0.5 rounded border border-[#10b981]/30">
                           -{discountValue}%
                         </span>
                       )}
-                    </div>
+            </div>
                     <h3 className="text-xs font-semibold text-white text-center">{t("shop.title", "Shop")}</h3>
-                  </div>
+          </div>
                 </motion.div>
               </Link>
 
               {/* XP Pass Card */}
-              <motion.div
+  <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
@@ -2039,8 +2039,8 @@ export default function Home() {
                     <h3 className="text-xs font-semibold text-white text-center">{t("xp_pass.title", "XP Pass")}</h3>
                   </div>
                 </div>
-              </motion.div>
-            </div>
+</motion.div>
+      </div>
             {/* $ANI Card (replaces Chat) - COMMENTED OUT */}
             {/* <div className="col-span-2">
               <div
@@ -2059,16 +2059,16 @@ export default function Home() {
 
             {/* Daily Deals - Kompakter (zuerst) */}
             {user?.wallet_address && (
-              <motion.div
+                  <motion.div
                 initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                    animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.22 }}
                 className="rounded-2xl backdrop-blur-xl bg-white/5 border border-white/10 p-2"
-              >
-                <DailyDealsBatch
-                  walletAddress={user.wallet_address}
-                  onPurchaseSuccess={handleDailyDealPurchaseSuccess}
-                />
+                        >
+                  <DailyDealsBatch
+                    walletAddress={user.wallet_address}
+                    onPurchaseSuccess={handleDailyDealPurchaseSuccess}
+                  />
               </motion.div>
             )}
 
@@ -2091,20 +2091,20 @@ export default function Home() {
                 
                 <div className="flex items-center gap-3 mb-3">
                   <div className="relative w-16 h-24 rounded-lg overflow-hidden border border-white/20 flex-shrink-0">
-                    <img
-                      src={getCloudflareImageUrl(specialDeal.card_image_url)}
-                      alt={specialDeal.card_name}
+                      <img
+                        src={getCloudflareImageUrl(specialDeal.card_image_url)}
+                        alt={specialDeal.card_name}
                       className="w-full h-full object-cover"
-                    />
+                      />
                     <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
-                      {renderStars(specialDeal.card_level, "xs")}
+                        {renderStars(specialDeal.card_level, "xs")}
+                      </div>
                     </div>
-                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#d4af37]/20 text-[#d4af37] font-medium border border-[#d4af37]/30">
                         {getDisplayRarity(specialDeal.card_rarity)}
-                      </span>
+                        </span>
                       {specialDeal.discount_percentage != null && Number(specialDeal.discount_percentage) > 0 && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#10b981]/20 text-[#10b981] font-medium border border-[#10b981]/30">
                           -{specialDeal.discount_percentage}%
@@ -2123,7 +2123,7 @@ export default function Home() {
                         <div className="flex items-center gap-1 text-[10px] text-white/60">
                           <Crown className="h-3 w-3 text-purple-400" />
                           <span>+{specialDeal.elite_tickets}</span>
-                        </div>
+                    </div>
                       )}
                     </div>
                   </div>
@@ -2140,15 +2140,15 @@ export default function Home() {
                       </div>
                     ) : (
                       <p className="text-base font-semibold text-white">{formatPrice(specialDeal.price)}</p>
-                    )}
-                  </div>
+                )}
+                </div>
                   <Button
                     size="sm"
                     className="bg-[#d4af37] hover:bg-[#c9a030] text-black font-medium rounded-lg px-3 text-xs h-8"
                   >
                     {t("deals.buy", "View Deal")}
                   </Button>
-                </div>
+              </div>
               </motion.div>
             )}
 
@@ -2197,11 +2197,11 @@ export default function Home() {
               </motion.div>
             </div>
 
-            <Dialog open={showSpecialDealDialog} onOpenChange={(open) => {
-              if (!open && !buyingSpecialDeal && !showSpecialDealSuccess) {
-                setShowSpecialDealDialog(false);
-              }
-            }}>
+              <Dialog open={showSpecialDealDialog} onOpenChange={(open) => {
+                if (!open && !buyingSpecialDeal && !showSpecialDealSuccess) {
+                  setShowSpecialDealDialog(false);
+                }
+              }}>
                 {specialDeal && (
                   <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-xl border-0 bg-gray-900 text-white">
                     <DialogTitle className="sr-only">{t("deals.special_deal", "Special Deal")}</DialogTitle>
@@ -2317,26 +2317,26 @@ export default function Home() {
                           {/* Classic Tickets */}
                           {specialDeal.classic_tickets > 0 && (
                             <div className="flex items-center"> 
-                              <div className="w-9 h-9 rounded-md bg-blue-900/30 border border-blue-700/50 flex items-center justify-center mr-3">
-                                <Ticket className="h-4 w-4 text-blue-400" />
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-white">{specialDeal.classic_tickets} {t("deals.regular_tickets", "Regular Tickets")}</p>
-                                <p className="text-xs text-gray-400">{t("deals.for_regular_packs", "For regular card packs")}</p>
-                              </div>
+                            <div className="w-9 h-9 rounded-md bg-blue-900/30 border border-blue-700/50 flex items-center justify-center mr-3">
+                              <Ticket className="h-4 w-4 text-blue-400" />
                             </div>
+                            <div>
+                              <p className="text-sm font-medium text-white">{specialDeal.classic_tickets} {t("deals.regular_tickets", "Regular Tickets")}</p>
+                              <p className="text-xs text-gray-400">{t("deals.for_regular_packs", "For regular card packs")}</p>
+                            </div>
+                          </div>
                           )}
                           {/* Legendary Tickets (elite_tickets) - only show if > 0 */}
                           {specialDeal.elite_tickets != null && Number(specialDeal.elite_tickets) > 0 && (
                             <div className="flex items-center"> 
-                              <div className="w-9 h-9 rounded-md bg-purple-900/30 border border-purple-700/50 flex items-center justify-center mr-3">
-                                <Crown className="h-4 w-4 text-purple-400" />
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-white">{specialDeal.elite_tickets} {t("deals.legendary_tickets", "Legendary Tickets")}</p>
-                                <p className="text-xs text-gray-400">{t("deals.for_legendary_packs", "For legendary card packs")}</p>
-                              </div>
+                            <div className="w-9 h-9 rounded-md bg-purple-900/30 border border-purple-700/50 flex items-center justify-center mr-3">
+                              <Crown className="h-4 w-4 text-purple-400" />
                             </div>
+                            <div>
+                              <p className="text-sm font-medium text-white">{specialDeal.elite_tickets} {t("deals.legendary_tickets", "Legendary Tickets")}</p>
+                              <p className="text-xs text-gray-400">{t("deals.for_legendary_packs", "For legendary card packs")}</p>
+                            </div>
+                          </div>
                           )}
                         </div>
                       </div>
@@ -2399,7 +2399,7 @@ export default function Home() {
                 )}
               </Dialog>
 
-          </div>
+                    </div>
         </main>
 
         
@@ -2453,26 +2453,26 @@ export default function Home() {
 
         {/* Referrals Dialog */}
 <Dialog open={showReferralDialog} onOpenChange={setShowReferralDialog}>
-  <DialogContent className="bg-gradient-to-br from-[#232526] to-[#414345] border-2 border-yellow-400 text-white">
-    <DialogTitle className="text-xl font-bold text-yellow-100 flex items-center gap-2">
-      <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center border border-yellow-300">
-        <Gift className="h-5 w-5 text-white" />
+  <DialogContent className="bg-gradient-to-br from-[#1a1a1a] via-[#2d2d2d] to-[#1a1a1a] border border-white/20 text-white max-w-sm mx-auto max-h-[90vh] overflow-y-auto shadow-2xl backdrop-blur-sm">
+    <DialogTitle className="text-lg font-semibold text-white mb-1 flex items-center gap-2">
+      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#d4af37]/20 to-[#d4af37]/10 border border-[#d4af37]/30 flex items-center justify-center">
+        <Gift className="h-5 w-5 text-[#d4af37]" />
       </div>
       {t("referrals.invite_friends", "Invite Friends")}
     </DialogTitle>
-    <DialogDescription className="text-sm text-yellow-200">
+    <DialogDescription className="text-sm text-white/70 mb-4">
       {t("referrals.share_code", "Share your referral code with friends to earn rewards!")}<br />
-      <span className="text-xs text-red-400 font-semibold">{t("referrals.username_note", "Note: Only username works as referral code")}</span><br />
-      <span className="text-xs text-red-400 font-semibold">⚠️ {t("referrals.abuse_warning", "Abuse will result in account suspension")}</span>
+      <span className="text-xs text-red-400/80 font-semibold">{t("referrals.username_note", "Note: Only username works as referral code")}</span><br />
+      <span className="text-xs text-red-400/80 font-semibold">⚠️ {t("referrals.abuse_warning", "Abuse will result in account suspension")}</span>
     </DialogDescription>
     {/* Your referral link */}
-    <div className="mt-6">
-      <div className="text-sm font-semibold text-yellow-100 mb-2">{t("referrals.your_code", "Your Referral Code")}</div>
-      <div className="flex items-center justify-between bg-gradient-to-r from-[#232526] to-[#414345] border-2 border-yellow-400 rounded-lg px-4 py-3 shadow-lg">
-        <span className="truncate text-sm font-mono text-yellow-200 font-bold">{user?.username}</span>
+    <div className="mb-4">
+      <div className="text-sm font-semibold text-white mb-2">{t("referrals.your_code", "Your Referral Code")}</div>
+      <div className="flex items-center justify-between bg-white/5 border border-white/10 rounded-lg px-4 py-3">
+        <span className="truncate text-sm font-mono text-white font-semibold">{user?.username}</span>
         <Button
           size="sm"
-          className="bg-yellow-400 hover:bg-yellow-500 text-white font-bold border-2 border-yellow-300 shadow-lg"
+          className="bg-gradient-to-r from-[#d4af37] to-[#f4d03f] hover:from-[#f4d03f] hover:to-[#d4af37] text-black font-semibold rounded-lg"
           onClick={() => {
             const link = `https://world.org/mini-app?app_id=app_b4a7aaa5da2b8df0fa0e5b0f48b27cea&path=${user?.username}`
             navigator.clipboard.writeText(link)
@@ -2485,50 +2485,50 @@ export default function Home() {
       </div>
     </div>
     {/* Rewards overview */}
-    <div className="mt-6 bg-gradient-to-br from-yellow-400/20 to-yellow-600/20 border-2 border-yellow-400 rounded-lg p-4 shadow-lg">
-      <h4 className="text-sm font-bold text-yellow-100 mb-3 flex items-center gap-2">
-        <span className="text-yellow-400">🎁</span>
+    <div className="mb-4 bg-white/5 border border-white/10 rounded-lg p-4">
+      <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+        <span className="text-[#d4af37]">🎁</span>
         {t("referrals.what_you_get", "What You Get")}
       </h4>
-      <ul className="text-sm text-yellow-200 space-y-2">
+      <ul className="text-sm text-white/70 space-y-2">
         <li className="flex items-center gap-2">
-          <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
-          <strong className="text-yellow-100">+5</strong> {t("referrals.regular_tickets", "Regular Tickets")}
+          <span className="w-2 h-2 bg-[#d4af37] rounded-full"></span>
+          <strong className="text-white">+5</strong> {t("referrals.regular_tickets", "Regular Tickets")}
         </li>
         <li className="flex items-center gap-2">
-          <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
-          <strong className="text-yellow-100">+3</strong> {t("referrals.legendary_tickets", "Legendary Tickets")}
+          <span className="w-2 h-2 bg-[#d4af37] rounded-full"></span>
+          <strong className="text-white">+3</strong> {t("referrals.legendary_tickets", "Legendary Tickets")}
         </li>
         <li className="flex items-center gap-2">
-          <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
+          <span className="w-2 h-2 bg-[#d4af37] rounded-full"></span>
           {t("referrals.level_requirement", "Once friend reaches Level 3")}
         </li>
       </ul>
     </div>
     {/* Referred users list */}
-    <div className="mt-6">
-      <h4 className="text-sm font-bold text-yellow-100 mb-3 flex items-center gap-2">
-        <span className="text-yellow-400">👥</span>
+    <div>
+      <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+        <span className="text-[#d4af37]">👥</span>
         {t("referrals.your_referrals", "Your Referrals")}
       </h4>
       {referredUsers.length === 0 ? (
-        <div className="bg-gradient-to-r from-[#232526]/50 to-[#414345]/50 border border-yellow-400/30 rounded-lg p-4 text-center">
-          <p className="text-sm text-yellow-200/70">{t("referrals.no_referrals", "No referrals yet")}</p>
+        <div className="bg-white/5 border border-white/10 rounded-lg p-4 text-center">
+          <p className="text-sm text-white/60">{t("referrals.no_referrals", "No referrals yet")}</p>
         </div>
       ) : (
-        <div className="space-y-2 max-h-48 overflow-y-auto bg-gradient-to-r from-[#232526]/30 to-[#414345]/30 border border-yellow-400/30 rounded-lg p-3">
+        <div className="space-y-2 max-h-48 overflow-y-auto bg-white/5 border border-white/10 rounded-lg p-3">
           {referredUsers.map((ref) => (
-            <div key={ref.username} className="flex justify-between items-center border-b border-yellow-400/20 pb-2 last:border-b-0">
-              <span className="text-sm text-yellow-200">
+            <div key={ref.username} className="flex justify-between items-center border-b border-white/10 pb-2 last:border-b-0">
+              <span className="text-sm text-white">
                 @{ref.username.length > 10 ? ref.username.slice(0, 10) + "…" : ref.username} 
-                <span className="text-yellow-400/70 text-xs ml-1">(Level {ref.level})</span>
+                <span className="text-white/60 text-xs ml-1">(Level {ref.level})</span>
               </span>
               {ref.reward_claimed ? (
-                <CheckCircle className="h-4 w-4 text-green-400" />
+                <CheckCircle className="h-4 w-4 text-[#10b981]" />
               ) : ref.level >= 3 ? (
                 <Button
                   size="sm"
-                  className="bg-green-500 hover:bg-green-600 text-white font-bold text-xs border border-green-400"
+                  className="bg-[#10b981]/20 border border-[#10b981]/30 hover:bg-[#10b981]/30 text-[#10b981] font-semibold text-xs rounded-lg"
                   onClick={async () => {
                     if (!user?.username) return
                     try {
