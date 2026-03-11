@@ -258,8 +258,8 @@ export default function WeeklyContestPage() {
                 <CollapsibleContent className="pt-1 space-y-1 text-xs pl-0 text-left">
                   <div className="text-left">• {t("contest.common_cards", "Common Cards")} = <span className="font-semibold text-[#d4af37]">2 {t("contest.points", "Points")}</span></div>
                   <div className="text-left">• {t("contest.rare_cards", "Rare Cards")} = <span className="font-semibold text-[#d4af37]">2 {t("contest.points", "Points")}</span></div>
-                  <div className="text-left">• {t("contest.epic_cards", "Epic Cards")} = <span className="font-semibold text-[#d4af37]">10 {t("contest.points", "Points")}</span> <span className="text-[#10b981] font-semibold">(2x Bonus!)</span></div>
-                  <div className="text-left">• {t("contest.legendary_cards", "Legendary Cards")} = <span className="font-semibold text-[#d4af37]">40 {t("contest.points", "Points")}</span> <span className="text-[#10b981] font-semibold">(2x Bonus!)</span></div>
+                  <div className="text-left">• {t("contest.epic_cards", "Epic Cards")} = <span className="font-semibold text-[#d4af37]">5 {t("contest.points", "Points")}</span></div>
+                  <div className="text-left">• {t("contest.legendary_cards", "Legendary Cards")} = <span className="font-semibold text-[#d4af37]">20 {t("contest.points", "Points")}</span></div>
                 </CollapsibleContent>
               </Collapsible>
               <Collapsible className="w-full" open={isTradeMarketOpen} onOpenChange={setIsTradeMarketOpen}>

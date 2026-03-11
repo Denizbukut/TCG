@@ -1950,11 +1950,6 @@ export default function Home() {
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
-                {/* 2x Bonus Badge */}
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#10b981]/10 border border-[#10b981]/20">
-                  <span className="text-[10px] font-medium text-[#10b981]">Epic & Legendary: 2x Bonus</span>
-            </div>
-
                 {/* Countdown */}
         {isContestActive() && (() => {
         const timeLeft = formatContestCountdown(contestCountdown)
