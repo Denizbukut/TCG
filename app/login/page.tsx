@@ -137,15 +137,40 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen relative flex items-end justify-center">
-      {/* Full screen background image using Next.js Image component for better optimization */}
+    <div className="min-h-screen relative flex items-end justify-center overflow-hidden bg-[#0b1026]">
+      {/* Pure CSS background — no network requests, no external image */}
       <div className="absolute inset-0 z-0">
-        <img
-          src="/login.jpg"
-          alt="Login background"
-          className="absolute inset-0 w-full h-full object-cover"
+        {/* Base gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#1b1040] via-[#0b1026] to-black" />
+        {/* Glow blobs */}
+        <div className="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-purple-600/30 blur-3xl" />
+        <div className="absolute top-1/3 -right-24 h-80 w-80 rounded-full bg-blue-500/25 blur-3xl" />
+        <div className="absolute bottom-0 left-1/4 h-72 w-72 rounded-full bg-pink-500/20 blur-3xl" />
+        {/* Subtle grid overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.08]"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)",
+            backgroundSize: "44px 44px",
+          }}
         />
+        {/* Darken toward the bottom so the form stays readable */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
       </div>
+
+      {/* Title */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="absolute top-24 left-0 right-0 z-10 px-4 text-center"
+      >
+        <h1 className="text-3xl font-bold tracking-tight text-white drop-shadow-lg sm:text-4xl">
+          Anime World <span className="text-purple-400">TCG</span>
+        </h1>
+        <p className="mt-2 text-sm text-white/70">Collect, trade and battle anime cards</p>
+      </motion.div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
